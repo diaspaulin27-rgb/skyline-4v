@@ -858,7 +858,7 @@ input[type="range"]::-webkit-slider-thumb {
         <button id="pauseBtn" class="hud-btn">Ⅱ</button>
 
         <div class="phase-badge">
-          FASE <span id="phaseDisplay">1</span>/10
+          FASE <span id="phaseDisplay">1</span>/20
         </div>
       </div>
 
@@ -867,6 +867,7 @@ input[type="range"]::-webkit-slider-thumb {
           <span>🌧️</span>
           <span id="pointsDisplay">0</span>
         </div>
+        <button id="zenManualHudBtn" class="btn zen-manual-hud hidden">REGENERAR NÉVOA</button>
       </div>
 
     </div>
@@ -1100,6 +1101,12 @@ input[type="range"]::-webkit-slider-thumb {
           max="100"
           value="70">
 
+        <div class="setting-row" style="margin-top:22px;">
+          <span>Som da chuva</span>
+          <span id="rainSoundVal">70%</span>
+        </div>
+        <input id="rainSoundSlider" type="range" min="0" max="100" value="70">
+
         <div
           class="setting-row"
           style="margin-top:22px;">
@@ -1209,7 +1216,7 @@ input[type="range"]::-webkit-slider-thumb {
         <button
           id="pauseSettingsBtn"
           class="btn">
-          OPÇÕES
+          AJUSTES
         </button>
 
         <button
@@ -1222,6 +1229,17 @@ input[type="range"]::-webkit-slider-thumb {
 
     </div>
 
+  </section>
+
+  <!-- =====================================================
+       TRANSIÇÃO / ANÚNCIO
+  ====================================================== -->
+  <section id="adScreen" class="screen hidden">
+    <div class="menu-card ad-card">
+      <div class="ad-label">INTERVALO</div>
+      <div class="ad-dots">•••</div>
+      <p>Um pequeno momento antes da próxima chuva.</p>
+    </div>
   </section>
 
   <!-- =====================================================
@@ -1297,6 +1315,7 @@ const state = {
 
   rainIntensity: 0.7,
   ambVolume: 0.5,
+  rainVolume: 0.7,
 
   gameSound: true,
   musicSound: true,
@@ -1323,147 +1342,326 @@ const state = {
 ========================================================= */
 
 const phases = [
-
   {
-    name: "A Primeira Chuva",
+    name: "Primeira Chuva",
     feeling: "Serenidade",
-    story:
-      "A cidade acaba de receber a primeira chuva da noite. Tudo está quieto, como se o mundo tivesse diminuído o volume.",
+    story: "Chuva quieta.",
     hue: 215,
     sky: ["#030712", "#0f2740"],
     lights: ["#38bdf8", "#7dd3fc", "#fef3c7"],
     rain: 0.72,
     thunder: 0,
     sound: "rain",
-    weather: "soft"
+    weather: "rain",
+    type: "rain",
+    nameEn: "First Rain",
+    feelingEn: "Serenity",
+    storyEn: "Quiet city rain."
   },
-
   {
     name: "Luzes Distantes",
     feeling: "Nostalgia",
-    story:
-      "Do outro lado da avenida, algumas janelas permanecem acesas. Você não sabe quem está ali, mas a cidade parece lembrar de alguém.",
+    story: "Janelas do outro lado da rua.",
     hue: 235,
     sky: ["#080817", "#202044"],
     lights: ["#fbbf24", "#f472b6", "#818cf8"],
     rain: 0.76,
     thunder: 1,
-    sound: "memory",
-    weather: "medium"
+    sound: "rain",
+    weather: "rain",
+    type: "rain",
+    nameEn: "Distant Lights",
+    feelingEn: "Nostalgia",
+    storyEn: "Windows across the street."
   },
-
   {
     name: "Depois da Meia-Noite",
     feeling: "Solidão",
-    story:
-      "A cidade dormiu. Apenas os semáforos e os reflexos molhados continuam acordados.",
+    story: "A cidade dormiu.",
     hue: 225,
     sky: ["#020617", "#111827"],
     lights: ["#22d3ee", "#60a5fa", "#a5b4fc"],
     rain: 0.84,
     thunder: 2,
-    sound: "lonely",
-    weather: "heavy"
+    sound: "rain",
+    weather: "rain",
+    type: "rain",
+    nameEn: "After Midnight",
+    feelingEn: "Loneliness",
+    storyEn: "The city sleeps."
   },
-
   {
     name: "Neon",
     feeling: "Contemplação",
-    story:
-      "As ruas parecem um reflexo líquido de uma cidade que nunca termina.",
+    story: "Reflexos líquidos.",
     hue: 285,
     sky: ["#10051c", "#321344"],
     lights: ["#f43f5e", "#a855f7", "#06b6d4"],
     rain: 0.88,
     thunder: 3,
-    sound: "neon",
-    weather: "heavy"
+    sound: "rain",
+    weather: "rain",
+    type: "rain",
+    nameEn: "Neon Splash",
+    feelingEn: "Contemplation",
+    storyEn: "Liquid reflections."
   },
-
   {
     name: "A Janela",
     feeling: "Intimidade",
-    story:
-      "A chuva bate perto. Você está protegido atrás do vidro, observando o mundo passar sem precisar fazer parte dele.",
+    story: "Protegido atrás do vidro.",
     hue: 195,
     sky: ["#03151b", "#12323c"],
     lights: ["#67e8f9", "#fde68a", "#f0f9ff"],
     rain: 0.68,
     thunder: 4,
-    sound: "window",
-    weather: "soft"
+    sound: "rain",
+    weather: "rain",
+    type: "rain",
+    nameEn: "The Window",
+    feelingEn: "Intimacy",
+    storyEn: "Protected behind glass."
   },
-
   {
     name: "Tempestade",
     feeling: "Tensão",
-    story:
-      "O vento aumentou. A cidade desaparece entre flashes de luz e cortinas de chuva.",
+    story: "Ventos fortes e flashes.",
     hue: 210,
     sky: ["#02040a", "#16202d"],
     lights: ["#e0f2fe", "#93c5fd", "#f8fafc"],
     rain: 1,
     thunder: 5,
-    sound: "storm",
-    weather: "storm"
+    sound: "rain",
+    weather: "rain",
+    type: "rain",
+    nameEn: "Storm",
+    feelingEn: "Tension",
+    storyEn: "Heavy winds and flashes."
   },
-
   {
     name: "Horizonte",
     feeling: "Esperança",
-    story:
-      "Entre as nuvens, existe uma pequena faixa de luz. Talvez a tempestade esteja terminando.",
+    story: "Uma pequena faixa de luz.",
     hue: 205,
     sky: ["#07111c", "#24485d"],
     lights: ["#fde68a", "#fbbf24", "#bae6fd"],
     rain: 0.65,
     thunder: 6,
-    sound: "hope",
-    weather: "medium"
+    sound: "rain",
+    weather: "rain",
+    type: "rain",
+    nameEn: "Horizon",
+    feelingEn: "Hope",
+    storyEn: "A tiny strip of light."
   },
-
   {
     name: "Memórias",
     feeling: "Saudade",
-    story:
-      "Cada gota parece carregar uma lembrança. Algumas você reconhece. Outras prefere deixar passar.",
+    story: "Gotas carregando o passado.",
     hue: 260,
     sky: ["#090613", "#2b183b"],
     lights: ["#c4b5fd", "#f9a8d4", "#fef3c7"],
     rain: 0.78,
     thunder: 7,
-    sound: "memory2",
-    weather: "medium"
+    sound: "rain",
+    weather: "rain",
+    type: "rain",
+    nameEn: "Memories",
+    feelingEn: "Longing",
+    storyEn: "Drops carrying past moments."
   },
-
   {
     name: "Silêncio",
     feeling: "Paz",
-    story:
-      "Não há carros. Não há vozes. Só água escorrendo pelo vidro e uma cidade respirando devagar.",
+    story: "Sem carros, só água.",
     hue: 175,
     sky: ["#020d0d", "#123638"],
     lights: ["#5eead4", "#99f6e4", "#fef9c3"],
     rain: 0.55,
     thunder: 8,
-    sound: "silence",
-    weather: "soft"
+    sound: "rain",
+    weather: "rain",
+    type: "rain",
+    nameEn: "Silence",
+    feelingEn: "Peace",
+    storyEn: "No cars, just water."
   },
-
   {
-    name: "Quando a Chuva Passa",
+    name: "O Céu Clareia",
     feeling: "Renascimento",
-    story:
-      "A última tempestade se afasta. O céu clareia lentamente e as luzes da cidade começam a desaparecer.",
+    story: "A tempestade está indo embora.",
     hue: 35,
     sky: ["#17100a", "#513b20"],
     lights: ["#fde68a", "#fb923c", "#fef3c7"],
     rain: 0.48,
     thunder: 9,
-    sound: "rebirth",
-    weather: "light"
+    sound: "rain",
+    weather: "rain",
+    type: "rain",
+    nameEn: "Clearing Sky",
+    feelingEn: "Rebirth",
+    storyEn: "Storm is leaving."
+  },
+  {
+    name: "Carro em Movimento",
+    feeling: "Jornada",
+    story: "Vendo as luzes borradas passando.",
+    hue: 200,
+    sky: ["#0a0a0a", "#1a1a1a"],
+    lights: ["#ff0000", "#ffaa00"],
+    rain: 0.8,
+    thunder: 1,
+    sound: "carRain",
+    weather: "car",
+    type: "car",
+    nameEn: "Moving Car",
+    feelingEn: "Journey",
+    storyEn: "Watching lines blur past."
+  },
+  {
+    name: "Nevasca",
+    feeling: "Frio",
+    story: "Silêncio branco e suave.",
+    hue: 200,
+    sky: ["#2d3748", "#4a5568"],
+    lights: ["#e2e8f0", "#cbd5e0"],
+    rain: 0.4,
+    thunder: 0,
+    sound: "snow",
+    weather: "snow",
+    type: "snow",
+    nameEn: "Snowfall",
+    feelingEn: "Cold",
+    storyEn: "Soft white silence."
+  },
+  {
+    name: "Chuva na Rodovia",
+    feeling: "Velocidade",
+    story: "Gotas rápidas batendo no para-brisa.",
+    hue: 220,
+    sky: ["#050510", "#151530"],
+    lights: ["#fff", "#ff0000", "#00ffff"],
+    rain: 0.9,
+    thunder: 2,
+    sound: "carRain",
+    weather: "car",
+    type: "car",
+    nameEn: "Highway Rain",
+    feelingEn: "Speed",
+    storyEn: "Fast drops hitting the windshield."
+  },
+  {
+    name: "Geada Matinal",
+    feeling: "Cristalino",
+    story: "Gelo derretendo no vidro.",
+    hue: 190,
+    sky: ["#4a5568", "#a0aec0"],
+    lights: ["#fff", "#e2e8f0"],
+    rain: 0.3,
+    thunder: 0,
+    sound: "snow",
+    weather: "snow",
+    type: "snow",
+    nameEn: "Morning Frost",
+    feelingEn: "Crisp",
+    storyEn: "Ice melting on the glass."
+  },
+  {
+    name: "Chuva de Verão",
+    feeling: "Calor",
+    story: "Chuva enquanto o sol brilha.",
+    hue: 50,
+    sky: ["#35546d", "#8197a8"],
+    lights: ["#fff"],
+    rain: 0.5,
+    thunder: 0,
+    sound: "rain",
+    weather: "rain",
+    type: "rain",
+    nameEn: "Summer Sun Shower",
+    feelingEn: "Warmth",
+    storyEn: "Rain while the sun shines."
+  },
+  {
+    name: "Nevasca à Meia-Noite",
+    feeling: "Isolamento",
+    story: "Vento feroz e neve cegante.",
+    hue: 230,
+    sky: ["#000", "#111"],
+    lights: ["#718096", "#a0aec0"],
+    rain: 0.8,
+    thunder: 3,
+    sound: "snow",
+    weather: "snow",
+    type: "snow",
+    nameEn: "Midnight Blizzard",
+    feelingEn: "Isolation",
+    storyEn: "Fierce wind and blinding snow."
+  },
+  {
+    name: "Túnel da Cidade",
+    feeling: "Eco",
+    story: "Luzes laranjas passando rápido.",
+    hue: 30,
+    sky: ["#1a1005", "#3a2010"],
+    lights: ["#f6ad55", "#ed8936"],
+    rain: 0.5,
+    thunder: 0,
+    sound: "carRain",
+    weather: "car",
+    type: "car",
+    nameEn: "City Tunnel",
+    feelingEn: "Echo",
+    storyEn: "Orange lights rushing by."
+  },
+  {
+    name: "Gotas Douradas",
+    feeling: "Beleza",
+    story: "Pôr do sol refletindo na água.",
+    hue: 20,
+    sky: ["#c53030", "#ed8936"],
+    lights: ["#fefcbf", "#fbd38d"],
+    rain: 0.6,
+    thunder: 1,
+    sound: "rain",
+    weather: "rain",
+    type: "rain",
+    nameEn: "Golden Hour Drops",
+    feelingEn: "Beautiful",
+    storyEn: "Sunsets reflecting in the water."
+  },
+  {
+    name: "Passeio na Neve",
+    feeling: "Aconchego",
+    story: "Quente por dentro, congelado por fora.",
+    hue: 210,
+    sky: ["#1a202c", "#2d3748"],
+    lights: ["#e2e8f0", "#ff0000"],
+    rain: 0.6,
+    thunder: 0,
+    sound: "snowyDrive",
+    weather: "snow",
+    type: "car_snow",
+    nameEn: "Snowy Drive",
+    feelingEn: "Cozy",
+    storyEn: "Warm inside, frozen outside."
+  },
+  {
+    name: "A Última Limpeza",
+    feeling: "Despedida",
+    story: "O vidro finalmente está limpo.",
+    hue: 200,
+    sky: ["#2b6cb0", "#4299e1"],
+    lights: ["#fff", "#bee3f8"],
+    rain: 0.2,
+    thunder: 0,
+    sound: "rain",
+    weather: "rain",
+    type: "rain",
+    nameEn: "The Last Wipe",
+    feelingEn: "Closure",
+    storyEn: "The glass is finally clear."
   }
-
 ];
 
 /* =========================================================
@@ -2746,8 +2944,8 @@ function handlePointerDown(e) {
     );
 
   clearFog(
-    e.clientX,
-    e.clientY,
+    (e.clientX - fogCanvas.getBoundingClientRect().left) * (W / fogCanvas.getBoundingClientRect().width),
+    (e.clientY - fogCanvas.getBoundingClientRect().top) * (H / fogCanvas.getBoundingClientRect().height),
     brush
   );
 
@@ -2780,8 +2978,8 @@ function handlePointerMove(e) {
     );
 
   clearFog(
-    e.clientX,
-    e.clientY,
+    (e.clientX - fogCanvas.getBoundingClientRect().left) * (W / fogCanvas.getBoundingClientRect().width),
+    (e.clientY - fogCanvas.getBoundingClientRect().top) * (H / fogCanvas.getBoundingClientRect().height),
     brush
   );
 
@@ -2814,6 +3012,14 @@ fogCanvas.addEventListener(
   "pointercancel",
   handlePointerUp
 );
+
+/* Touch safety: the glass gesture must never pan/drag the page or background. */
+['pointerdown','pointermove','pointerup','pointercancel'].forEach(type=>{
+  fogCanvas.addEventListener(type,e=>{ e.preventDefault(); e.stopPropagation(); },{passive:false});
+});
+document.addEventListener('touchmove',e=>{
+  if(state.started && !e.target.closest('button,input,select')) e.preventDefault();
+},{passive:false});
 
 /* =========================================================
    AUDIO ENGINE
@@ -3309,6 +3515,13 @@ function lightning() {
 
 let phaseCompleted = false;
 
+function showAd(callback){
+  const ad=document.getElementById('adScreen');
+  if(!ad){ if(callback) callback(); return; }
+  ad.classList.remove('hidden');
+  setTimeout(()=>{ad.classList.add('hidden'); if(callback) callback();},1400);
+}
+
 function completePhase() {
 
   if (phaseCompleted) return;
@@ -3345,19 +3558,10 @@ function completePhase() {
         state.currentPhase
       ].name;
 
-  document
-    .getElementById(
-      "rewardScreen"
-    )
-    .classList
-    .remove("hidden");
-
-  document
-    .getElementById(
-      "hud"
-    )
-    .classList
-    .add("hidden");
+  showAd(()=>{
+    document.getElementById('rewardScreen').classList.remove('hidden');
+    document.getElementById('hud').classList.add('hidden');
+  });
 
   updateCoins();
 
@@ -4236,6 +4440,8 @@ document
 
   };
 
+document.getElementById('rainSoundSlider').oninput=e=>{ state.rainVolume=Number(e.target.value)/100; document.getElementById('rainSoundVal').textContent=e.target.value+'%'; updateAudio(); saveGame(); };
+
 document
   .getElementById(
     "gameSoundToggle"
@@ -4327,7 +4533,7 @@ document
         .classList
         .remove("hidden");
 
-      state.currentPhase = 9;
+      state.currentPhase = phases.length - 1;
 
       updatePhaseUI();
 
@@ -4367,11 +4573,11 @@ document
    No external assets required.
 ========================================================= */
 
-/* 1 — phase completion at 97% */
-const RS_PHASE_COMPLETE = 0.97;
+/* 1 — phase completion at 99% */
+const RS_PHASE_COMPLETE = 0.99;
 
 /* 10/11/12/13 — Zen + settings */
-state.lang = state.lang || "en";
+state.lang = state.lang || "en"; state.rainVolume = typeof state.rainVolume === "number" ? state.rainVolume : .7;
 state.isZen = !!state.isZen;
 state.zenAutoFog = state.zenAutoFog !== false;
 state.zenRegenAccumulator = 0;
@@ -4403,7 +4609,7 @@ if (!unlockedBrushes.needle) unlockedBrushes.needle = false;
 phases[0].landmark = "cristo";
 phases[3].landmark = "eiffel";
 phases[6].landmark = "liberty";
-phases[9].landmark = "pao";
+phases[9].landmark = "pao"; phases[12].landmark = "cristo"; phases[16].landmark = "eiffel"; phases[18].landmark = "liberty";
 
 /* Textures and atmosphere per phase. */
 const RS_SKY_TEXTURES = phases.map((_,i) => ({
@@ -4444,16 +4650,26 @@ const RS_TEXT = {
 };
 
 const RS_PHASE_TEXT = [
-  ["The First Rain","Serenity","The city receives the first rain of the night.","A Primeira Chuva","Serenidade","Uma cidade silenciosa recebe a primeira chuva da noite."],
-  ["Distant Lights","Nostalgia","Some windows stay awake across the avenue.","Luzes Distantes","Nostalgia","Algumas janelas permanecem acesas do outro lado da avenida."],
-  ["After Midnight","Solitude","Only traffic lights and wet reflections remain awake.","Depois da Meia-Noite","Solidão","Só os semáforos e os reflexos molhados continuam acordados."],
-  ["Neon","Contemplation","The streets become liquid reflections of an endless city.","Neon","Contemplação","As ruas parecem reflexos líquidos de uma cidade que nunca termina."],
-  ["The Window","Intimacy","You are protected behind the glass, watching the world pass.","A Janela","Intimidade","Você está protegido atrás do vidro, observando o mundo passar."],
-  ["Storm","Tension","Wind rises and the city disappears behind curtains of rain.","Tempestade","Tensão","O vento aumenta e a cidade desaparece entre cortinas de chuva."],
-  ["Horizon","Hope","A small band of light appears between the clouds.","Horizonte","Esperança","Uma pequena faixa de luz aparece entre as nuvens."],
-  ["Memories","Longing","Every drop seems to carry a memory.","Memórias","Saudade","Cada gota parece carregar uma lembrança."],
-  ["Silence","Peace","No cars, no voices. Only water and a slow city breath.","Silêncio","Paz","Não há carros, nem vozes. Só água e uma cidade respirando devagar."],
-  ["When the Rain Passes","Renewal","The last storm moves away and the sky slowly clears.","Quando a Chuva Passa","Renascimento","A última tempestade se afasta e o céu clareia lentamente."]
+  ["The First Rain", "La Primera Lluvia", "A Primeira Chuva", "Serenity", "Serenidad", "Serenidade", "The city receives the first rain of the night.", "La ciudad recibe la primera lluvia de la noche.", "Uma cidade silenciosa recebe a primeira chuva da noite."],
+  ["Distant Lights", "Luces Distantes", "Luzes Distantes", "Nostalgia", "Nostalgia", "Nostalgia", "Some windows stay awake across the avenue.", "Algunas ventanas siguen despiertas al otro lado de la avenida.", "Algumas janelas permanecem acesas do outro lado da avenida."],
+  ["After Midnight", "Después de Medianoche", "Depois da Meia-Noite", "Solitude", "Soledad", "Solidão", "Only traffic lights and wet reflections remain awake.", "Solo los semáforos y los reflejos mojados siguen despiertos.", "Só os semáforos e os reflexos molhados continuam acordados."],
+  ["Neon", "Neón", "Neon", "Contemplation", "Contemplación", "Contemplação", "The streets become liquid reflections of an endless city.", "Las calles se convierten en reflejos líquidos de una ciudad infinita.", "As ruas parecem reflexos líquidos de uma cidade que nunca termina."],
+  ["The Window", "La Ventana", "A Janela", "Intimacy", "Intimidad", "Intimidade", "You are protected behind the glass, watching the world pass.", "Estás protegido detrás del cristal, observando pasar el mundo.", "Você está protegido atrás do vidro, observando o mundo passar."],
+  ["Storm", "Tormenta", "Tempestade", "Tension", "Tensión", "Tensão", "Wind rises and the city disappears behind curtains of rain.", "El viento aumenta y la ciudad desaparece entre cortinas de lluvia.", "O vento aumenta e a cidade desaparece entre cortinas de chuva."],
+  ["Horizon", "Horizonte", "Horizonte", "Hope", "Esperanza", "Esperança", "A small band of light appears between the clouds.", "Una pequeña franja de luz aparece entre las nubes.", "Uma pequena faixa de luz aparece entre as nuvens."],
+  ["Memories", "Memorias", "Memórias", "Longing", "Añoranza", "Saudade", "Every drop seems to carry a memory.", "Cada gota parece llevar un recuerdo.", "Cada gota parece carregar uma lembrança."],
+  ["Silence", "Silencio", "Silêncio", "Peace", "Paz", "Paz", "No cars, no voices. Only water and a slow city breath.", "No hay coches ni voces. Solo agua y una ciudad respirando despacio.", "Não há carros, nem vozes. Só água e uma cidade respirando devagar."],
+  ["When the Rain Passes", "Cuando Pasa la Lluvia", "Quando a Chuva Passa", "Renewal", "Renacimiento", "Renascimento", "The last storm moves away and the sky slowly clears.", "La última tormenta se aleja y el cielo empieza a despejarse.", "A última tempestade se afasta e o céu clareia lentamente."],
+  ["Moving Car", "Coche en Movimiento", "Carro em Movimento", "Journey", "Viaje", "Jornada", "Watching city lights glide across the windshield.", "Las luces de la ciudad pasan suavemente por el parabrisas.", "Vendo as luzes da cidade deslizando pelo para-brisa."],
+  ["Snowfall", "Nevada", "Nevasca", "Cold", "Frío", "Frio", "Soft white silence covers the world outside.", "Un suave silencio blanco cubre el mundo exterior.", "Um silêncio branco e suave cobre o mundo lá fora."],
+  ["Highway Rain", "Lluvia en la Autopista", "Chuva na Rodovia", "Speed", "Velocidad", "Velocidade", "Rain streaks diagonally across a wet highway.", "La lluvia cae en diagonal sobre una autopista mojada.", "A chuva corta a janela na diagonal sobre uma rodovia molhada."],
+  ["Morning Frost", "Escarcha Matinal", "Geada Matinal", "Crisp", "Cristalino", "Cristalino", "Ice melts slowly as the morning light arrives.", "El hielo se derrite lentamente con la luz de la mañana.", "O gelo derrete lentamente quando chega a luz da manhã."],
+  ["Summer Sun Shower", "Lluvia de Verano", "Chuva de Verão", "Warmth", "Calor", "Calor", "Warm sunlight breaks through a gentle shower.", "La luz cálida atraviesa una lluvia suave.", "A luz quente atravessa uma chuva suave."],
+  ["Midnight Blizzard", "Ventisca de Medianoche", "Nevasca à Meia-Noite", "Isolation", "Aislamiento", "Isolamento", "Snow and wind erase the city at midnight.", "La nieve y el viento borran la ciudad a medianoche.", "A neve e o vento apagam a cidade à meia-noite."],
+  ["City Tunnel", "Túnel de la Ciudad", "Túnel da Cidade", "Echo", "Eco", "Eco", "Orange lights repeat through the wet tunnel.", "Las luces naranjas se repiten dentro del túnel mojado.", "Luzes laranjas se repetem dentro do túnel molhado."],
+  ["Golden Hour Drops", "Gotas de Hora Dorada", "Gotas Douradas", "Beauty", "Belleza", "Beleza", "Warm sunset colors shimmer through the rain.", "Los colores cálidos del atardecer brillan entre la lluvia.", "As cores quentes do pôr do sol brilham através da chuva."],
+  ["Snowy Drive", "Viaje Nevado", "Passeio na Neve", "Cozy", "Acogedor", "Aconchego", "Warm inside, frozen outside, moving slowly through snow.", "Calor por dentro, frío por fuera, avanzando lentamente entre la nieve.", "Quente por dentro, frio por fora, avançando lentamente na neve."],
+  ["The Last Wipe", "La Última Limpieza", "A Última Limpeza", "Closure", "Despedida", "Despedida", "The glass is finally clear and the rain becomes quiet.", "El cristal finalmente está limpio y la lluvia se calma.", "O vidro finalmente está limpo e a chuva fica tranquila."]
 ];
 
 function rsText(k){ return (RS_TEXT[state.lang] || RS_TEXT.en)[k] || k; }
@@ -4481,6 +4697,7 @@ saveGame = function(){
     gameSound:state.gameSound,
     musicSound:state.musicSound,
     vibration:state.vibration,
+    rainVolume:state.rainVolume,
     lang:state.lang,
     zenAutoFog:state.zenAutoFog
   }));
@@ -4529,6 +4746,9 @@ function rsCloseSettings(){
   if(rsSettingsFromPhase && state.started){
     document.getElementById('pauseScreen').classList.remove('hidden');
     state.paused=true;
+  } else if(state.isZen && state.started){
+    document.getElementById('pauseScreen').classList.remove('hidden');
+    state.paused=true;
   } else {
     document.getElementById('mainMenu').classList.remove('hidden');
   }
@@ -4573,10 +4793,10 @@ function rsRegenerateFogFull(){
 function rsSlowZenFog(dt){
   if(!state.isZen || !state.zenAutoFog || state.paused || !state.started) return;
   state.zenRegenAccumulator += dt;
-  if(state.zenRegenAccumulator < 1.2) return;
+  if(state.zenRegenAccumulator < 1.0) return;
   state.zenRegenAccumulator=0;
   /* Very slow: about 1.2% of the grid per second. */
-  const cells=Math.max(1,Math.round(fogGrid.length*.012));
+  const cells=Math.max(1,Math.max(1,Math.round(fogGrid.length*.006)));
   fogCtx.save(); fogCtx.globalCompositeOperation='source-over';
   for(let i=0;i<cells;i++){
     const idx=Math.floor(Math.random()*fogGrid.length); fogGrid[idx]=false;
@@ -4594,7 +4814,7 @@ function rsSlowZenFog(dt){
 /* 11 — Zen does not show phase HUD. */
 function rsSetZenHUD(active){
   const badge=document.querySelector('.phase-badge');
-  if(badge) badge.style.display=active?'none':'';
+  if(badge) badge.style.display=active?'none':''; rsUpdateZenManualHud();
   const instruction=document.getElementById('instruction');
   if(instruction) instruction.textContent=active?rsText('zenInfinite'):rsText('clean');
 }
@@ -4756,35 +4976,60 @@ function rsUpdateMusic(){
 const rsOriginalInitAudio=initAudio;
 initAudio=function(){ rsOriginalInitAudio(); rsEnsureMusic(); rsUpdateMusic(); if(!rsMusicTimer) rsMusicTimer=setInterval(rsUpdateMusic,1800); };
 const rsOriginalUpdateAudio=updateAudio;
-updateAudio=function(){ rsOriginalUpdateAudio(); rsUpdateMusic(); };
+updateAudio=function(){ rsOriginalUpdateAudio(); if(rainGain) rainGain.gain.value=state.gameSound ? state.rainVolume * .22 : 0; rsUpdateMusic(); };
 
 /* 12 — language only appears in main-menu settings. */
 function rsBuildSettingsExtras(){
   const card=document.querySelector('#settingsScreen .menu-card'); if(!card) return;
+  const content=card.querySelector('div[style="text-align:left;"]'); if(!content) return;
+
   let langRow=document.getElementById('rsLanguageRow');
   if(!langRow){
     langRow=document.createElement('div'); langRow.id='rsLanguageRow'; langRow.style.marginTop='22px';
-    langRow.innerHTML='<div class="setting-row"><span id="rsLanguageLabel">Language</span><select id="rsLanguageSelect" style="background:#101827;color:#fff;border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:8px"><option value="en">English</option><option value="es">Español</option><option value="pt">Português</option></select></div>';
-    card.querySelector('div[style="text-align:left;"]')?.appendChild(langRow);
-    langRow.querySelector('select').addEventListener('change',e=>{state.lang=e.target.value;rsApplyLanguage();updatePhaseUI();renderPhases();renderStore();saveGame();});
+    langRow.innerHTML='<div class="setting-row"><span id="rsLanguageLabel">Idioma</span></div><div class="rs-language-buttons"><button data-lang="en">English</button><button data-lang="es">Español</button><button data-lang="pt">Português</button></div>';
+    content.appendChild(langRow);
+    langRow.querySelectorAll('button[data-lang]').forEach(b=>b.onclick=()=>{state.lang=b.dataset.lang;saveGame();rsApplyLanguage();updatePhaseUI();renderPhases();renderStore();});
   }
-  langRow.style.display=rsSettingsFromPhase?'none':'block';
-  const sel=langRow.querySelector('select'); if(sel) sel.value=state.lang;
+  langRow.style.display=(!rsSettingsFromPhase && !state.isZen)?'block':'none';
+  langRow.querySelectorAll('button[data-lang]').forEach(b=>b.classList.toggle('active',b.dataset.lang===state.lang));
 
   let zenBox=document.getElementById('rsZenSettings');
   if(!zenBox){
     zenBox=document.createElement('div'); zenBox.id='rsZenSettings'; zenBox.style.marginTop='24px'; zenBox.style.paddingTop='18px'; zenBox.style.borderTop='1px solid rgba(255,255,255,.1)';
-    zenBox.innerHTML='<h3 id="rsZenTitle" style="margin:0 0 12px">Zen Mode</h3><div class="toggle-row"><div class="toggle-text"><strong id="rsZenAuto">Auto-regenerate fog</strong><span id="rsZenAutoDesc">Let the mist return slowly by itself.</span></div><div id="rsZenAutoToggle" class="toggle on"></div></div><button id="rsZenManual" class="btn" style="width:100%;margin-top:14px">REGENERATE FOG 100%</button>';
-    card.querySelector('div[style="text-align:left;"]')?.appendChild(zenBox);
-    document.getElementById('rsZenAutoToggle').onclick=()=>{state.zenAutoFog=!state.zenAutoFog;setToggle('rsZenAutoToggle',state.zenAutoFog);saveGame();};
-    document.getElementById('rsZenManual').onclick=()=>{rsRegenerateFogFull();};
+    zenBox.innerHTML='<h3 id="rsZenTitle" style="margin:0 0 12px">Modo Zen</h3><div class="toggle-row"><div class="toggle-text"><strong id="rsZenAuto">Regenerar névoa automaticamente</strong><span id="rsZenAutoDesc">Deixe a névoa voltar lentamente sozinha.</span></div><div id="rsZenAutoToggle" class="toggle on"></div></div><button id="rsZenManual" class="btn" style="width:100%;margin-top:14px">REGENERAR NÉVOA 100%</button>';
+    content.appendChild(zenBox);
+    document.getElementById('rsZenAutoToggle').onclick=()=>{state.zenAutoFog=!state.zenAutoFog;setToggle('rsZenAutoToggle',state.zenAutoFog);rsUpdateZenManualHud();saveGame();};
+    document.getElementById('rsZenManual').onclick=()=>rsRegenerateFogFull();
   }
   zenBox.style.display=state.isZen?'block':'none';
   setToggle('rsZenAutoToggle',state.zenAutoFog);
+  rsUpdateZenManualHud();
+
+  // Music toggle is intentionally not exposed in the three settings menus.
+  const musicRow=document.getElementById('musicToggle')?.closest('.toggle-row'); if(musicRow) musicRow.style.display='none';
+  const gameToggleRow=document.getElementById('gameSoundToggle')?.closest('.toggle-row'); if(gameToggleRow) gameToggleRow.style.display='none';
+  const rainSound=document.getElementById('rainSoundSlider'); if(rainSound){rainSound.value=Math.round(state.rainVolume*100);document.getElementById('rainSoundVal').textContent=rainSound.value+'%';}
+  const rainSlider=document.getElementById('rainSlider');
+  if(rainSlider){rainSlider.value=Math.round(state.rainIntensity*100);}
+  const rainLabel=rainSlider?.previousElementSibling?.querySelector('span:first-child');
+  if(rainLabel) rainLabel.textContent=state.isZen?'Intensidade da Chuva':'Intensidade da Chuva';
+  const rainRow=rainSlider?.previousElementSibling; if(rainRow) rainRow.style.display=state.isZen?'flex':'none';
+  if(rainSlider) rainSlider.style.display=state.isZen?'block':'none';
+  const rainSoundRow=rainSound?.previousElementSibling; if(rainSoundRow) rainSoundRow.style.display='flex';
+  if(rainSound) rainSound.style.display='block';
 }
+function rsUpdateZenManualHud(){
+  const b=document.getElementById('zenManualHudBtn'); const c=document.querySelector('.currency-badge');
+  if(!b||!c) return;
+  const show=!!state.isZen && !state.zenAutoFog;
+  b.classList.toggle('hidden',!show); c.style.display=show?'none':'';
+  b.textContent=rsText('zenManual');
+  b.onclick=()=>rsRegenerateFogFull();
+}
+
 function rsApplyLanguage(){
   const set=(id,k)=>{const e=document.getElementById(id);if(e)e.textContent=rsText(k);};
-  set('continueBtn','continue'); set('phasesBtn','phases'); set('storeBtn','store'); set('settingsBtn','settings');
+  set('continueBtn','continue'); const zb=document.getElementById('zenBtn'); if(zb)zb.textContent=rsText('zen'); set('phasesBtn','phases'); set('storeBtn','store'); set('settingsBtn','settings');
   set('closePhasesBtn','back'); set('closeStoreBtn','back'); set('closeSettingsBtn','save'); set('resumeBtn','resume'); set('exitMenuBtn','main'); set('pauseSettingsBtn','settings'); set('nextPhaseBtn','next'); set('rewardMenuBtn','main');
   const s=document.querySelector('#settingsScreen h2'); if(s)s.textContent=rsText('settingsTitle');
   const rows=document.querySelectorAll('#settingsScreen .setting-row span:first-child'); if(rows[0])rows[0].textContent=rsText('rain'); if(rows[1])rows[1].textContent=rsText('ambience');
@@ -4799,7 +5044,7 @@ function rsApplyLanguage(){
 const rsOriginalUpdatePhaseUI=updatePhaseUI;
 updatePhaseUI=function(){
   const phase=phases[state.currentPhase]; const text=rsPhaseText(state.currentPhase);
-  const pd=document.getElementById('phaseDisplay'); if(pd)pd.textContent=state.currentPhase+1;
+  const pd=document.getElementById('phaseDisplay'); if(pd)pd.textContent=state.currentPhase+1; const pb=document.querySelector('.phase-badge'); if(pb && !state.isZen) pb.lastChild && (pb.lastChild.textContent='/'+phases.length);
   const mn=document.getElementById('menuPhaseName'); if(mn)mn.textContent=text.name;
   const mf=document.getElementById('menuPhaseFeeling'); if(mf)mf.textContent=text.feeling;
   const ms=document.getElementById('menuPhaseStory'); if(ms)ms.textContent=text.story;
@@ -4844,14 +5089,16 @@ renderStore=function(){
 
 /* 13/11 — add Zen button to menu without replacing existing markup. */
 function rsEnsureZenButton(){
-  const stack=document.querySelector('#mainMenu .btn-stack'); if(!stack || document.getElementById('zenBtn')) return;
-  const b=document.createElement('button'); b.id='zenBtn'; b.className='btn'; b.textContent=rsText('zen'); b.onclick=()=>startZen();
-  stack.insertBefore(b,document.getElementById('settingsBtn'));
+  const stack=document.querySelector('#mainMenu .btn-stack'); if(!stack) return;
+  let b=document.getElementById('zenBtn');
+  if(!b){ b=document.createElement('button'); b.id='zenBtn'; b.className='btn'; b.onclick=()=>startZen(); }
+  b.textContent=rsText('zen');
+  stack.insertBefore(b,document.getElementById('phasesBtn'));
 }
 
 /* Rebind settings actions after all original handlers exist. */
 document.getElementById('settingsBtn').onclick=()=>rsOpenSettings(false);
-document.getElementById('pauseSettingsBtn').onclick=()=>rsOpenSettings(true);
+document.getElementById('pauseSettingsBtn').onclick=()=>rsOpenSettings(true); document.getElementById('pauseSettingsBtn').textContent=rsText('settings');
 document.getElementById('closeSettingsBtn').onclick=()=>rsCloseSettings();
 
 /* Zen close behavior */
