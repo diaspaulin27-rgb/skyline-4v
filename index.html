@@ -5156,6 +5156,301 @@ requestAnimationFrame(
   loop
 );
 
+
+/* =========================================================
+   RAINY SKYLINE — CORRECTION PATCH
+   Keeps the current V4 as base and fixes the requested items.
+========================================================= */
+
+/* 1 + 14 — ONE canonical language table for all phase names.
+   The previous patch used the wrong indexes for feeling/story, causing
+   English/Spanish/Portuguese to mix. */
+function rsPhaseText(i){
+  const p = RS_PHASE_TEXT[i] || RS_PHASE_TEXT[0];
+  if(state.lang === 'es') return {name:p[1], feeling:p[4], story:p[7]};
+  if(state.lang === 'pt') return {name:p[2], feeling:p[5], story:p[8]};
+  return {name:p[0], feeling:p[3], story:p[6]};
+}
+
+/* Keep the V3 language selector visual/interaction: one compact button
+   that cycles languages. Spanish is added to the same old interaction. */
+function rsBuildV3LanguageSelector(){
+  const content=document.querySelector('#settingsScreen .menu-card div[style="text-align:left;"]');
+  if(!content) return;
+  let row=document.getElementById('rsLanguageRow');
+  if(!row){
+    row=document.createElement('div');
+    row.id='rsLanguageRow';
+    row.className='setting-row';
+    row.style.marginTop='22px';
+    row.innerHTML='<span id="rsLanguageLabel">Language</span><button id="langToggleBtn" class="btn btn-small" style="padding:5px 10px;min-height:30px;">English</button>';
+    content.appendChild(row);
+    document.getElementById('langToggleBtn').onclick=()=>{
+      state.lang = state.lang==='en' ? 'pt' : state.lang==='pt' ? 'es' : 'en';
+      saveGame();
+      rsApplyLanguage();
+      updatePhaseUI();
+      renderPhases();
+      renderStore();
+      rsBuildSettingsExtras();
+    };
+  }
+  row.style.display=(!rsSettingsFromPhase && !state.isZen)?'flex':'none';
+  const b=document.getElementById('langToggleBtn');
+  if(b) b.textContent=state.lang==='en'?'English':state.lang==='pt'?'Português':'Español';
+}
+
+/* Remove the previous three-button language UI if it exists, then rebuild
+   the V3-style single button. */
+function rsCleanLanguageButtons(){
+  const old=document.querySelector('#rsLanguageRow .rs-language-buttons');
+  if(old) old.remove();
+}
+
+/* 4 + 2 — Car phase: movement comes from the vehicle/world, not from a
+   static diagonal rain direction. Rain streaks remain mostly vertical and
+   acquire dynamic forward motion/perspective. */
+const rsCarRainDraw = RainDrop.prototype.draw;
+RainDrop.prototype.draw=function(){
+  const phase=phases[state.currentPhase]||phases[0];
+  const isCar=phase.weather==='car' || phase.type==='car' || phase.type==='car_snow';
+  if(!isCar) return rsCarRainDraw.call(this);
+  const motion = 0.65 + state.rainIntensity*1.25;
+  const perspective = 0.35 + (this.y/H)*0.9;
+  rainCtx.strokeStyle=`rgba(185,220,255,${this.alpha})`;
+  rainCtx.lineWidth=this.width;
+  rainCtx.beginPath();
+  rainCtx.moveTo(this.x,this.y);
+  rainCtx.lineTo(this.x + (this.wind*0.25*motion), this.y + this.len*(1+perspective*0.55));
+  rainCtx.stroke();
+};
+
+/* Extra moving road streaks make the car actually feel like it is travelling. */
+let rsCarMotionTime=0;
+function rsDrawCarMotion(dt){
+  const phase=phases[state.currentPhase];
+  if(!state.started || state.isZen || !phase || (phase.weather!=='car' && phase.type!=='car' && phase.type!=='car_snow')) return;
+  rsCarMotionTime += dt;
+  bgCtx.save();
+  const speed=35+state.rainIntensity*85;
+  const horizon=H*.69;
+  for(let i=0;i<18;i++){
+    const seed=(i*97)%1000;
+    const x=((seed/1000*W + rsCarMotionTime*speed*(0.25+(i%5)*.08))%(W+180))-90;
+    const y=horizon + (i%6)*H*.035;
+    bgCtx.strokeStyle=`rgba(210,225,235,${.05+(i%4)*.018})`;
+    bgCtx.lineWidth=1+(i%3)*.7;
+    bgCtx.beginPath();
+    bgCtx.moveTo(x,y);
+    bgCtx.lineTo(x+35+(i%4)*14,y+3+(i%3)*2);
+    bgCtx.stroke();
+  }
+  bgCtx.restore();
+}
+
+/* 3 — continuous, quiet car engine tone. */
+let rsCarEngine=null, rsCarEngineGain=null, rsCarEngineFilter=null, rsCarEngineLfo=null, rsCarEngineLfoGain=null;
+function rsUpdateCarEngine(){
+  if(!audioCtx || !masterGain) return;
+  const phase=phases[state.currentPhase]||{};
+  const isCar=phase.weather==='car'||phase.type==='car'||phase.type==='car_snow';
+  if(isCar){
+    if(!rsCarEngine){
+      rsCarEngine=audioCtx.createOscillator();
+      rsCarEngineGain=audioCtx.createGain();
+      rsCarEngineFilter=audioCtx.createBiquadFilter();
+      rsCarEngineLfo=audioCtx.createOscillator();
+      rsCarEngineLfoGain=audioCtx.createGain();
+      rsCarEngine.type='sawtooth';
+      rsCarEngine.frequency.value=54;
+      rsCarEngineFilter.type='lowpass';
+      rsCarEngineFilter.frequency.value=180;
+      rsCarEngineGain.gain.value=0;
+      rsCarEngineLfo.type='sine';
+      rsCarEngineLfo.frequency.value=.12;
+      rsCarEngineLfoGain.gain.value=4;
+      rsCarEngineLfo.connect(rsCarEngineLfoGain).connect(rsCarEngine.frequency);
+      rsCarEngine.connect(rsCarEngineFilter).connect(rsCarEngineGain).connect(masterGain);
+      rsCarEngine.start(); rsCarEngineLfo.start();
+    }
+    rsCarEngineGain.gain.setTargetAtTime(state.gameSound ? .018 : 0,audioCtx.currentTime,.35);
+    rsCarEngine.frequency.setTargetAtTime(50+state.rainIntensity*9,audioCtx.currentTime,.8);
+  }else if(rsCarEngineGain){
+    rsCarEngineGain.gain.setTargetAtTime(0,audioCtx.currentTime,.4);
+  }
+}
+
+const rsOldUpdateAudio2=updateAudio;
+updateAudio=function(){ rsOldUpdateAudio2(); rsUpdateCarEngine(); };
+
+/* 5 — Zen never shows coins. */
+function rsUpdateZenHudVisibility(){
+  const coin=document.querySelector('.currency-badge');
+  if(coin) coin.style.display=state.isZen ? 'none' : '';
+}
+
+/* 6 — snow requires two passes. First pass lightens the fog, second pass
+   removes it completely. Other phases keep the current single-pass wipe. */
+let rsSnowPassGrid=new Uint8Array(GRID_X*GRID_Y);
+const rsClearFogBeforeSnow=clearFog;
+function rsSnowCellTouch(x,y,radius){
+  const gx=Math.floor((x/W)*GRID_X), gy=Math.floor((y/H)*GRID_Y);
+  const rx=Math.ceil((radius/W)*GRID_X)+1, ry=Math.ceil((radius/H)*GRID_Y)+1;
+  for(let yy=gy-ry;yy<=gy+ry;yy++) for(let xx=gx-rx;xx<=gx+rx;xx++){
+    if(xx<0||yy<0||xx>=GRID_X||yy>=GRID_Y) continue;
+    const idx=yy*GRID_X+xx;
+    const px=(xx+.5)/GRID_X*W, py=(yy+.5)/GRID_Y*H;
+    if(Math.hypot(px-x,py-y)<=radius) rsSnowPassGrid[idx]=Math.min(2,rsSnowPassGrid[idx]+1);
+  }
+}
+function rsSnowClearFog(x,y,brush){
+  const radius=brush.radius;
+  rsSnowCellTouch(x,y,radius);
+  fogCtx.save();
+  fogCtx.globalCompositeOperation='destination-out';
+  fogCtx.globalAlpha=.38;
+  fogCtx.beginPath(); fogCtx.arc(x,y,radius,0,Math.PI*2); fogCtx.fill();
+  fogCtx.globalAlpha=1;
+  fogCtx.restore();
+  /* Only cells crossed twice count as cleared. */
+  const gx=Math.floor((x/W)*GRID_X), gy=Math.floor((y/H)*GRID_Y);
+  const rx=Math.ceil((radius/W)*GRID_X)+1, ry=Math.ceil((radius/H)*GRID_Y)+1;
+  for(let yy=gy-ry;yy<=gy+ry;yy++) for(let xx=gx-rx;xx<=gx+rx;xx++){
+    if(xx<0||yy<0||xx>=GRID_X||yy>=GRID_Y) continue;
+    const idx=yy*GRID_X+xx;
+    if(rsSnowPassGrid[idx]>=2) fogGrid[idx]=true;
+  }
+  updateProgress();
+}
+clearFog=function(x,y,brush){
+  const phase=phases[state.currentPhase]||phases[0];
+  if(!state.isZen && (phase.weather==='snow'||phase.type==='snow'||phase.type==='car_snow')) rsSnowClearFog(x,y,brush);
+  else rsClearFogBeforeSnow(x,y,brush);
+};
+const rsInitFogBeforeSnow=initFog;
+initFog=function(){ rsInitFogBeforeSnow(); rsSnowPassGrid=new Uint8Array(GRID_X*GRID_Y); };
+
+/* 8 — Zen intensity becomes a weather scale; at 100% snow begins. */
+let rsZenSnow=[];
+function rsEnsureZenSnow(){
+  if(rsZenSnow.length<160) rsZenSnow=Array.from({length:160},()=>({x:Math.random()*W,y:Math.random()*H,v:35+Math.random()*80,r:.7+Math.random()*2}));
+}
+function rsDrawZenWeather(){
+  if(!state.isZen || !state.started || state.paused || state.rainIntensity<1) return;
+  rsEnsureZenSnow();
+  const amount=Math.min(1,(state.rainIntensity-0.85)/.15);
+  rainCtx.save();
+  rainCtx.fillStyle='rgba(255,255,255,.72)';
+  for(let i=0;i<Math.floor(rsZenSnow.length*amount);i++){
+    const s=rsZenSnow[i]; s.y += s.v*.016; s.x += Math.sin((performance.now()+i*70)*.001)*.12;
+    if(s.y>H+8){s.y=-8;s.x=Math.random()*W;}
+    rainCtx.beginPath(); rainCtx.arc(s.x,s.y,s.r,0,Math.PI*2); rainCtx.fill();
+  }
+  rainCtx.restore();
+}
+
+/* 9 — dedicated Zen landscape, more detailed than a normal phase. */
+function rsDrawZenScene(){
+  const g=bgCtx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#07111d'); g.addColorStop(.42,'#17364b'); g.addColorStop(1,'#071018');
+  bgCtx.fillStyle=g; bgCtx.fillRect(0,0,W,H);
+  const moon=bgCtx.createRadialGradient(W*.72,H*.2,0,W*.72,H*.2,130);
+  moon.addColorStop(0,'rgba(230,245,255,.32)'); moon.addColorStop(.35,'rgba(180,220,255,.10)'); moon.addColorStop(1,'transparent');
+  bgCtx.fillStyle=moon; bgCtx.beginPath(); bgCtx.arc(W*.72,H*.2,130,0,Math.PI*2); bgCtx.fill();
+  /* distant mountains */
+  bgCtx.fillStyle='rgba(7,18,28,.78)'; bgCtx.beginPath(); bgCtx.moveTo(0,H*.67); bgCtx.lineTo(W*.16,H*.48); bgCtx.lineTo(W*.29,H*.64); bgCtx.lineTo(W*.45,H*.42); bgCtx.lineTo(W*.62,H*.63); bgCtx.lineTo(W*.78,H*.46); bgCtx.lineTo(W,H*.64); bgCtx.lineTo(W,H); bgCtx.lineTo(0,H); bgCtx.closePath(); bgCtx.fill();
+  /* lake */
+  const lake=bgCtx.createLinearGradient(0,H*.67,0,H); lake.addColorStop(0,'rgba(70,130,155,.20)'); lake.addColorStop(1,'rgba(2,8,14,.78)'); bgCtx.fillStyle=lake; bgCtx.fillRect(0,H*.67,W,H*.33);
+  for(let i=0;i<28;i++){ const y=H*.70+i*H*.009; const x=(i*83)%W; bgCtx.strokeStyle=`rgba(180,220,235,${.025+(i%5)*.008})`; bgCtx.lineWidth=1; bgCtx.beginPath(); bgCtx.moveTo(x,y); bgCtx.lineTo(Math.min(W,x+60+(i%7)*18),y); bgCtx.stroke(); }
+  /* small warm cabin */
+  const cx=W*.22, cy=H*.67; bgCtx.fillStyle='#101b22'; bgCtx.fillRect(cx-38,cy-45,76,45); bgCtx.beginPath(); bgCtx.moveTo(cx-48,cy-45); bgCtx.lineTo(cx,cy-78); bgCtx.lineTo(cx+48,cy-45); bgCtx.closePath(); bgCtx.fill(); bgCtx.fillStyle='rgba(255,204,110,.85)'; bgCtx.fillRect(cx-24,cy-31,13,15); bgCtx.fillRect(cx+10,cy-31,13,15);
+  rsDrawGrass();
+}
+const rsDrawCityBackgroundBeforeZen=drawCityBackground;
+drawCityBackground=function(){
+  if(state.isZen){ rsDrawZenScene(); return; }
+  rsDrawCityBackgroundBeforeZen();
+};
+
+/* 13 — returning to the main menu must also pass through the ad interval. */
+const rsExitMenuOriginal=document.getElementById('exitMenuBtn').onclick;
+document.getElementById('exitMenuBtn').onclick=()=>{
+  showAd(()=>{
+    state.started=false; state.paused=false; state.activePointers.clear(); state.isZen=false;
+    initFog(); state.hasInteracted=false;
+    document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
+    document.getElementById('hud').classList.add('hidden');
+    document.getElementById('mainMenu').classList.remove('hidden');
+    rsSetZenHUD(false); rsUpdateZenHudVisibility(); updatePhaseUI(); saveGame();
+  });
+};
+const rsRewardMenuOriginal=document.getElementById('rewardMenuBtn').onclick;
+document.getElementById('rewardMenuBtn').onclick=()=>{
+  showAd(()=>{
+    document.getElementById('rewardScreen').classList.add('hidden');
+    document.getElementById('mainMenu').classList.remove('hidden');
+    updatePhaseUI();
+  });
+};
+
+/* Keep Zen HUD state and car sound synchronized whenever a phase starts. */
+const rsStartZenOriginal=startZen;
+startZen=function(){ rsStartZenOriginal(); rsSetZenHUD(true); rsUpdateZenHudVisibility(); rsUpdateCarEngine(); };
+const rsStartPhaseOriginal2=startPhase;
+startPhase=function(i){ rsStartPhaseOriginal2(i); rsSetZenHUD(false); rsUpdateZenHudVisibility(); rsUpdateCarEngine(); };
+
+/* Use the corrected V3-style selector and translated phase labels. */
+const rsApplyLanguageOld=rsApplyLanguage;
+rsApplyLanguage=function(){
+  rsApplyLanguageOld();
+  rsBuildV3LanguageSelector();
+  rsCleanLanguageButtons();
+  const text=rsPhaseText(state.currentPhase);
+  const m=document.getElementById('menuPhaseName'), f=document.getElementById('menuPhaseFeeling'), st=document.getElementById('menuPhaseStory');
+  if(m)m.textContent=text.name; if(f)f.textContent=text.feeling; if(st)st.textContent=text.story;
+  const manual=document.getElementById('zenManualHudBtn'); if(manual) manual.textContent='mist';
+  const manualSettings=document.getElementById('rsZenManual'); if(manualSettings) manualSettings.textContent='mist';
+  rsUpdateZenHudVisibility();
+};
+
+/* Rebuild the Zen settings/manual button after each settings open. */
+const rsBuildSettingsExtrasOld=rsBuildSettingsExtras;
+rsBuildSettingsExtras=function(){
+  rsBuildSettingsExtrasOld();
+  rsBuildV3LanguageSelector();
+  rsCleanLanguageButtons();
+  const b=document.getElementById('rsZenManual'); if(b)b.textContent='mist';
+};
+
+/* Ensure the Zen manual button is literally "mist" and only appears when
+   auto-regeneration is disabled. */
+function rsUpdateZenManualHud(){
+  const b=document.getElementById('zenManualHudBtn'), c=document.querySelector('.currency-badge');
+  if(!b||!c)return;
+  const show=!!state.isZen && !state.zenAutoFog;
+  b.classList.toggle('hidden',!show); c.style.display=state.isZen?'none':(show?'none':'');
+  b.textContent='mist'; b.onclick=()=>{rsRegenerateFogFull();};
+}
+
+/* Add motion/snow/Zen weather to the existing frame loop without replacing
+   the good finger gesture implementation. */
+const rsLoopBeforeFinal=loop;
+loop=function(time){
+  const dt=Math.min((time-state.lastTime)/1000,.1);
+  rsLoopBeforeFinal(time);
+  rsDrawCarMotion(dt);
+  rsDrawZenWeather();
+  rsUpdateZenHudVisibility();
+  rsUpdateCarEngine();
+};
+
+/* Reapply settings whenever the selector changes and after initialization. */
+rsBuildV3LanguageSelector();
+rsCleanLanguageButtons();
+rsApplyLanguage();
+rsUpdateZenManualHud();
+rsUpdateZenHudVisibility();
+
 </script>
 
 </body>
