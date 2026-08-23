@@ -494,146 +494,26 @@ function updateTranslations() {
 
 /* 20 FASES (Incluindo Carro e Neve/Sol) */
 const phases = [
-  {
-    name:{en:"First Rain",es:"Primera Lluvia",pt:"Primeira Chuva"},
-    feeling:{en:"Serenity",es:"Serenidad",pt:"Serenidade"},
-    story:{en:"The first rain arrives over a quiet city at the end of the afternoon.",es:"La primera lluvia llega sobre una ciudad tranquila al final de la tarde.",pt:"A primeira chuva chega sobre uma cidade tranquila no fim da tarde."},
-    time:"dusk", weather:"drizzle", rain:.45, wind:-.25, fog:.22, traffic:.18, reflect:.35,
-    sky:["#17233d","#355c73","#d59b68"], ground:"#0b1720", lights:["#f9d77e","#8fd8ff","#ffd7a0"], sound:"softRain"
-  },
-  {
-    name:{en:"Distant Lights",es:"Luces Distantes",pt:"Luzes Distantes"},
-    feeling:{en:"Distance",es:"Distancia",pt:"Distância"},
-    story:{en:"Fine rain separates you from a city glowing softly in the distance.",es:"La lluvia fina te separa de una ciudad que brilla suavemente a lo lejos.",pt:"A chuva fina separa você de uma cidade brilhando suavemente ao longe."},
-    time:"night", weather:"rain", rain:.58, wind:-.55, fog:.28, traffic:.12, reflect:.45,
-    sky:["#070b1c","#1b2347","#34366b"], ground:"#070b13", lights:["#b8d8ff","#ffd27a","#9bc7ff"], sound:"distantRain"
-  },
-  {
-    name:{en:"After Midnight",es:"Después de Medianoche",pt:"Depois da Meia-Noite"},
-    feeling:{en:"Solitude",es:"Soledad",pt:"Solidão"},
-    story:{en:"After midnight, heavy rain falls over nearly empty streets.",es:"Después de medianoche, una lluvia intensa cae sobre calles casi vacías.",pt:"Depois da meia-noite, uma chuva pesada cai sobre ruas quase vazias."},
-    time:"lateNight", weather:"heavyRain", rain:.9, wind:-.9, fog:.32, traffic:.05, reflect:.62,
-    sky:["#030611","#0b1630","#182b4b"], ground:"#03070d", lights:["#d7e8ff","#ffcc88","#7fa8d9"], sound:"heavyRain"
-  },
-  {
-    name:{en:"Neon Splash",es:"Salpicadura de Neón",pt:"Neon na Chuva"},
-    feeling:{en:"Energy",es:"Energía",pt:"Energia"},
-    story:{en:"Neon signs dissolve into colorful reflections across the wet city.",es:"Los letreros de neón se convierten en reflejos de colores sobre la ciudad mojada.",pt:"As luzes de neon se transformam em reflexos coloridos sobre a cidade molhada."},
-    time:"night", weather:"heavyRain", rain:.92, wind:-.7, fog:.24, traffic:.55, reflect:.9,
-    sky:["#09051c","#20104a","#431f63"], ground:"#080611", lights:["#ff5fd7","#55d9ff","#ffd45c","#a78bfa"], sound:"neonRain"
-  },
-  {
-    name:{en:"The Window",es:"La Ventana",pt:"A Janela"},
-    feeling:{en:"Intimacy",es:"Intimidad",pt:"Intimidade"},
-    story:{en:"A quiet window, a calm rain, and almost nothing else.",es:"Una ventana tranquila, una lluvia serena y casi nada más.",pt:"Uma janela tranquila, uma chuva calma e quase nada além disso."},
-    time:"evening", weather:"softRain", rain:.3, wind:-.15, fog:.38, traffic:.02, reflect:.28,
-    sky:["#151b2c","#2b3548","#5a6272"], ground:"#0b1018", lights:["#ffdca8","#e7efff"], sound:"quietRain"
-  },
-  {
-    name:{en:"Storm",es:"Tormenta",pt:"Tempestade"},
-    feeling:{en:"Intensity",es:"Intensidad",pt:"Intensidade"},
-    story:{en:"Wind bends the rain while distant thunder tears through the sky.",es:"El viento inclina la lluvia mientras los truenos atraviesan el cielo.",pt:"O vento inclina a chuva enquanto trovões rasgam o céu."},
-    time:"stormNight", weather:"storm", rain:1.0, wind:-1.35, fog:.34, traffic:.12, reflect:.68,
-    sky:["#03040a","#101522","#26354a"], ground:"#03070b", lights:["#dcecff","#ffd48a"], sound:"storm"
-  },
-  {
-    name:{en:"Horizon",es:"Horizonte",pt:"Horizonte"},
-    feeling:{en:"Hope",es:"Esperanza",pt:"Esperança"},
-    story:{en:"The rain fades as the first light appears beyond the horizon.",es:"La lluvia se desvanece mientras aparece la primera luz en el horizonte.",pt:"A chuva diminui enquanto a primeira luz surge no horizonte."},
-    time:"dawn", weather:"fadingRain", rain:.42, wind:.15, fog:.25, traffic:.1, reflect:.42,
-    sky:["#1b2947","#66728c","#e7a77d"], ground:"#10151c", lights:["#ffe2ad","#d8edff"], sound:"dawnRain"
-  },
-  {
-    name:{en:"Memories",es:"Recuerdos",pt:"Memórias"},
-    feeling:{en:"Nostalgia",es:"Nostalgia",pt:"Nostalgia"},
-    story:{en:"Warm lights glow through a nostalgic rain, like a memory returning.",es:"Luces cálidas brillan bajo una lluvia nostálgica, como un recuerdo que regresa.",pt:"Luzes quentes brilham sob uma chuva nostálgica, como uma memória que retorna."},
-    time:"twilight", weather:"nostalgicRain", rain:.55, wind:-.2, fog:.3, traffic:.16, reflect:.58,
-    sky:["#201a2d","#5b394b","#b46d61"], ground:"#120e16", lights:["#ffd18a","#ffb86b","#e8d2b0"], sound:"nostalgia"
-  },
-  {
-    name:{en:"Silence",es:"Silencio",pt:"Silêncio"},
-    feeling:{en:"Stillness",es:"Quietud",pt:"Quietude"},
-    story:{en:"A nearly empty city listens to the softest rain of the night.",es:"Una ciudad casi vacía escucha la lluvia más suave de la noche.",pt:"Uma cidade quase vazia escuta a chuva mais suave da noite."},
-    time:"night", weather:"mistRain", rain:.18, wind:.05, fog:.2, traffic:.01, reflect:.2,
-    sky:["#070b16","#121b2b","#243044"], ground:"#05080e", lights:["#bcd7ee","#e8d7a8"], sound:"silenceRain"
-  },
-  {
-    name:{en:"Clearing Sky",es:"Cielo Despejado",pt:"Céu se Abrindo"},
-    feeling:{en:"Relief",es:"Alivio",pt:"Alívio"},
-    story:{en:"The storm retreats and patches of open sky return above the city.",es:"La tormenta se aleja y vuelven a aparecer claros en el cielo.",pt:"A tempestade vai embora e trechos de céu aberto voltam a surgir."},
-    time:"postRain", weather:"clearingRain", rain:.25, wind:.18, fog:.18, traffic:.22, reflect:.48,
-    sky:["#27354b","#70879b","#b9d3d8"], ground:"#111921", lights:["#ffe0a1","#cfe9ff"], sound:"clearingRain"
-  },
-  {
-    name:{en:"Moving Car",es:"Coche en Movimiento",pt:"Carro em Movimento"},
-    feeling:{en:"Journey",es:"Viaje",pt:"Viagem"},
-    story:{en:"Rain slides diagonally across the glass as the wet road moves beneath you.",es:"La lluvia cruza el cristal en diagonal mientras la carretera mojada avanza bajo ti.",pt:"A chuva atravessa o vidro na diagonal enquanto a estrada molhada passa diante de você."},
-    time:"night", weather:"drivingRain", rain:.82, wind:-1.15, fog:.2, traffic:.62, reflect:.85,
-    sky:["#07101c","#172b3d","#35536a"], ground:"#070d12", lights:["#f8d58a","#e9f4ff","#ff6f61"], sound:"carContinuous"
-  },
-  {
-    name:{en:"Snowfall",es:"Nevada",pt:"Neve"},
-    feeling:{en:"Quiet Winter",es:"Invierno Tranquilo",pt:"Inverno Silencioso"},
-    story:{en:"Snow falls over a sleeping city, turning the night almost completely white.",es:"La nieve cae sobre una ciudad dormida y vuelve la noche casi completamente blanca.",pt:"A neve cai sobre uma cidade adormecida, deixando a noite quase completamente branca."},
-    time:"snowNight", weather:"snow", rain:.12, wind:-.35, fog:.78, traffic:.03, reflect:.25,
-    sky:["#101621","#2c3541","#7d8791"], ground:"#d9dde0", lights:["#eef5ff","#ffdca8"], sound:"snow"
-  },
-  {
-    name:{en:"Highway Rain",es:"Lluvia en la Autopista",pt:"Chuva na Rodovia"},
-    feeling:{en:"Momentum",es:"Impulso",pt:"Movimento"},
-    story:{en:"Far-off headlights cut through a hard rain along the endless highway.",es:"Los faros lejanos atraviesan la lluvia intensa de una autopista interminable.",pt:"Faróis distantes cortam a chuva forte de uma rodovia sem fim."},
-    time:"lateNight", weather:"highwayStorm", rain:.95, wind:-1.0, fog:.3, traffic:.78, reflect:.9,
-    sky:["#04070d","#0c1724","#1d2d3d"], ground:"#05090d", lights:["#fff1c4","#e6f3ff","#ffb37a"], sound:"highwayRain"
-  },
-  {
-    name:{en:"Morning Frost",es:"Escarcha Matinal",pt:"Geada da Manhã"},
-    feeling:{en:"Cold Light",es:"Luz Fría",pt:"Luz Fria"},
-    story:{en:"Cold condensation and pale morning light soften the frozen city.",es:"La condensación fría y la luz pálida de la mañana suavizan la ciudad helada.",pt:"A condensação fria e a luz pálida da manhã suavizam a cidade congelada."},
-    time:"coldMorning", weather:"frost", rain:.08, wind:.08, fog:.58, traffic:.08, reflect:.3,
-    sky:["#27313c","#77838e","#c6cbd0"], ground:"#9ca6ac", lights:["#fff0cc","#dcecff"], sound:"frost"
-  },
-  {
-    name:{en:"Summer Sun Shower",es:"Lluvia de Verano",pt:"Chuva de Verão"},
-    feeling:{en:"Wonder",es:"Asombro",pt:"Encanto"},
-    story:{en:"Sunlight and warm rain arrive together, turning every drop into a small spark.",es:"La luz del sol y la lluvia cálida llegan juntas, convirtiendo cada gota en una pequeña chispa.",pt:"A luz do sol e a chuva quente chegam juntas, transformando cada gota em um pequeno brilho."},
-    time:"sunShower", weather:"sunRain", rain:.5, wind:.3, fog:.12, traffic:.28, reflect:.7,
-    sky:["#4c7898","#9dc7d4","#f3c56f"], ground:"#16221e", lights:["#ffe9a8","#fff5cf","#bce7ff"], sound:"sunShower"
-  },
-  {
-    name:{en:"Midnight Blizzard",es:"Ventisca de Medianoche",pt:"Nevasca da Meia-Noite"},
-    feeling:{en:"Wild Winter",es:"Invierno Salvaje",pt:"Inverno Selvagem"},
-    story:{en:"A midnight blizzard sweeps across the city with hard wind and drifting snow.",es:"Una ventisca de medianoche atraviesa la ciudad con viento fuerte y nieve a la deriva.",pt:"Uma nevasca de meia-noite atravessa a cidade com vento forte e neve soprando."},
-    time:"blizzardNight", weather:"blizzard", rain:.22, wind:-1.5, fog:.86, traffic:.02, reflect:.22,
-    sky:["#05080d","#151e28","#303a44"], ground:"#cfd5da", lights:["#edf5ff","#cfe1f5"], sound:"blizzard"
-  },
-  {
-    name:{en:"City Tunnel",es:"Túnel de la Ciudad",pt:"Túnel da Cidade"},
-    feeling:{en:"Enclosure",es:"Refugio",pt:"Refúgio"},
-    story:{en:"Artificial lights guide the way while water streams down the tunnel walls.",es:"Las luces artificiales guían el camino mientras el agua corre por las paredes del túnel.",pt:"Luzes artificiais guiam o caminho enquanto a água escorre pelas paredes do túnel."},
-    time:"tunnel", weather:"dripping", rain:.35, wind:.02, fog:.3, traffic:.35, reflect:.95,
-    sky:["#101216","#24282c","#45484b"], ground:"#090b0d", lights:["#f7d58b","#e8efff","#8fd8ff"], sound:"tunnel"
-  },
-  {
-    name:{en:"Golden Hour Drops",es:"Gotas de Hora Dorada",pt:"Gotas da Hora Dourada"},
-    feeling:{en:"Warmth",es:"Calidez",pt:"Calor"},
-    story:{en:"The last sunlight turns the rain golden above a glowing skyline.",es:"La última luz del sol vuelve dorada la lluvia sobre un horizonte luminoso.",pt:"A última luz do sol deixa a chuva dourada sobre um horizonte iluminado."},
-    time:"goldenHour", weather:"goldenRain", rain:.46, wind:-.15, fog:.16, traffic:.2, reflect:.76,
-    sky:["#4a3a42","#b06d59","#f2c56e"], ground:"#1a1716", lights:["#ffe2a3","#fff0c2","#d8eaff"], sound:"goldenRain"
-  },
-  {
-    name:{en:"Snowy Drive",es:"Viaje Nevado",pt:"Estrada Nevada"},
-    feeling:{en:"Adventure",es:"Aventura",pt:"Aventura"},
-    story:{en:"Headlights carve a path through snow as the road disappears into the night.",es:"Los faros abren un camino entre la nieve mientras la carretera desaparece en la noche.",pt:"Os faróis abrem caminho pela neve enquanto a estrada desaparece na noite."},
-    time:"snowDrive", weather:"drivingSnow", rain:.18, wind:-.8, fog:.68, traffic:.52, reflect:.7,
-    sky:["#060a11","#17202b","#34414c"], ground:"#aeb7bd", lights:["#fff3c4","#e6f3ff","#ffcf88"], sound:"snowDrive"
-  },
-  {
-    name:{en:"The Last Wipe",es:"La Última Pasada",pt:"A Última Limpeza"},
-    feeling:{en:"Release",es:"Liberación",pt:"Libertação"},
-    story:{en:"The weather slowly changes as the final clear view emerges beyond the glass.",es:"El clima cambia poco a poco mientras la última vista clara aparece más allá del cristal.",pt:"O clima muda lentamente enquanto a última visão clara surge além do vidro."},
-    time:"changingSky", weather:"changing", rain:.38, wind:.12, fog:.5, traffic:.25, reflect:.6,
-    sky:["#26384d","#7892a0","#e5b27a"], ground:"#111a1e", lights:["#ffe2a8","#e5f3ff","#d6c7ff"], sound:"lastWipe"
-  }
+  { name: {en:"First Rain", pt:"Primeira Chuva"}, feeling: {en:"Serenity", pt:"Serenidade"}, story: {en:"The first rain arrives at the end of a quiet afternoon.", pt:"A primeira chuva chega no fim de uma tarde tranquila."}, hue: 205, sky: ["#17233d", "#496b78", "#d7a06f"], lights: ["#f9d77e", "#9edcff", "#ffd2a0"], rain: 0.42, thunder: 0, type: "rain" },
+  { name: {en:"Distant Lights", pt:"Luzes Distantes"}, feeling: {en:"Distance", pt:"Distância"}, story: {en:"Fine rain separates you from a city glowing far away.", pt:"A chuva fina separa você de uma cidade brilhando ao longe."}, hue: 232, sky: ["#070b1c", "#1b2850", "#343b68"], lights: ["#b9d9ff", "#ffd27a", "#9fc8ff"], rain: 0.52, thunder: 1, type: "rain" },
+  { name: {en:"After Midnight", pt:"Depois da Meia-Noite"}, feeling: {en:"Solitude", pt:"Solidão"}, story: {en:"Heavy rain falls over streets that have almost emptied.", pt:"A chuva pesada cai sobre ruas que já estão quase vazias."}, hue: 224, sky: ["#020611", "#0b1730", "#1b2d49"], lights: ["#d8e9ff", "#ffcc88", "#86aee0"], rain: 0.86, thunder: 2, type: "rain" },
+  { name: {en:"Neon Splash", pt:"Neon na Chuva"}, feeling: {en:"Energy", pt:"Energia"}, story: {en:"Neon signs dissolve into colorful reflections on wet streets.", pt:"As luzes de neon viram reflexos coloridos nas ruas molhadas."}, hue: 285, sky: ["#09051c", "#25104b", "#472062"], lights: ["#ff5fd7", "#55d9ff", "#ffd45c"], rain: 0.94, thunder: 3, type: "rain" },
+  { name: {en:"The Window", pt:"A Janela"}, feeling: {en:"Intimacy", pt:"Intimidade"}, story: {en:"A calm rain, a warm window, and almost nothing else.", pt:"Uma chuva calma, uma janela acolhedora e quase nada além disso."}, hue: 195, sky: ["#151b2c", "#2d3b4a", "#596674"], lights: ["#ffdca8", "#e7efff", "#f2c99a"], rain: 0.28, thunder: 4, type: "rain" },
+  { name: {en:"Storm", pt:"Tempestade"}, feeling: {en:"Intensity", pt:"Intensidade"}, story: {en:"Wind drives the rain while lightning tears through the sky.", pt:"O vento empurra a chuva enquanto relâmpagos rasgam o céu."}, hue: 210, sky: ["#02040a", "#101722", "#26374a"], lights: ["#e0f2fe", "#93c5fd", "#f8fafc"], rain: 1.0, thunder: 5, type: "rain" },
+  { name: {en:"Horizon", pt:"Horizonte"}, feeling: {en:"Hope", pt:"Esperança"}, story: {en:"The rain fades as the first light rises beyond the horizon.", pt:"A chuva diminui enquanto a primeira luz surge no horizonte."}, hue: 28, sky: ["#1b2947", "#697c8d", "#e7a77d"], lights: ["#ffe2ad", "#d8edff", "#f7c27d"], rain: 0.38, thunder: 6, type: "rain" },
+  { name: {en:"Memories", pt:"Memórias"}, feeling: {en:"Nostalgia", pt:"Nostalgia"}, story: {en:"Warm lights glow through a rain that feels like an old memory.", pt:"Luzes quentes brilham através de uma chuva que parece uma memória antiga."}, hue: 260, sky: ["#201a2d", "#5b394b", "#b46d61"], lights: ["#ffd18a", "#ffb86b", "#e8d2b0"], rain: 0.56, thunder: 7, type: "rain" },
+  { name: {en:"Silence", pt:"Silêncio"}, feeling: {en:"Stillness", pt:"Quietude"}, story: {en:"A nearly empty city listens to the softest rain.", pt:"Uma cidade quase vazia escuta a chuva mais suave."}, hue: 175, sky: ["#070d16", "#142331", "#29404a"], lights: ["#b9d8dc", "#dff2e9", "#e9d7a8"], rain: 0.16, thunder: 8, type: "rain" },
+  { name: {en:"Clearing Sky", pt:"Céu se Abrindo"}, feeling: {en:"Relief", pt:"Alívio"}, story: {en:"The rain ends slowly and open sky returns above the city.", pt:"A chuva termina aos poucos e o céu aberto volta sobre a cidade."}, hue: 55, sky: ["#27354b", "#71899b", "#b9d3d8"], lights: ["#ffe0a1", "#cfe9ff", "#f4d28c"], rain: 0.22, thunder: 9, type: "rain" },
+  { name: {en:"Moving Car", pt:"Carro em Movimento"}, feeling: {en:"Journey", pt:"Jornada"}, story: {en:"Rain moves diagonally across the glass while the wet road passes beneath.", pt:"A chuva cruza o vidro na diagonal enquanto a estrada molhada passa abaixo."}, hue: 200, sky: ["#07101c", "#172b3d", "#35536a"], lights: ["#f8d58a", "#e9f4ff", "#ff6f61"], rain: 0.82, thunder: 1, type: "car" },
+  { name: {en:"Snowfall", pt:"Neve"}, feeling: {en:"Quiet Winter", pt:"Inverno Silencioso"}, story: {en:"Snow falls over a sleeping city, turning the night almost white.", pt:"A neve cai sobre uma cidade adormecida, deixando a noite quase branca."}, hue: 205, sky: ["#101621", "#303b47", "#78848f"], lights: ["#eef5ff", "#ffdca8", "#d9e8f5"], rain: 0.18, thunder: 0, type: "snow" },
+  { name: {en:"Highway Rain", pt:"Chuva na Rodovia"}, feeling: {en:"Momentum", pt:"Movimento"}, story: {en:"Far-off headlights cut through hard rain on an endless highway.", pt:"Faróis distantes cortam a chuva forte de uma rodovia sem fim."}, hue: 220, sky: ["#04070d", "#0c1724", "#1d2d3d"], lights: ["#fff1c4", "#e6f3ff", "#ff8c70"], rain: 0.95, thunder: 2, type: "car" },
+  { name: {en:"Morning Frost", pt:"Geada da Manhã"}, feeling: {en:"Cold Light", pt:"Luz Fria"}, story: {en:"Cold condensation and pale morning light soften the frozen city.", pt:"A condensação fria e a luz pálida da manhã suavizam a cidade congelada."}, hue: 190, sky: ["#27313c", "#77838e", "#c6cbd0"], lights: ["#fff0cc", "#dcecff", "#f3f6f8"], rain: 0.10, thunder: 0, type: "snow" },
+  { name: {en:"Summer Sun Shower", pt:"Chuva de Verão"}, feeling: {en:"Wonder", pt:"Encanto"}, story: {en:"Sunlight and warm rain arrive together, turning drops into sparks.", pt:"A luz do sol e a chuva quente chegam juntas, transformando gotas em brilhos."}, hue: 48, sky: ["#4c7898", "#9dc7d4", "#f3c56f"], lights: ["#ffe9a8", "#fff5cf", "#bce7ff"], rain: 0.52, thunder: 0, type: "rain" },
+  { name: {en:"Midnight Blizzard", pt:"Nevasca da Meia-Noite"}, feeling: {en:"Wild Winter", pt:"Inverno Selvagem"}, story: {en:"A midnight blizzard sweeps across the city with fierce wind and snow.", pt:"Uma nevasca de meia-noite atravessa a cidade com vento forte e neve."}, hue: 230, sky: ["#05080d", "#151e28", "#303a44"], lights: ["#edf5ff", "#cfe1f5", "#a9c2d9"], rain: 0.28, thunder: 3, type: "snow" },
+  { name: {en:"City Tunnel", pt:"Túnel da Cidade"}, feeling: {en:"Enclosure", pt:"Refúgio"}, story: {en:"Artificial lights guide the way while water streams down the tunnel walls.", pt:"Luzes artificiais guiam o caminho enquanto a água escorre pelas paredes do túnel."}, hue: 30, sky: ["#101216", "#282c30", "#484c50"], lights: ["#f7d58b", "#e8efff", "#8fd8ff"], rain: 0.35, thunder: 0, type: "car" },
+  { name: {en:"Golden Hour Drops", pt:"Gotas da Hora Dourada"}, feeling: {en:"Warmth", pt:"Calor"}, story: {en:"The last sunlight turns the rain golden above the skyline.", pt:"A última luz do sol deixa a chuva dourada sobre o horizonte."}, hue: 20, sky: ["#4a3a42", "#b06d59", "#f2c56e"], lights: ["#ffe2a3", "#fff0c2", "#d8eaff"], rain: 0.48, thunder: 1, type: "rain" },
+  { name: {en:"Snowy Drive", pt:"Estrada Nevada"}, feeling: {en:"Adventure", pt:"Aventura"}, story: {en:"Headlights carve a path through snow as the road disappears into night.", pt:"Os faróis abrem caminho pela neve enquanto a estrada desaparece na noite."}, hue: 210, sky: ["#060a11", "#17202b", "#34414c"], lights: ["#fff3c4", "#e6f3ff", "#ffcf88"], rain: 0.22, thunder: 0, type: "car_snow" },
+  { name: {en:"The Last Wipe", pt:"A Última Limpeza"}, feeling: {en:"Closure", pt:"Despedida"}, story: {en:"The weather changes gradually as the final clear view emerges.", pt:"O clima muda aos poucos enquanto a última visão clara surge."}, hue: 200, sky: ["#26384d", "#7892a0", "#e5b27a"], lights: ["#ffe2a8", "#e5f3ff", "#d6c7ff"], rain: 0.30, thunder: 0, type: "rain" }
 ];
 
 const brushes = {
