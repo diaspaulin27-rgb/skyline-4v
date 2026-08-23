@@ -1,245 +1,1174 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#030712">
-<title>Rainy Skyline — V3.1 FINAL 100% — Cinematic Edition</title>
+
+<title>Rainy Skyline — Atmospheric Experience</title>
+
 <style>
-:root{--primary:#38bdf8;--bg-dark:#030712;--panel-bg:rgba(15,23,42,.78);--panel-border:rgba(255,255,255,.12)}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg-dark);color:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;touch-action:none}
-button,input{font-family:inherit}
-#game{position:fixed;inset:0;overflow:hidden}
-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
-#bgCanvas{z-index:1}#rainCanvas{z-index:3}#glassCanvas{z-index:5}#fogCanvas{z-index:7;touch-action:none}
-#lightningFlash{position:absolute;inset:0;z-index:8;background:white;opacity:0;pointer-events:none;mix-blend-mode:overlay}
-#vignette{position:absolute;inset:0;z-index:9;pointer-events:none;background:radial-gradient(circle at center,transparent 35%,rgba(3,7,18,.78) 100%)}
-#hud{position:absolute;inset:0;z-index:20;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between;padding:calc(20px + env(safe-area-inset-top)) calc(20px + env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) calc(20px + env(safe-area-inset-left));transition:opacity .5s}
-#hud.hidden{opacity:0;pointer-events:none}
-.hud-header{display:flex;justify-content:space-between;align-items:center}
-.hud-left,.hud-right{display:flex;align-items:center;gap:10px}
-.hud-btn{width:48px;height:48px;border-radius:50%;border:1px solid var(--panel-border);background:rgba(15,23,42,.62);backdrop-filter:blur(12px);color:white;font-size:18px;display:grid;place-items:center;cursor:pointer;pointer-events:auto;transition:.2s}
-.hud-btn:active{transform:scale(.92)}
-.currency-badge{pointer-events:auto;background:rgba(15,23,42,.62);border:1px solid var(--panel-border);backdrop-filter:blur(12px);padding:8px 16px;border-radius:20px;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:var(--primary)}
-.phase-badge{background:rgba(15,23,42,.55);border:1px solid var(--panel-border);backdrop-filter:blur(12px);padding:8px 13px;border-radius:18px;font-size:11px;letter-spacing:1px;color:rgba(255,255,255,.8)}
-#instruction{text-align:center;color:rgba(255,255,255,.72);font-size:11px;letter-spacing:4px;text-transform:uppercase;animation:pulse 2s infinite ease-in-out;text-shadow:0 2px 8px rgba(0,0,0,.8)}
-#instruction.hidden-text{opacity:0;visibility:hidden}
-.progress-wrap{width:min(380px,70vw);margin:0 auto 18px;text-align:center;opacity:.85}
-.progress-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-bottom:7px;color:rgba(255,255,255,.6)}
-.progress-bar{width:100%;height:4px;border-radius:10px;background:rgba(255,255,255,.1);overflow:hidden}
-#progressFill{height:100%;width:0%;border-radius:inherit;background:linear-gradient(90deg,#38bdf8,#7dd3fc,#fff);box-shadow:0 0 12px rgba(56,189,248,.7);transition:width .2s}
-@keyframes pulse{0%,100%{opacity:.4}50%{opacity:.9}}
-.screen{position:absolute;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(3,7,18,.7);backdrop-filter:blur(10px);transition:.4s}
-.screen.hidden{opacity:0;visibility:hidden;pointer-events:none}
-.menu-card{width:min(450px,100%);max-height:calc(100vh - 40px);overflow-y:auto;background:var(--panel-bg);border:1px solid var(--panel-border);border-radius:28px;padding:32px 24px;box-shadow:0 20px 50px rgba(0,0,0,.6);backdrop-filter:blur(20px);text-align:center}
-.menu-card::-webkit-scrollbar{width:0}
-.menu-title{font-family:Georgia,serif;font-size:38px;font-weight:400;margin:0;background:linear-gradient(180deg,#fff 0%,rgba(255,255,255,.7) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.menu-subtitle{color:rgba(255,255,255,.5);font-size:11px;letter-spacing:3px;margin:8px 0 32px;text-transform:uppercase}
-.phase-title{margin:0;font-family:Georgia,serif;font-weight:400;font-size:27px}
-.phase-feeling{margin:7px 0 4px;color:var(--primary);font-size:11px;letter-spacing:2px;text-transform:uppercase}
-.phase-story{color:rgba(255,255,255,.55);line-height:1.55;font-size:12px;margin:0 0 22px}
-.btn-stack{display:flex;flex-direction:column;gap:12px}
-.btn{min-height:52px;border-radius:16px;border:1px solid var(--panel-border);background:rgba(255,255,255,.05);color:white;font-size:13px;font-weight:600;letter-spacing:1px;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 16px}
-.btn:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.25);transform:translateY(-2px)}
-.btn:active{transform:scale(.98)}
-.btn-primary{background:linear-gradient(135deg,#0284c7 0%,#0369a1 100%);border-color:rgba(56,189,248,.4);box-shadow:0 8px 20px rgba(56,189,248,.4)}
-.btn-small{min-height:38px;font-size:11px;padding:6px 14px;border-radius:999px}
-.phase-list{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:20px 0;max-height:330px;overflow-y:auto}
-.phase-item{border:1px solid var(--panel-border);border-radius:16px;padding:14px;background:rgba(255,255,255,.035);text-align:left;cursor:pointer;transition:.2s}
-.phase-item.active{border-color:var(--primary);background:rgba(56,189,248,.1)}
-.phase-item.locked{opacity:.35;cursor:not-allowed}
-.phase-number{font-size:9px;letter-spacing:2px;color:rgba(255,255,255,.4)}
-.phase-name{font-size:13px;margin-top:4px;font-weight:600}
-.phase-mini-feeling{font-size:10px;color:var(--primary);margin-top:5px}
-.coin-big{font-size:13px;color:var(--primary);margin:10px 0 20px}
-.store-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0;max-height:380px;overflow-y:auto}
-.store-item{border:1px solid var(--panel-border);border-radius:16px;padding:13px;background:rgba(255,255,255,.03);cursor:pointer;text-align:left;transition:.2s}
-.store-item.active{border-color:var(--primary);background:rgba(56,189,248,.1)}
-.store-preview{height:48px;border-radius:12px;margin-bottom:10px;background:linear-gradient(120deg,rgba(255,255,255,.12),rgba(56,189,248,.08));display:grid;place-items:center;font-size:10px;color:rgba(255,255,255,.5)}
-.store-item-title{font-size:13px;font-weight:600;margin-bottom:4px}
-.store-item-desc{font-size:10px;line-height:1.4;color:rgba(255,255,255,.45);min-height:28px}
-.store-item-cost{font-size:11px;color:var(--primary);margin-top:8px}
-.finger-slots{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:15px 0}
-.finger-slot{border:1px solid var(--panel-border);background:rgba(255,255,255,.035);border-radius:16px;padding:14px}
-.slot-label{color:rgba(255,255,255,.4);font-size:9px;letter-spacing:2px;text-transform:uppercase}
-.slot-name{font-size:12px;margin-top:5px}
-.setting-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;font-size:13px}
-.toggle-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06);text-align:left}
-.toggle-text strong{display:block;font-size:13px}
-.toggle-text span{display:block;margin-top:3px;font-size:10px;color:rgba(255,255,255,.4)}
-.toggle{width:48px;height:27px;border-radius:30px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.1);position:relative;cursor:pointer;flex-shrink:0}
-.toggle::after{content:"";position:absolute;top:3px;left:3px;width:19px;height:19px;border-radius:50%;background:white;transition:.2s}
-.toggle.on{background:rgba(56,189,248,.45);border-color:rgba(56,189,248,.7)}
-.toggle.on::after{transform:translateX(21px);box-shadow:0 0 10px rgba(56,189,248,.8)}
-input[type="range"]{width:100%;height:6px;appearance:none;border-radius:10px;background:rgba(255,255,255,.1);outline:none;margin-top:8px}
-input[type="range"]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;border-radius:50%;background:var(--primary);cursor:pointer;box-shadow:0 0 10px var(--primary)}
-.reward-icon{font-size:48px;margin-bottom:10px;filter:drop-shadow(0 0 15px rgba(56,189,248,.5))}
-.reward-title{font-family:Georgia,serif;font-size:30px;font-weight:400;margin:0}
-.reward-coins{font-size:28px;color:var(--primary);margin:15px 0;font-weight:700}
-.reward-description{color:rgba(255,255,255,.55);font-size:12px;line-height:1.5;margin-bottom:24px}
-#rsToast{position:fixed;left:50%;top:22%;transform:translate(-50%,-50%);z-index:9999;padding:10px 16px;border-radius:999px;background:rgba(8,15,30,.82);border:1px solid rgba(255,255,255,.18);color:#fff;font-size:12px;letter-spacing:.12em;opacity:0;transition:.25s;pointer-events:none}
+:root {
+  --primary: #38bdf8;
+  --primary-glow: rgba(56, 189, 248, 0.4);
+  --bg-dark: #030712;
+  --panel-bg: rgba(15, 23, 42, 0.78);
+  --panel-border: rgba(255, 255, 255, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-dark);
+  color: #f8fafc;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  touch-action: none;
+}
+
+#adScreen {
+  position: fixed;
+  inset: 0;
+  z-index: 8000;
+  background: rgba(0,0,0,0.95);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.3s ease;
+}
+
+#game {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+}
+
+canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+#bgCanvas { z-index: 1; }
+#rainCanvas { z-index: 3; }
+#glassCanvas { z-index: 5; }
+#fogCanvas { z-index: 7; touch-action: none; }
+
+#lightningFlash {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  background: white;
+  opacity: 0;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+
+#vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  pointer-events: none;
+  background: radial-gradient(circle at center, transparent 35%, rgba(3, 7, 18, 0.78) 100%);
+}
+
+#hud {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: calc(20px + env(safe-area-inset-top)) calc(20px + env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) calc(20px + env(safe-area-inset-left));
+  transition: opacity 0.5s ease;
+}
+
+#hud.hidden { opacity: 0; pointer-events: none; }
+
+.hud-header { display: flex; justify-content: space-between; align-items: center; }
+.hud-left, .hud-right { display: flex; align-items: center; gap: 10px; }
+
+.hud-btn {
+  width: 48px; height: 48px;
+  border-radius: 50%; border: 1px solid var(--panel-border);
+  background: rgba(15, 23, 42, 0.62);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  color: white; font-size: 18px; display: grid; place-items: center;
+  cursor: pointer; pointer-events: auto; transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px rgba(255,255,255,0.06);
+}
+.hud-btn:active { transform: scale(0.92); }
+
+.currency-badge {
+  pointer-events: auto; background: rgba(15, 23, 42, 0.62);
+  border: 1px solid var(--panel-border); backdrop-filter: blur(12px);
+  padding: 8px 16px; border-radius: 20px; display: flex;
+  align-items: center; gap: 8px; font-size: 14px; font-weight: 600;
+  color: var(--primary); box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.phase-badge {
+  background: rgba(15,23,42,0.55); border: 1px solid var(--panel-border);
+  backdrop-filter: blur(12px); padding: 8px 13px; border-radius: 18px;
+  font-size: 11px; letter-spacing: 1px; color: rgba(255,255,255,.8);
+}
+
+#instruction {
+  text-align: center; color: rgba(255, 255, 255, 0.72);
+  font-size: 11px; letter-spacing: 4px; text-transform: uppercase;
+  animation: pulse 2s infinite ease-in-out; text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+#instruction.hidden-text { opacity: 0; visibility: hidden; }
+
+.progress-wrap { width: min(380px, 70vw); margin: 0 auto 18px; text-align: center; opacity: .8; }
+.progress-label { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 7px; color: rgba(255,255,255,.6); }
+.progress-bar { width: 100%; height: 4px; border-radius: 10px; background: rgba(255,255,255,.1); overflow: hidden; }
+#progressFill { height: 100%; width: 0%; border-radius: inherit; background: linear-gradient(90deg, #38bdf8, #7dd3fc, #ffffff); box-shadow: 0 0 12px rgba(56,189,248,.7); transition: width .2s ease; }
+
+@keyframes pulse { 0%, 100% { opacity: .4; } 50% { opacity: .9; } }
+
+.screen {
+  position: absolute; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center;
+  padding: 20px; background: rgba(3,7,18,.7); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  transition: opacity .4s ease, visibility .4s ease;
+}
+.screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+.menu-card {
+  width: min(450px, 100%); max-height: calc(100vh - 40px); overflow-y: auto;
+  background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 28px;
+  padding: 32px 24px; box-shadow: 0 20px 50px rgba(0,0,0,.6), inset 0 1px rgba(255,255,255,.04);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); text-align: center;
+}
+.menu-card::-webkit-scrollbar { width: 0; }
+
+.menu-title { font-family: Georgia, serif; font-size: 38px; font-weight: 400; margin: 0; background: linear-gradient(180deg, #ffffff 0%, rgba(255,255,255,.7) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.menu-subtitle { color: rgba(255,255,255,.5); font-size: 11px; letter-spacing: 3px; margin: 8px 0 32px; text-transform: uppercase; }
+
+.phase-title { margin: 0; font-family: Georgia, serif; font-weight: 400; font-size: 27px; }
+.phase-feeling { margin: 7px 0 4px; color: var(--primary); font-size: 11px; letter-spacing: 2px; text-transform: uppercase; }
+.phase-story { color: rgba(255,255,255,.55); line-height: 1.55; font-size: 12px; margin: 0 0 22px; }
+
+.btn-stack { display: flex; flex-direction: column; gap: 12px; }
+.btn {
+  min-height: 52px; border-radius: 16px; border: 1px solid var(--panel-border);
+  background: rgba(255,255,255,.05); color: white; font-size: 13px; font-weight: 600;
+  letter-spacing: 1px; cursor: pointer; transition: all .2s ease; display: flex;
+  align-items: center; justify-content: center; gap: 10px; padding: 10px 16px;
+}
+.btn:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.25); transform: translateY(-2px); }
+.btn:active { transform: scale(.98); }
+.btn-primary { background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border-color: rgba(56,189,248,.4); box-shadow: 0 8px 20px var(--primary-glow); }
+.btn-zen { background: linear-gradient(135deg, #10b981 0%, #047857 100%); border-color: rgba(16, 185, 129, 0.4); box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3); }
+
+.phase-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; max-height: 330px; overflow-y: auto; }
+.phase-item { border: 1px solid var(--panel-border); border-radius: 16px; padding: 14px; background: rgba(255,255,255,.035); text-align: left; cursor: pointer; transition: .2s ease; }
+.phase-item:hover { background: rgba(255,255,255,.08); }
+.phase-item.active { border-color: var(--primary); background: rgba(56,189,248,.1); box-shadow: 0 0 20px rgba(56,189,248,.08); }
+.phase-item.locked { opacity: .35; cursor: not-allowed; }
+.phase-number { font-size: 9px; letter-spacing: 2px; color: rgba(255,255,255,.4); }
+.phase-name { font-size: 13px; margin-top: 4px; font-weight: 600; }
+.phase-mini-feeling { font-size: 10px; color: var(--primary); margin-top: 5px; }
+
+.coin-big { font-size: 13px; color: var(--primary); margin: 10px 0 20px; }
+.store-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; max-height: 350px; overflow-y: auto; }
+.store-item { border: 1px solid var(--panel-border); border-radius: 16px; padding: 13px; background: rgba(255,255,255,.03); cursor: pointer; text-align: left; transition: all .2s ease; }
+.store-preview { height: 48px; border-radius: 12px; margin-bottom: 10px; background: radial-gradient(circle at 25% 25%, rgba(255,255,255,.9) 0 3px, transparent 4px), linear-gradient(120deg, rgba(255,255,255,.12), rgba(56,189,248,.08)); position: relative; overflow: hidden; }
+.store-item-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.store-item-desc { font-size: 10px; line-height: 1.4; color: rgba(255,255,255,.45); }
+.store-item-cost { font-size: 11px; color: var(--primary); margin-top: 8px; }
+
+.finger-slots { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
+.finger-slot { border: 1px solid var(--panel-border); background: rgba(255,255,255,.035); border-radius: 16px; padding: 14px; }
+.slot-label { color: rgba(255,255,255,.4); font-size: 9px; letter-spacing: 2px; text-transform: uppercase; }
+.slot-name { font-size: 12px; margin-top: 5px; }
+.combine-info { padding: 12px; border-radius: 14px; background: rgba(56,189,248,.06); border: 1px solid rgba(56,189,248,.12); color: rgba(255,255,255,.65); font-size: 11px; margin-bottom: 15px; }
+
+.setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 9px; font-size: 13px; }
+.toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,.06); text-align: left; }
+.toggle-text strong { display: block; font-size: 13px; }
+.toggle-text span { display: block; margin-top: 3px; font-size: 10px; color: rgba(255,255,255,.4); }
+.toggle { width: 48px; height: 27px; border-radius: 30px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.1); position: relative; cursor: pointer; flex-shrink: 0; }
+.toggle::after { content: ""; position: absolute; top: 3px; left: 3px; width: 19px; height: 19px; border-radius: 50%; background: white; transition: .2s ease; }
+.toggle.on { background: rgba(56,189,248,.45); border-color: rgba(56,189,248,.7); }
+.toggle.on::after { transform: translateX(21px); box-shadow: 0 0 10px rgba(56,189,248,.8); }
+input[type="range"] { width: 100%; height: 6px; appearance: none; border-radius: 10px; background: rgba(255,255,255,.1); outline: none; margin-top: 8px; }
+input[type="range"]::-webkit-slider-thumb { appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--primary); cursor: pointer; }
+
+.reward-icon { font-size: 48px; margin-bottom: 10px; filter: drop-shadow(0 0 15px rgba(56,189,248,.5)); }
+.reward-title { font-family: Georgia, serif; font-size: 30px; font-weight: 400; margin: 0; }
+.reward-coins { font-size: 28px; color: var(--primary); margin: 15px 0; font-weight: 700; text-shadow: 0 0 20px rgba(56,189,248,.45); }
+.reward-description { color: rgba(255,255,255,.55); font-size: 12px; line-height: 1.5; margin-bottom: 24px; }
+
 </style>
 </head>
 <body>
+
+<div id="adScreen" class="screen hidden">
+  <div style="text-align: center;">
+    <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px;" data-i18n="ad_loading">Ad Loading...</div>
+    <div style="font-size: 12px; color: #888;">(AdMob Placeholder)</div>
+  </div>
+</div>
+
 <div id="game">
-<canvas id="bgCanvas"></canvas><canvas id="rainCanvas"></canvas><canvas id="glassCanvas"></canvas><canvas id="fogCanvas"></canvas>
-<div id="lightningFlash"></div><div id="vignette"></div>
-<div id="hud" class="hidden">
-<div class="hud-header"><div class="hud-left"><button id="pauseBtn" class="hud-btn">Ⅱ</button><div class="phase-badge">FASE <span id="phaseDisplay">1</span>/20</div></div><div class="hud-right"><div class="currency-badge"><span>🌧️</span><span id="pointsDisplay">0</span></div><button id="zenManualHudBtn" class="btn btn-small hidden" style="pointer-events:auto;">mist</button></div></div>
-<div><div id="instruction">PASSE O DEDO PARA LIMPAR</div><div class="progress-wrap"><div class="progress-label">Desembace a janela</div><div class="progress-bar"><div id="progressFill"></div></div></div></div>
-</div>
-<section id="mainMenu" class="screen"><div class="menu-card"><h1 class="menu-title">Rainy Skyline</h1><p class="menu-subtitle">Atmospheric Relaxation</p><div id="mainPhaseInfo"><h2 class="phase-title" id="menuPhaseName"></h2><div class="phase-feeling" id="menuPhaseFeeling"></div><p class="phase-story" id="menuPhaseStory"></p></div><div class="btn-stack"><button id="continueBtn" class="btn btn-primary"></button><button id="zenBtn" class="btn"></button><button id="phasesBtn" class="btn"></button><button id="storeBtn" class="btn"></button><button id="settingsBtn" class="btn"></button></div></div></section>
+  <canvas id="bgCanvas"></canvas>
+  <canvas id="rainCanvas"></canvas>
+  <canvas id="glassCanvas"></canvas>
+  <canvas id="fogCanvas"></canvas>
+  <div id="lightningFlash"></div>
+  <div id="vignette"></div>
 
-<section id="phasesScreen" class="screen hidden"><div class="menu-card"><h2 style="margin:0;font-size:24px;" id="phasesTitle"></h2><p style="color:rgba(255,255,255,.5);font-size:12px;margin-top:6px;" id="phasesDesc"></p><div id="phaseList" class="phase-list"></div><button id="closePhasesBtn" class="btn" style="width:100%;"></button></div></section>
-<section id="storeScreen" class="screen hidden"><div class="menu-card"><h2 style="margin:0;font-size:24px;" id="storeTitle"></h2><p style="color:rgba(255,255,255,.5);font-size:12px;margin-top:4px;" id="storeDesc"></p><div class="coin-big">🌧️ <span id="storeCoins">0</span> moedas</div><div class="finger-slots"><div class="finger-slot"><div class="slot-label">Dedo 1</div><div class="slot-name" id="slot1Name"></div></div><div class="finger-slot"><div class="slot-label">Dedo 2</div><div class="slot-name" id="slot2Name"></div></div></div><div id="storeGrid" class="store-grid"></div><button id="closeStoreBtn" class="btn" style="width:100%;"></button></div></section>
-<section id="settingsScreen" class="screen hidden"><div class="menu-card"><h2 style="margin:0 0 20px;" id="settingsTitle"></h2><div style="text-align:left;" id="settingsContent">
-<div class="setting-row"><span id="rainLabel"></span><span id="rainVal">70%</span></div><input id="rainSlider" type="range" min="10" max="100" value="70">
-<div class="setting-row" style="margin-top:22px;"><span id="rainSoundLabel"></span><span id="rainSoundVal">70%</span></div><input id="rainSoundSlider" type="range" min="0" max="100" value="70">
-<div class="setting-row" style="margin-top:22px;"><span id="ambLabel"></span><span id="ambVal">50%</span></div><input id="ambSlider" type="range" min="0" max="100" value="50">
-<div style="margin-top:25px;">
-<div class="toggle-row"><div class="toggle-text"><strong id="gameSoundTitle"></strong><span id="gameSoundDesc"></span></div><div id="gameSoundToggle" class="toggle on"></div></div>
-<div class="toggle-row"><div class="toggle-text"><strong id="musicTitle"></strong><span id="musicDesc"></span></div><div id="musicToggle" class="toggle on"></div></div>
-<div class="toggle-row"><div class="toggle-text"><strong id="vibTitle"></strong><span id="vibDesc"></span></div><div id="vibrationToggle" class="toggle on"></div></div>
+  <!-- HUD -->
+  <div id="hud" class="hidden">
+    <div class="hud-header">
+      <div class="hud-left">
+        <button id="pauseBtn" class="hud-btn">Ⅱ</button>
+        <div class="phase-badge"><span data-i18n="phase_hud">PHASE</span> <span id="phaseDisplay">1</span>/20</div>
+      </div>
+      <div class="hud-right">
+        <div class="currency-badge"><span>🌧️</span><span id="pointsDisplay">0</span></div>
+      </div>
+    </div>
+    <div>
+      <div id="instruction" data-i18n="wipe_instruction">SWIPE TO WIPE THE FOG</div>
+      <div class="progress-wrap">
+        <div class="progress-label" id="progressLabelText" data-i18n="defog_window">Defog the window</div>
+        <div class="progress-bar"><div id="progressFill"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MENU PRINCIPAL -->
+  <section id="mainMenu" class="screen hidden">
+    <div class="menu-card">
+      <h1 class="menu-title">Rainy Skyline</h1>
+      <p class="menu-subtitle">Atmospheric Relaxation</p>
+      <div id="mainPhaseInfo">
+        <h2 class="phase-title" id="menuPhaseName">The First Rain</h2>
+        <div class="phase-feeling" id="menuPhaseFeeling">Serenity</div>
+        <p class="phase-story" id="menuPhaseStory">A silent city watches the first rain of the night.</p>
+      </div>
+      <div class="btn-stack">
+        <button id="continueBtn" class="btn btn-primary" data-i18n="btn_continue">CONTINUE PHASE</button>
+        <button id="zenBtn" class="btn btn-zen" data-i18n="btn_zen">ZEN MODE (INFINITE)</button>
+        <button id="phasesBtn" class="btn" data-i18n="btn_phases">PHASES & MEMORIES</button>
+        <button id="storeBtn" class="btn" data-i18n="btn_store">FINGER STORE</button>
+        <button id="settingsBtn" class="btn" data-i18n="btn_settings">SETTINGS</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- FASES -->
+  <section id="phasesScreen" class="screen hidden">
+    <div class="menu-card">
+      <h2 style="margin:0;font-size:24px;" data-i18n="phases_title">Phases & Memories</h2>
+      <p style="color:rgba(255,255,255,.5);font-size:12px;margin-top:6px;" data-i18n="phases_desc">Every weather holds a feeling.</p>
+      <div id="phaseList" class="phase-list"></div>
+      <button id="closePhasesBtn" class="btn" style="width:100%;" data-i18n="btn_back">BACK</button>
+    </div>
+  </section>
+
+  <!-- LOJA -->
+  <section id="storeScreen" class="screen hidden">
+    <div class="menu-card">
+      <h2 style="margin:0;font-size:24px;" data-i18n="store_title">Finger Store</h2>
+      <p style="color:rgba(255,255,255,.5);font-size:12px;margin-top:4px;" data-i18n="store_desc">Build your own way to wipe.</p>
+      <div class="coin-big">🌧️ <span id="storeCoins">0</span> <span data-i18n="store_coins">coins</span></div>
+      <div class="finger-slots">
+        <div class="finger-slot"><div class="slot-label" data-i18n="store_finger1">Finger 1</div><div class="slot-name" id="slot1Name">Soft</div></div>
+        <div class="finger-slot"><div class="slot-label" data-i18n="store_finger2">Finger 2</div><div class="slot-name" id="slot2Name">Soft</div></div>
+      </div>
+      <div class="combine-info" data-i18n="store_info">You can use two fingers at once. Combine them to create your perfect wiping style!</div>
+      <div id="storeGrid" class="store-grid"></div>
+      <button id="closeStoreBtn" class="btn" style="width:100%;" data-i18n="btn_back">BACK</button>
+    </div>
+  </section>
+
+  <!-- CONFIGURAÇÕES -->
+  <section id="settingsScreen" class="screen hidden">
+    <div class="menu-card">
+      <h2 style="margin:0 0 20px;" data-i18n="settings_title">Settings</h2>
+      <div style="text-align:left;">
+        
+        <div class="setting-row">
+          <span data-i18n="set_lang">Language</span>
+          <button id="langToggleBtn" class="btn btn-small" style="padding: 5px 10px; min-height:30px;">English</button>
+        </div>
+
+        <div class="setting-row"><span data-i18n="set_rain">Rain Intensity</span><span id="rainVal">70%</span></div>
+        <input id="rainSlider" type="range" min="10" max="100" value="70">
+        
+        <div class="setting-row" style="margin-top:22px;"><span data-i18n="set_vol">Ambience Volume</span><span id="ambVal">50%</span></div>
+        <input id="ambSlider" type="range" min="0" max="100" value="50">
+
+        <div style="margin-top:25px;">
+          <div class="toggle-row">
+            <div class="toggle-text"><strong data-i18n="set_snd1">SFX</strong><span data-i18n="set_snd1_desc">Noise and drops</span></div>
+            <div id="gameSoundToggle" class="toggle on"></div>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-text"><strong data-i18n="set_snd2">Music / Atmosphere</strong><span data-i18n="set_snd2_desc">Background layers</span></div>
+            <div id="musicToggle" class="toggle on"></div>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-text"><strong data-i18n="set_snd3">Vibration</strong><span data-i18n="set_snd3_desc">Haptic feedback on thunder</span></div>
+            <div id="vibrationToggle" class="toggle on"></div>
+          </div>
+        </div>
+      </div>
+      <button id="closeSettingsBtn" class="btn" style="width:100%;margin-top:25px;" data-i18n="btn_save">SAVE & BACK</button>
+    </div>
+  </section>
+
+  <!-- PAUSA -->
+  <section id="pauseScreen" class="screen hidden">
+    <div class="menu-card">
+      <h2 style="margin:0 0 8px;font-size:24px;" data-i18n="pause_title">Paused</h2>
+      <p style="color:rgba(255,255,255,.45);font-size:11px;margin-bottom:25px;" data-i18n="pause_desc">The weather is waiting for you.</p>
+      <div class="btn-stack">
+        <button id="resumeBtn" class="btn btn-primary" data-i18n="btn_resume">RETURN & RELAX</button>
+        <button id="pauseSettingsBtn" class="btn" data-i18n="btn_settings">OPTIONS</button>
+        <button id="exitMenuBtn" class="btn" data-i18n="btn_mainmenu">MAIN MENU</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- RECOMPENSA -->
+  <section id="rewardScreen" class="screen hidden">
+    <div class="menu-card">
+      <div class="reward-icon">✦</div>
+      <h2 class="reward-title" data-i18n="reward_title">Phase Complete</h2>
+      <div id="rewardPhaseName" class="phase-feeling">The First Rain</div>
+      <div class="reward-coins">+100 🌧️</div>
+      <p class="reward-description" data-i18n="reward_desc">You finished this memory. The next feeling awaits.</p>
+      <div class="btn-stack">
+        <button id="nextPhaseBtn" class="btn btn-primary" data-i18n="btn_next">NEXT PHASE</button>
+        <button id="rewardMenuBtn" class="btn" data-i18n="btn_mainmenu">MAIN MENU</button>
+      </div>
+    </div>
+  </section>
 </div>
-</div><button id="closeSettingsBtn" class="btn" style="width:100%;margin-top:25px;"></button></div></section>
-<section id="pauseScreen" class="screen hidden"><div class="menu-card"><h2 style="margin:0 0 8px;font-size:24px;" id="pauseTitle"></h2><p style="color:rgba(255,255,255,.45);font-size:11px;margin-bottom:25px;" id="pauseDesc"></p><div class="btn-stack"><button id="resumeBtn" class="btn btn-primary"></button><button id="pauseSettingsBtn" class="btn"></button><button id="exitMenuBtn" class="btn"></button></div></div></section>
-<section id="adScreen" class="screen hidden"><div class="menu-card"><div style="letter-spacing:3px;font-size:10px;opacity:.5;" id="adLabel">INTERVALO</div><div style="margin:15px 0;font-size:24px;">•••</div><p style="font-size:12px;opacity:.6;" id="adDesc"></p></div></section>
-<section id="rewardScreen" class="screen hidden"><div class="menu-card"><div class="reward-icon">✦</div><h2 class="reward-title" id="rewardTitle"></h2><div id="rewardPhaseName" class="phase-feeling"></div><div class="reward-coins">+100 🌧️</div><p class="reward-description" id="rewardDesc"></p><div class="btn-stack"><button id="nextPhaseBtn" class="btn btn-primary"></button><button id="rewardMenuBtn" class="btn"></button></div></div></section>
-</div>
-<div id="rsToast"></div>
+
 <script>
-/* V3.1 FINAL 100% - All 35 fixes */
-const PHASE_COMPLETE = 0.99;
-const state = { started:false, paused:false, currentPhase:0, highestPhase:0, points:0, hasInteracted:false, rainIntensity:0.7, ambVolume:0.5, rainVolume:0.7, gameSound:true, musicSound:true, vibration:true, lastTime:performance.now(), fogProgress:0, brush1:"soft", brush2:"soft", activePointers:new Map(), lang:"pt", isZen:false, zenAutoFog:false, zenRegenAccum:0 };
-const PHASE_TEXT = [
-["The First Rain","La Primera Lluvia","A Primeira Chuva","Serenity","Serenidad","Serenidade","A silent city receives the first rain.","Una ciudad silenciosa recibe la primera lluvia.","Uma cidade silenciosa recebe a primeira chuva."],
-["Distant Lights","Luces Distantes","Luzes Distantes","Nostalgia","Nostalgia","Nostalgia","Windows stay awake across the avenue.","Ventanas siguen despiertas.","Janelas permanecem acesas do outro lado da avenida."],
-["After Midnight","Despues de Medianoche","Depois da Meia-Noite","Solitude","Soledad","Solidão","Only traffic lights remain awake.","Solo los semáforos siguen despiertos.","Só os semáforos continuam acordados."],
-["Neon","Neon","Neon","Contemplation","Contemplacion","Contemplação","Streets become liquid reflections.","Calles se convierten en reflejos líquidos.","Ruas parecem reflexos líquidos."],
-["The Window","La Ventana","A Janela","Intimacy","Intimidad","Intimidade","Protected behind the glass.","Protegido detrás del cristal.","Protegido atrás do vidro."],
-["Storm","Tormenta","Tempestade","Tension","Tension","Tensão","Wind rises and city disappears.","El viento aumenta y la ciudad desaparece.","O vento aumenta e a cidade desaparece."],
-["Horizon","Horizonte","Horizonte","Hope","Esperanza","Esperança","Small band of light between clouds.","Pequeña franja de luz entre nubes.","Pequena faixa de luz entre nuvens."],
-["Memories","Memorias","Memórias","Longing","Añoranza","Saudade","Every drop carries a memory.","Cada gota lleva un recuerdo.","Cada gota carrega uma lembrança."],
-["Silence","Silencio","Silêncio","Peace","Paz","Paz","No cars, only water.","Sin coches, solo agua.","Sem carros, só água."],
-["Clearing Sky","Cielo Aclarando","O Céu Clareia","Rebirth","Renacimiento","Renascimento","Storm moves away.","Tormenta se aleja.","Tempestade se afasta."],
-["Moving Car","Coche en Movimiento","Carro em Movimento","Journey","Viaje","Jornada","City lights glide at 50 km/h.","Luces pasan suavemente.","Luzes deslizando devagar."],
-["Snowfall","Nevada","Nevasca","Cold","Frío","Frio","Soft white silence outside.","Suave silencio blanco fuera.","Silêncio branco e suave lá fora."],
-["Highway Rain","Lluvia en Autopista","Chuva na Rodovia","Speed","Velocidad","Velocidade","Wet highway at 60 km/h.","Autopista mojada a 60 km/h.","Rodovia molhada a 60 km/h."],
-["Morning Frost","Escarcha Matinal","Geada Matinal","Crisp","Cristalino","Cristalino","Ice melts slowly.","Hielo se derrite lentamente.","Gelo derrete lentamente."],
-["Summer Shower","Lluvia de Verano","Chuva de Verão","Warmth","Calor","Calor","Sunlight through gentle shower.","Luz cálida atraviesa lluvia suave.","Luz quente atravessa chuva suave."],
-["Midnight Blizzard","Ventisca Medianoche","Nevasca à Meia-Noite","Isolation","Aislamiento","Isolamento","Snow erases city at midnight.","Nieve borra la ciudad a medianoche.","Neve apaga a cidade à meia-noite."],
-["City Tunnel","Túnel Ciudad","Túnel da Cidade","Echo","Eco","Eco","Orange lights in wet tunnel.","Luces naranjas en túnel mojado.","Luzes laranjas em túnel molhado."],
-["Golden Drops","Gotas Doradas","Gotas Douradas","Beauty","Belleza","Beleza","Sunset colors through rain.","Colores atardecer brillan entre lluvia.","Cores pôr do sol brilham na chuva."],
-["Snowy Drive","Viaje Nevado","Passeio na Neve","Cozy","Acogedor","Aconchego","Warm inside, frozen outside.","Calor dentro, frío fuera.","Quente dentro, frio fora."],
-["The Last Wipe","La Última Limpieza","A Última Limpeza","Closure","Despedida","Despedida","Glass finally clear.","Cristal finalmente limpio.","Vidro finalmente limpo."]
-];
-function getPhaseText(i){ const p=PHASE_TEXT[i]||PHASE_TEXT[0]; if(state.lang==='en') return {name:p[0],feeling:p[3],story:p[6]}; if(state.lang==='es') return {name:p[1],feeling:p[4],story:p[7]}; return {name:p[2],feeling:p[5],story:p[8]}; }
-const phases = PHASE_TEXT.map((_,i)=>({ hue:200+i*7, sky:i<10? ["#030712","#0f2740"] : i<13? ["#0a0a0a","#1a1a1a"] : ["#2d3748","#4a5568"], lights:["#38bdf8","#fde68a","#f472b6"], rain:0.6+ (i%5)*0.08, thunder:i%6, weather: (i===10||i===12||i===16)?"car" : (i===11||i===13||i===15||i===18)?"snow":"rain", type: (i===10||i===12||i===16)?"car" : (i===18)?"car_snow" : (i===11||i===13||i===15)?"snow":"rain", landmark: i===0?"cristo": i===3?"eiffel": i===6?"liberty": i===9?"pao": "", music:170+i*6 }));
-phases[10].rain=0.8; phases[12].rain=0.9; phases[16].rain=0.5;
-const brushes = {
-soft:{name:"Suave",cost:0,radius:38,blur:0.9,desc:"Grande e suave. Ideal pra começar."},
-precise:{name:"Preciso",cost:100,radius:22,blur:0.35,desc:"Fino e preciso para detalhes."},
-broad:{name:"Largo",cost:200,radius:65,blur:0.8,desc:"Limpa área grande rápido."},
-sharp:{name:"Nítido",cost:300,radius:17,blur:0.12,desc:"Muito fino, bordas definidas."},
-feather:{name:"Pluma",cost:350,radius:16,blur:0.18,desc:"Muito fino, pouca perda de nitidez."},
-cirurgico:{name:"Cirúrgico",cost:500,radius:12,blur:0.10,desc:"Extremamente fino e preciso."},
-nevoa:{name:"Névoa",cost:650,radius:30,blur:1.35,desc:"Suave, difuso e atmosférico."},
-veludo:{name:"Veludo",cost:800,radius:46,blur:1.05,desc:"Macia, vinheta suave."},
-cristal:{name:"Cristal",cost:1000,radius:19,blur:0.06,desc:"Fino e muito nítido, sem vinheta."},
-largo:{name:"Chuva Larga",cost:1250,radius:82,blur:0.72,desc:"Gigante, pra limpar tudo rápido."},
-aura:{name:"Aura",cost:1500,radius:58,blur:1.5,desc:"Grande halo, etéreo."},
-agulha:{name:"Agulha",cost:1800,radius:9,blur:0.02,desc:"O dedo mais fino da coleção."}
-};
-let unlocked = {soft:true};
-function save(){ localStorage.setItem("rainySkylineSave",JSON.stringify({points:state.points,cur:state.currentPhase,high:state.highestPhase,b1:state.brush1,b2:state.brush2,unlocked,rainI:state.rainIntensity,amb:state.ambVolume,rainV:state.rainVolume,gs:state.gameSound,ms:state.musicSound,vib:state.vibration,lang:state.lang,zenAuto:state.zenAutoFog})); }
-function load(){ try{ const d=JSON.parse(localStorage.getItem("rainySkylineSave")); if(!d) return; state.points=d.points||0; state.currentPhase=Math.max(0,Math.min(19,d.cur||0)); state.highestPhase=Math.max(0,Math.min(19,d.high||0)); state.currentPhase=Math.min(state.currentPhase,state.highestPhase); state.brush1=d.b1||"soft"; state.brush2=d.b2||"soft"; unlocked=Object.assign({soft:true},d.unlocked||{}); state.rainIntensity=d.rainI??0.7; state.ambVolume=d.amb??0.5; state.rainVolume=d.rainV??0.7; state.gameSound=d.gs!==false; state.musicSound=d.ms!==false; state.vibration=d.vib!==false; state.lang=['pt','en','es'].includes(d.lang)?d.lang:'pt'; state.zenAutoFog=!!d.zenAuto; if(!brushes[state.brush1]) state.brush1='soft'; if(!brushes[state.brush2]) state.brush2='soft'; }catch(e){} }
-const bgC=document.getElementById("bgCanvas"), rainC=document.getElementById("rainCanvas"), glassC=document.getElementById("glassCanvas"), fogC=document.getElementById("fogCanvas");
-const bg=bgC.getContext("2d"), rainCtx=rainC.getContext("2d"), glassCtx=glassC.getContext("2d"), fogCtx=fogC.getContext("2d");
-let W=innerWidth,H=innerHeight,DPR=1;
-function setup(c,ctx){ c.width=W*DPR; c.height=H*DPR; c.style.width=W+"px"; c.style.height=H+"px"; ctx.setTransform(DPR,0,0,DPR,0,0); }
-function resize(){ const saved=state.currentPhase; W=innerWidth; H=innerHeight; DPR=Math.min(devicePixelRatio||1,2); setup(bgC,bg); setup(rainC,rainCtx); setup(glassC,glassCtx); setup(fogC,fogCtx); initFog(); drawBG(); state.currentPhase=saved; updateUI(); }
-addEventListener("resize",resize);
-let buildings=[], bokeh=[], roadOffset=0, zenSnow=[];
-function genCity(){ buildings=[]; bokeh=[]; const ph=phases[state.currentPhase]; let x=-40; while(x<W+100){ const w=45+Math.random()*80, h=100+Math.random()*H*.5; buildings.push({x,w,h,d:.25+Math.random()*.75}); x+=w+4; } for(let i=0;i<35;i++) bokeh.push({x:Math.random()*W,y:H*.25+Math.random()*H*.55,r:8+Math.random()*35,color:ph.lights[Math.floor(Math.random()*ph.lights.length)],alpha:.04+Math.random()*.12}); if(zenSnow.length===0) zenSnow=Array.from({length:140},()=>({x:Math.random()*W,y:Math.random()*H,v:20+Math.random()*60,r:.6+Math.random()*2.2})); }
-function drawBG(){ const ph=phases[state.currentPhase]; if(state.isZen){ const g=bg.createLinearGradient(0,0,0,H); g.addColorStop(0,'#07111d'); g.addColorStop(.42,'#1a3a52'); g.addColorStop(.78,'#0d1f2e'); g.addColorStop(1,'#040a10'); bg.fillStyle=g; bg.fillRect(0,0,W,H); const moon=bg.createRadialGradient(W*.72,H*.18,0,W*.72,H*.18,150); moon.addColorStop(0,'rgba(235,245,255,.35)'); moon.addColorStop(.3,'rgba(180,220,255,.12)'); moon.addColorStop(1,'transparent'); bg.fillStyle=moon; bg.beginPath(); bg.arc(W*.72,H*.18,150,0,Math.PI*2); bg.fill(); bg.fillStyle='rgba(8,18,28,.85)'; bg.beginPath(); bg.moveTo(0,H*.62); bg.lineTo(W*.12,H*.46); bg.lineTo(W*.26,H*.58); bg.lineTo(W*.42,H*.38); bg.lineTo(W*.58,H*.55); bg.lineTo(W*.74,H*.42); bg.lineTo(W*.88,H*.58); bg.lineTo(W,H*.52); bg.lineTo(W,H); bg.lineTo(0,H); bg.closePath(); bg.fill(); bg.fillStyle='rgba(12,28,42,.9)'; bg.beginPath(); bg.moveTo(0,H*.68); bg.lineTo(W*.18,H*.54); bg.lineTo(W*.33,H*.66); bg.lineTo(W*.51,H*.48); bg.lineTo(W*.67,H*.62); bg.lineTo(W,H*.58); bg.lineTo(W,H); bg.lineTo(0,H); bg.closePath(); bg.fill(); const lake=bg.createLinearGradient(0,H*.68,0,H); lake.addColorStop(0,'rgba(70,130,155,.22)'); lake.addColorStop(.5,'rgba(20,60,75,.28)'); lake.addColorStop(1,'rgba(2,8,14,.85)'); bg.fillStyle=lake; bg.fillRect(0,H*.68,W,H*.32); for(let i=0;i<32;i++){ const y=H*.71+i*H*.009; const x=(i*83)%W; bg.strokeStyle=`rgba(180,220,235,${.03+(i%5)*.012})`; bg.lineWidth=1; bg.beginPath(); bg.moveTo(x,y); bg.lineTo(Math.min(W,x+60+(i%7)*18),y); bg.stroke(); } const cx=W*.24, cy=H*.68; bg.fillStyle='#0e1b24'; bg.fillRect(cx-42,cy-50,84,50); bg.beginPath(); bg.moveTo(cx-52,cy-50); bg.lineTo(cx,cy-86); bg.lineTo(cx+52,cy-50); bg.closePath(); bg.fill(); bg.fillStyle='rgba(255,210,110,.88)'; bg.fillRect(cx-26,cy-36,14,16); bg.fillRect(cx+12,cy-36,14,16); drawGrass(); return; } if(!buildings.length) genCity(); const sky=bg.createLinearGradient(0,0,0,H); sky.addColorStop(0,ph.sky[0]); sky.addColorStop(.55,ph.sky[1]); sky.addColorStop(1,"#020308"); bg.fillStyle=sky; bg.fillRect(0,0,W,H); bg.save(); for(let i=0;i<7;i++){ const x=((i*137)+(state.currentPhase*53))%(W+180)-90, y=H*(.08+(i%4)*.07), r=40+(i%3)*28; const g=bg.createRadialGradient(x,y,0,x,y,r*2.3); g.addColorStop(0,`rgba(255,255,255,${.05+(i%2)*.03})`); g.addColorStop(1,'rgba(255,255,255,0)'); bg.fillStyle=g; bg.beginPath(); bg.arc(x,y,r*2,0,Math.PI*2); bg.fill(); } for(let i=0;i<120;i++){ if(Math.random()>.6) continue; bg.fillStyle=`rgba(255,255,255,${.03+Math.random()*.08})`; bg.fillRect(Math.random()*W,Math.random()*H*.6,1,1); } bg.restore(); bokeh.forEach(l=>{ const g=bg.createRadialGradient(l.x,l.y,0,l.x,l.y,l.r); g.addColorStop(0,l.color); g.addColorStop(1,"transparent"); bg.fillStyle=g; bg.globalAlpha=l.alpha; bg.beginPath(); bg.arc(l.x,l.y,l.r,0,Math.PI*2); bg.fill(); }); bg.globalAlpha=1; buildings.forEach((b,i)=>{ const y=H-b.h; const shade=Math.max(2,9*b.d); bg.fillStyle=`hsl(${ph.hue},25%,${shade}%)`; bg.fillRect(b.x,y,b.w,b.h); const rows=Math.floor(b.h/17), cols=Math.max(1,Math.floor(b.w/18)); for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){ const seed=(i*97+r*31+c*17)%11; if(seed>5) continue; const color=ph.lights[(i+r+c)%ph.lights.length]; bg.globalAlpha=.08+(seed/11)*.35; bg.fillStyle=color; bg.fillRect(b.x+7+c*18,y+9+r*17,6,5); } bg.globalAlpha=1; }); const ground=bg.createLinearGradient(0,H*.76,0,H); ground.addColorStop(0,"rgba(0,0,0,0)"); ground.addColorStop(1,"rgba(0,0,0,.55)"); bg.fillStyle=ground; bg.fillRect(0,H*.7,W,H*.3); drawLandmark(ph.landmark); drawGrass(); if(ph.weather==='car'||ph.type==='car'||ph.type==='car_snow') drawRoad(); }
-function drawGrass(){ const y=H*.79; bg.save(); bg.globalAlpha=.55; for(let i=0;i<Math.ceil(W/7);i++){ const x=i*7+(i%3), h=3+(i*17%9); bg.strokeStyle=`rgba(95,145,92,${.15+(i%5)*.035})`; bg.lineWidth=1; bg.beginPath(); bg.moveTo(x,y); bg.lineTo(x-2+(i%4),y-h); bg.stroke(); } bg.restore(); }
-function drawLandmark(type){ if(!type) return; const base=H*.69, cx=W*.72; bg.save(); bg.globalAlpha=.38; bg.fillStyle='rgba(255,255,255,.22)'; bg.strokeStyle='rgba(255,255,255,.35)'; bg.lineWidth=2; if(type==='cristo'){ bg.fillRect(cx-5,base-62,10,62); bg.fillRect(cx-28,base-49,56,6); bg.beginPath(); bg.arc(cx,base-72,7,0,Math.PI*2); bg.fill(); } else if(type==='eiffel'){ bg.beginPath(); bg.moveTo(cx,base-105); bg.lineTo(cx-32,base); bg.moveTo(cx,base-105); bg.lineTo(cx+32,base); bg.moveTo(cx-18,base-55); bg.lineTo(cx+18,base-55); bg.stroke(); } else if(type==='liberty'){ bg.fillRect(cx-10,base-38,20,38); bg.beginPath(); bg.moveTo(cx,base-88); bg.lineTo(cx-15,base-38); bg.lineTo(cx+15,base-38); bg.closePath(); bg.fill(); } else if(type==='pao'){ bg.beginPath(); bg.moveTo(cx-80,base); bg.quadraticCurveTo(cx-45,base-70,cx-8,base-18); bg.quadraticCurveTo(cx+25,base-90,cx+80,base); bg.closePath(); bg.fill(); } bg.restore(); }
-function drawRoad(){ bg.save(); const y=H*.74; for(let i=0;i<22;i++){ const x=((i*120 - roadOffset)%(W+200))-100; const yy=y+(i%4)*8; bg.strokeStyle=`rgba(255,255,255,${.04+(i%3)*.02})`; bg.lineWidth=1+(i%2); bg.beginPath(); bg.moveTo(x,yy); bg.lineTo(x+40+(i%3)*10,yy+2); bg.stroke(); } bg.restore(); }
-class RainDrop{ constructor(){ this.reset(true); } reset(init=false){ this.x=Math.random()*(W+200)-100; this.y=init?Math.random()*H:-Math.random()*H; this.vy=600+Math.random()*900; this.len=14+Math.random()*35; this.alpha=.08+Math.random()*.27; this.width=.5+Math.random()*1.2; this.wind=-1.2-Math.random()*2.5; this.drift=0; } update(dt){ const ph=phases[state.currentPhase]; const isCar=ph.weather==='car'||ph.type==='car'||ph.type==='car_snow'; if(isCar){ this.drift+=dt*(30+state.rainIntensity*40); this.y+=this.vy*dt*(.25+state.rainIntensity*.6); this.x+=(this.wind+Math.sin(this.drift*.01)*1.2)*dt*(8+state.rainIntensity*10); } else { this.y+=this.vy*dt*(.35+state.rainIntensity*.9); this.x+=this.wind*dt*(20+ph.rain*30); } if(this.y>H+80) this.reset(); } draw(){ rainCtx.strokeStyle=`rgba(185,220,255,${this.alpha})`; rainCtx.lineWidth=this.width; rainCtx.beginPath(); rainCtx.moveTo(this.x,this.y); rainCtx.lineTo(this.x+this.wind*0.15, this.y+this.len*1.05); rainCtx.stroke(); } }
-class GlassDrop{ constructor(){ this.reset(true); } reset(init=false){ this.x=Math.random()*W; this.y=init?Math.random()*H:-100; this.r=1.5+Math.random()*4.5; this.vy=8+Math.random()*38; this.vx=-1+Math.random()*2; this.alpha=.15+Math.random()*.4; this.stretch=.5+Math.random()*2; } update(dt){ this.y+=this.vy*dt; this.x+=this.vx*dt; if(this.y>H+30) this.reset(); } draw(){ glassCtx.save(); const g=glassCtx.createRadialGradient(this.x-this.r*.35,this.y-this.r*.35,0,this.x,this.y,this.r*1.5); g.addColorStop(0,`rgba(255,255,255,${this.alpha})`); g.addColorStop(.3,`rgba(180,220,255,${this.alpha*.55})`); g.addColorStop(1,"rgba(20,50,80,0)"); glassCtx.fillStyle=g; glassCtx.beginPath(); glassCtx.ellipse(this.x,this.y,this.r,this.r*this.stretch,-.1,0,Math.PI*2); glassCtx.fill(); glassCtx.restore(); } }
-const RS_MAX_RAIN=380;
-let rainParticles=Array.from({length:RS_MAX_RAIN},()=>new RainDrop());
-const glassDrops=Array.from({length:85},()=>new GlassDrop());
-const GRID_X=40,GRID_Y=24; let fogGrid=[], snowGrid=null;
-function createFogGrid(){ fogGrid=Array.from({length:GRID_X*GRID_Y},()=>false); snowGrid=new Uint8Array(GRID_X*GRID_Y); }
-function initFog(){ createFogGrid(); fogCtx.globalCompositeOperation="source-over"; fogCtx.clearRect(0,0,W,H); const g=fogCtx.createLinearGradient(0,0,W,H); g.addColorStop(0,"rgba(220,230,235,.70)"); g.addColorStop(.5,"rgba(205,218,225,.58)"); g.addColorStop(1,"rgba(175,195,205,.66)"); fogCtx.fillStyle=g; fogCtx.fillRect(0,0,W,H); for(let i=0;i<18;i++){ const x=Math.random()*W,y=Math.random()*H,r=60+Math.random()*160; const rg=fogCtx.createRadialGradient(x,y,0,x,y,r); rg.addColorStop(0,"rgba(255,255,255,.09)"); rg.addColorStop(1,"transparent"); fogCtx.fillStyle=rg; fogCtx.beginPath(); fogCtx.arc(x,y,r,0,Math.PI*2); fogCtx.fill(); } const ph=phases[state.currentPhase]; if(ph.weather==='snow'||ph.type==='snow'||ph.type==='car_snow'){ const sg=fogCtx.createLinearGradient(0,0,W,H); sg.addColorStop(0,'rgba(235,240,245,.72)'); sg.addColorStop(.45,'rgba(250,252,255,.58)'); sg.addColorStop(1,'rgba(205,215,225,.76)'); fogCtx.fillStyle=sg; fogCtx.fillRect(0,0,W,H); for(let i=0;i<26;i++){ const x=Math.random()*W,y=Math.random()*H,r=40+Math.random()*150; const rg=fogCtx.createRadialGradient(x,y,0,x,y,r); rg.addColorStop(0,'rgba(255,255,255,.12)'); rg.addColorStop(1,'rgba(180,195,210,0)'); fogCtx.fillStyle=rg; fogCtx.beginPath(); fogCtx.arc(x,y,r,0,Math.PI*2); fogCtx.fill(); } } state.fogProgress=0; updateProgress(); }
-function markGrid(x,y,radius,isSnow){ const gx=Math.floor((x/W)*GRID_X), gy=Math.floor((y/H)*GRID_Y), rx=Math.ceil((radius/W)*GRID_X)+1, ry=Math.ceil((radius/H)*GRID_Y)+1; for(let yy=gy-ry;yy<=gy+ry;yy++) for(let xx=gx-rx;xx<=gx+rx;xx++){ if(xx<0||yy<0||xx>=GRID_X||yy>=GRID_Y) continue; const idx=yy*GRID_X+xx; const px=(xx+.5)/GRID_X*W, py=(yy+.5)/GRID_Y*H; if(Math.hypot(px-x,py-y)<=radius){ if(isSnow){ snowGrid[idx]=Math.min(2,snowGrid[idx]+1); if(snowGrid[idx]>=2) fogGrid[idx]=true; } else { fogGrid[idx]=true; } } } }
-function calcProgress(){ let c=0; for(const v of fogGrid) if(v) c++; return c/fogGrid.length; }
-function updateProgress(){ const p=calcProgress(); state.fogProgress=p; const fill=document.getElementById("progressFill"); if(fill) fill.style.width=Math.min(100,p*100)+"%"; if(!state.isZen && p>=PHASE_COMPLETE && state.started &&!state.paused) completePhase(); }
-function maybePerfect(){ if(state.isZen) return; if(Math.random()<0.0009 && state.fogProgress>0.28 &&!phaseCompleted){ state.points+=25; save(); updateCoins(); const toast=document.getElementById("rsToast"); toast.textContent="✦ "+t('perfect')+" +25"; toast.style.opacity="1"; clearTimeout(maybePerfect.t); maybePerfect.t=setTimeout(()=>toast.style.opacity="0",1400); } }
-function getBrush(){ return state.activePointers.size<=1?brushes[state.brush1]:brushes[state.brush2]; }
-function clearFog(x,y,brush){ if(!state.hasInteracted){ state.hasInteracted=true; document.getElementById("instruction").classList.add("hidden-text"); } const ph=phases[state.currentPhase]; const isSnow=!state.isZen && (ph.weather==='snow'||ph.type==='snow'||ph.type==='car_snow'); const radius=brush.radius, soft=Math.max(.02,Math.min(1.4,brush.blur)); fogCtx.save(); if(isSnow){ if(snowGrid[ Math.floor((y/H)*GRID_Y)*GRID_X + Math.floor((x/W)*GRID_X) ]===0){ fogCtx.globalCompositeOperation="source-over"; fogCtx.globalAlpha=.28; fogCtx.fillStyle="rgba(255,255,255,.18)"; fogCtx.beginPath(); fogCtx.arc(x,y,radius,0,Math.PI*2); fogCtx.fill(); } else { fogCtx.globalCompositeOperation="destination-out"; fogCtx.globalAlpha=1; fogCtx.beginPath(); fogCtx.arc(x,y,radius,0,Math.PI*2); fogCtx.fill(); } } else { fogCtx.globalCompositeOperation="destination-out"; const inner=radius*Math.max(.05,.45-soft*.15); const g=fogCtx.createRadialGradient(x,y,inner,x,y,radius); g.addColorStop(0,"rgba(0,0,0,1)"); g.addColorStop(Math.min(.95,.45+soft*.3),"rgba(0,0,0,.85)"); g.addColorStop(1,"rgba(0,0,0,0)"); fogCtx.fillStyle=g; fogCtx.beginPath(); fogCtx.arc(x,y,radius,0,Math.PI*2); fogCtx.fill(); } fogCtx.restore(); markGrid(x,y,radius,isSnow); if(!isSnow) maybePerfect(); if(state.vibration&&navigator.vibrate) navigator.vibrate(4); updateProgress(); }
-function handleDown(e){ if(!state.started||state.paused) return; fogC.setPointerCapture?.(e.pointerId); state.activePointers.set(e.pointerId,{x:e.clientX,y:e.clientY}); const brush=getBrush(); const rect=fogC.getBoundingClientRect(); const x=(e.clientX-rect.left)*(W/rect.width), y=(e.clientY-rect.top)*(H/rect.height); clearFog(x,y,brush); }
-function handleMove(e){ if(!state.started||state.paused) return; if(!state.activePointers.has(e.pointerId)) return; const brush=getBrush(); const rect=fogC.getBoundingClientRect(); const x=(e.clientX-rect.left)*(W/rect.width), y=(e.clientY-rect.top)*(H/rect.height); clearFog(x,y,brush); }
-function handleUp(e){ state.activePointers.delete(e.pointerId); }
-fogC.addEventListener("pointerdown",handleDown); fogC.addEventListener("pointermove",handleMove); fogC.addEventListener("pointerup",handleUp); fogC.addEventListener("pointercancel",handleUp);
+/* =========================================================
+   RAINY SKYLINE (20 Phases, Zen, Otmizado)
+========================================================= */
 
-fogC.addEventListener("pointerdown",e=>e.preventDefault(),{passive:false}); fogC.addEventListener("pointermove",e=>e.preventDefault(),{passive:false});
-let audioCtx=null, rainGain=null, musicGain=null, masterGain=null, noiseSrc=null, osc1=null, osc2=null, thunderTimer=null, carOsc=null, carGain=null, carFilter=null;
-function initAudio(){ if(audioCtx){ if(audioCtx.state==="suspended") audioCtx.resume(); return; } const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return; audioCtx=new AC(); masterGain=audioCtx.createGain(); masterGain.gain.value=.8; masterGain.connect(audioCtx.destination); const bs=audioCtx.sampleRate*2, buf=audioCtx.createBuffer(1,bs,audioCtx.sampleRate), out=buf.getChannelData(0); let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0; for(let i=0;i<bs;i++){ const w=Math.random()*2-1; b0=.99886*b0+w*.0555179; b1=.99332*b1+w*.0750759; b2=.969*b2+w*.153852; b3=.8665*b3+w*.3104856; b4=.55*b4+w*.5329522; b5=-.7616*b5-w*.016898; out[i]=(b0+b1+b2+b3+b4+b5+b6+w*.5362)*.035; b6=w*.115926; } noiseSrc=audioCtx.createBufferSource(); noiseSrc.buffer=buf; noiseSrc.loop=true; const f=audioCtx.createBiquadFilter(); f.type="lowpass"; f.frequency.value=1300; rainGain=audioCtx.createGain(); noiseSrc.connect(f).connect(rainGain).connect(masterGain); noiseSrc.start(); musicGain=audioCtx.createGain(); musicGain.gain.value=.03; musicGain.connect(masterGain); osc1=audioCtx.createOscillator(); osc2=audioCtx.createOscillator(); osc1.type="sine"; osc2.type="sine"; osc1.frequency.value=55; osc2.frequency.value=82; osc1.connect(musicGain); osc2.connect(musicGain); osc1.start(); osc2.start(); carOsc=audioCtx.createOscillator(); carGain=audioCtx.createGain(); carFilter=audioCtx.createBiquadFilter(); carFilter.type='lowpass'; carFilter.frequency.value=120; carOsc.type='sine'; carOsc.frequency.value=44; carGain.gain.value=0; carOsc.connect(carFilter).connect(carGain).connect(masterGain); carOsc.start(); updateAudio(); startThunder(); }
-function updateAudio(){ if(!audioCtx) return; const ph=phases[state.currentPhase]; if(rainGain) rainGain.gain.value=state.gameSound?state.rainVolume*.22:0; if(musicGain) musicGain.gain.value=state.musicSound?(.012+state.ambVolume*.03):0; if(osc1) osc1.frequency.setTargetAtTime(ph.music,audioCtx.currentTime,.8); const isCar=ph.weather==='car'||ph.type==='car'||ph.type==='car_snow'; if(carGain&&carOsc){ carGain.gain.setTargetAtTime(isCar&&state.gameSound?.009:0,audioCtx.currentTime,.8); carOsc.frequency.setTargetAtTime(44,audioCtx.currentTime,2); } }
-function startThunder(){ if(thunderTimer) clearTimeout(thunderTimer); function sched(){ const ph=phases[state.currentPhase]; const d=ph.thunder===0?18000+Math.random()*25000:9000+Math.random()*22000; thunderTimer=setTimeout(()=>{ if(state.started&&!state.paused) playThunder(ph.thunder); sched(); },d); } sched(); }
-function playThunder(v){ if(!audioCtx||!state.gameSound) return; const now=audioCtx.currentTime, dur=.8+v*.18; const buf=audioCtx.createBuffer(1,audioCtx.sampleRate*dur,audioCtx.sampleRate), d=buf.getChannelData(0); let low=0; for(let i=0;i<d.length;i++){ const t=i/d.length, w=Math.random()*2-1; low=low*.992+w*.008; const r=Math.sin(t*Math.PI*(7+v*1.3)); const env=Math.pow(1-t,1.35); d[i]=(w*.45+low*2+r*1.8)*env*.25; } const src=audioCtx.createBufferSource(); src.buffer=buf; const f=audioCtx.createBiquadFilter(); f.type=v%2===0?"lowpass":"bandpass"; f.frequency.value=170+v*45; const g=audioCtx.createGain(); g.gain.setValueAtTime(.0001,now); g.gain.exponentialRampToValueAtTime(.18+v*.018,now+.04); g.gain.exponentialRampToValueAtTime(.0001,now+dur); src.connect(f).connect(g).connect(masterGain); src.start(now); const flash=document.getElementById("lightningFlash"); const s=.08+Math.random()*.22; flash.style.opacity=s; setTimeout(()=>flash.style.opacity=0,50); }
-let phaseCompleted=false;
-function showAd(cb){ const ad=document.getElementById('adScreen'); ad.classList.remove('hidden'); setTimeout(()=>{ad.classList.add('hidden'); if(cb) cb();},1100); }
-function completePhase(){ if(phaseCompleted) return; phaseCompleted=true; state.started=false; state.paused=false; state.points+=100; if(state.currentPhase<phases.length-1) state.highestPhase=Math.max(state.highestPhase,state.currentPhase+1); save(); document.getElementById("rewardPhaseName").textContent=getPhaseText(state.currentPhase).name; showAd(()=>{ document.getElementById('rewardScreen').classList.remove('hidden'); document.getElementById('hud').classList.add('hidden'); }); updateCoins(); if(state.vibration&&navigator.vibrate) navigator.vibrate([50,60,100]); }
-function startPhase(i){ if(i<0||i>=phases.length) return; if(i>state.highestPhase) return; state.currentPhase=i; state.started=true; state.paused=false; state.hasInteracted=false; state.activePointers.clear(); state.isZen=false; phaseCompleted=false; genCity(); drawBG(); initFog(); updateUI(); document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden')); document.getElementById('hud').classList.remove('hidden'); document.getElementById('instruction').classList.remove('hidden-text'); initAudio(); updateAudio(); startThunder(); save(); updateZenUI(); }
-function startZen(){ state.isZen=true; state.started=true; state.paused=false; state.hasInteracted=false; state.activePointers.clear(); phaseCompleted=false; genCity(); drawBG(); initFog(); document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden')); document.getElementById('hud').classList.remove('hidden'); initAudio(); updateAudio(); startThunder(); updateZenUI(); applyLang(); }
-function updateUI(){ const pt=getPhaseText(state.currentPhase); document.getElementById("phaseDisplay").textContent=state.currentPhase+1; document.getElementById("menuPhaseName").textContent=pt.name; document.getElementById("menuPhaseFeeling").textContent=pt.feeling; document.getElementById("menuPhaseStory").textContent=pt.story; updateCoins(); applyLang(); }
-function updateCoins(){ document.getElementById("pointsDisplay").textContent=state.points; document.getElementById("storeCoins").textContent=state.points; }
-function renderPhases(){ const list=document.getElementById("phaseList"); list.innerHTML=""; phases.forEach((_,i)=>{ const pt=getPhaseText(i); const unlocked=i<=state.highestPhase; const div=document.createElement("div"); div.className="phase-item "+(i===state.currentPhase?"active ":"")+(!unlocked?"locked":""); div.innerHTML=`<div class="phase-number">FASE ${i+1}</div><div class="phase-name">${unlocked?pt.name:(state.lang==='en'?'🔒 Locked':'🔒 Bloqueada')}</div><div class="phase-mini-feeling">${unlocked?pt.feeling:(state.lang==='en'?'Complete previous':'Complete a anterior')}</div>`; if(unlocked) div.onclick=()=>startPhase(i); list.appendChild(div); }); }
-function renderStore(){ const grid=document.getElementById("storeGrid"); grid.innerHTML=""; Object.keys(brushes).forEach(k=>{ const b=brushes[k], isUnlock=!!unlocked[k]; const div=document.createElement("div"); div.className="store-item "+(state.brush1===k||state.brush2===k?"active":""); div.innerHTML=`<div class="store-preview">${b.radius}px • ${b.blur}</div><div class="store-item-title">${b.name}</div><div class="store-item-desc">${b.desc}</div><div class="store-item-cost">${isUnlock?t('equip'):b.cost+" 🌧️"}</div>`; div.onclick=()=>{ if(!isUnlock){ if(state.points<b.cost) return; state.points-=b.cost; unlocked[k]=true; save(); updateCoins(); renderStore(); return; } if(state.brush1===k) state.brush2=k; else state.brush1=k; save(); renderStore(); updateFingerSlots(); }; grid.appendChild(div); }); updateFingerSlots(); }
-function updateFingerSlots(){ document.getElementById("slot1Name").textContent=brushes[state.brush1].name; document.getElementById("slot2Name").textContent=brushes[state.brush2].name; }
-function updateSettingsUI(){ document.getElementById("rainSlider").value=Math.round(state.rainIntensity*100); document.getElementById("rainVal").textContent=Math.round(state.rainIntensity*100)+"%"; document.getElementById("rainSoundSlider").value=Math.round(state.rainVolume*100); document.getElementById("rainSoundVal").textContent=Math.round(state.rainVolume*100)+"%"; document.getElementById("ambSlider").value=Math.round(state.ambVolume*100); document.getElementById("ambVal").textContent=Math.round(state.ambVolume*100)+"%"; setToggle("gameSoundToggle",state.gameSound); setToggle("musicToggle",state.musicSound); setToggle("vibrationToggle",state.vibration); buildExtras(); }
-function setToggle(id,on){ const e=document.getElementById(id); if(e) e.classList.toggle("on",on); }
-const RS_TEXT={ pt:{continue:"CONTINUAR FASE",zen:"MODO ZEN (INFINITO)",phases:"FASES & MEMÓRIAS",store:"LOJA DE DEDOS",settings:"AJUSTES",back:"VOLTAR",save:"SALVAR E VOLTAR",pause:"Pausa",resume:"RETORNAR E RELAXAR",main:"MENU PRINCIPAL",next:"PRÓXIMA FASE",rain:"Intensidade da Chuva",rainSound:"Som da chuva",amb:"Volume da Ambiência",mist:"mist",equip:"EQUIPAR",perfect:"LIMPEZA PERFEITA",infinite:"PAZ INFINITA",clean:"PASSE O DEDO PARA LIMPAR",defog:"Desembace a janela",lang:"Idioma",phasesTitle:"Fases & Memórias",phasesDesc:"Cada chuva guarda um sentimento.",storeTitle:"Loja de Dedos",storeDesc:"10 dedos diferentes. Fino, grosso, nitidez e vinheta.",settingsTitle:"Ajustes",pauseDesc:"A chuva continua esperando por você.",rewardTitle:"Chuva concluída",rewardDesc:"Você terminou esta memória.",adDesc:"Um pequeno momento antes da próxima chuva.",zenAuto:"Regenerar névoa automaticamente",zenAutoDesc:"Deixe a névoa voltar sozinha lentamente.",gameSound:"Som do Jogo",gameDesc:"Gotas e ambiente",musicSound:"Música / atmosfera",musicDesc:"Camada lo-fi da fase",vib:"Vibração",vibDesc:"Feedback ao tocar"}, en:{continue:"CONTINUE PHASE",zen:"ZEN MODE (INFINITE)",phases:"PHASES & MEMORIES",store:"FINGER SHOP",settings:"SETTINGS",back:"BACK",save:"SAVE & BACK",pause:"Paused",resume:"RETURN & RELAX",main:"MAIN MENU",next:"NEXT PHASE",rain:"Rain Intensity",rainSound:"Rain Sound",amb:"Ambience Volume",mist:"mist",equip:"EQUIP",perfect:"PERFECT WIPE",infinite:"INFINITE PEACE",clean:"SWIPE TO WIPE THE FOG",defog:"Defog the window",lang:"Language",phasesTitle:"Phases & Memories",phasesDesc:"Each rain keeps a feeling.",storeTitle:"Finger Shop",storeDesc:"10 different fingers.",settingsTitle:"Settings",pauseDesc:"Rain is still waiting for you.",rewardTitle:"Rain completed",rewardDesc:"You finished this memory.",adDesc:"A short moment before next rain.",zenAuto:"Auto-regenerate fog",zenAutoDesc:"Let the mist return slowly.",gameSound:"Game Sound",gameDesc:"Drops and ambience",musicSound:"Music / atmosphere",musicDesc:"Lo-fi layer",vib:"Vibration",vibDesc:"Haptic feedback"}, es:{continue:"CONTINUAR FASE",zen:"MODO ZEN (INFINITO)",phases:"FASES Y MEMORIAS",store:"TIENDA DE DEDOS",settings:"AJUSTES",back:"VOLVER",save:"GUARDAR Y VOLVER",pause:"Pausa",resume:"VOLVER Y RELAJARSE",main:"MENÚ PRINCIPAL",next:"SIGUIENTE FASE",rain:"Intensidad de lluvia",rainSound:"Sonido de lluvia",amb:"Volumen ambiente",mist:"mist",equip:"EQUIPAR",perfect:"LIMPIEZA PERFECTA",infinite:"PAZ INFINITA",clean:"PASA EL DEDO PARA LIMPIAR",defog:"Desempaña la ventana",lang:"Idioma",phasesTitle:"Fases y Memorias",phasesDesc:"Cada lluvia guarda un sentimiento.",storeTitle:"Tienda de Dedos",storeDesc:"10 dedos diferentes.",settingsTitle:"Ajustes",pauseDesc:"La lluvia sigue esperándote.",rewardTitle:"Lluvia completada",rewardDesc:"Terminaste esta memoria.",adDesc:"Un momento antes de la próxima lluvia.",zenAuto:"Regenerar niebla automáticamente",zenAutoDesc:"Deja que la niebla vuelva sola lentamente.",gameSound:"Sonido del Juego",gameDesc:"Gotas y ambiente",musicSound:"Música / atmósfera",musicDesc:"Capa lo-fi",vib:"Vibración",vibDesc:"Feedback háptico"}};
-function t(k){ return (RS_TEXT[state.lang]||RS_TEXT.pt)[k]||k; }
-function applyLang(){ const set=(id,k)=>{const e=document.getElementById(id); if(e) e.textContent=t(k);}; set('continueBtn','continue'); set('zenBtn','zen'); set('phasesBtn','phases'); set('storeBtn','store'); set('settingsBtn','settings'); set('closePhasesBtn','back'); set('closeStoreBtn','back'); set('closeSettingsBtn','save'); set('resumeBtn','resume'); set('exitMenuBtn','main'); set('pauseSettingsBtn','settings'); set('nextPhaseBtn','next'); set('rewardMenuBtn','main'); set('rainLabel','rain'); set('rainSoundLabel','rainSound'); set('ambLabel','amb'); set('phasesTitle','phasesTitle'); set('storeTitle','storeTitle'); set('settingsTitle','settingsTitle'); set('pauseTitle','pause'); set('rewardTitle','rewardTitle'); document.getElementById('phasesDesc').textContent=t('phasesDesc'); document.getElementById('storeDesc').textContent=t('storeDesc'); document.getElementById('pauseDesc').textContent=t('pauseDesc'); document.getElementById('rewardDesc').textContent=t('rewardDesc'); document.getElementById('adDesc').textContent=t('adDesc'); document.getElementById('gameSoundTitle').textContent=t('gameSound'); document.getElementById('gameSoundDesc').textContent=t('gameDesc'); document.getElementById('musicTitle').textContent=t('musicSound'); document.getElementById('musicDesc').textContent=t('musicDesc'); document.getElementById('vibTitle').textContent=t('vib'); document.getElementById('vibDesc').textContent=t('vibDesc'); document.getElementById('zenManualHudBtn').textContent=t('mist'); const mb=document.getElementById('rsZenManual'); if(mb) mb.textContent=t('mist'); const instr=document.getElementById('instruction'); if(instr) instr.textContent=state.isZen?t('infinite'):t('clean'); const prog=document.querySelector('.progress-label'); if(prog) prog.textContent=t('defog'); }
-let rsSettingsFromPhase=false;
-function buildExtras(){ const content=document.getElementById('settingsContent'); if(!content) return; let langRow=document.getElementById('rsLanguageRow'); if(!langRow){ langRow=document.createElement('div'); langRow.id='rsLanguageRow'; langRow.className='setting-row'; langRow.style.marginTop='22px'; langRow.innerHTML='<span id="langLabel"></span><button id="langToggleBtn" class="btn btn-small" style="padding:5px 12px;min-height:32px;border-radius:999px;min-width:92px"></button>'; content.appendChild(langRow); document.getElementById('langToggleBtn').onclick=()=>{ state.lang=state.lang==='pt'?'en':state.lang==='en'?'es':'pt'; save(); applyLang(); updateUI(); renderPhases(); renderStore(); updateSettingsUI(); }; } langRow.style.display=(!rsSettingsFromPhase&&!state.isZen)?'flex':'none'; const b=document.getElementById('langToggleBtn'); if(b) b.textContent=state.lang==='pt'?'Português':state.lang==='en'?'English':'Español'; const ll=document.getElementById('langLabel'); if(ll) ll.textContent=t('lang'); let zenBox=document.getElementById('rsZenSettings'); if(!zenBox){ zenBox=document.createElement('div'); zenBox.id='rsZenSettings'; zenBox.style.marginTop='24px'; zenBox.style.paddingTop='18px'; zenBox.style.borderTop='1px solid rgba(255,255,255,.1)'; zenBox.innerHTML='<h3 style="margin:0 0 12px;font-size:14px;" id="zenTitle">Modo Zen</h3><div class="toggle-row"><div class="toggle-text"><strong id="zenAutoLabel"></strong><span id="zenAutoDesc"></span></div><div id="rsZenAutoToggle" class="toggle"></div></div><button id="rsZenManual" class="btn" style="width:100%;margin-top:14px">mist</button>'; content.appendChild(zenBox); document.getElementById('rsZenAutoToggle').onclick=()=>{ state.zenAutoFog=!state.zenAutoFog; setToggle('rsZenAutoToggle',state.zenAutoFog); updateZenUI(); save(); }; document.getElementById('rsZenManual').onclick=()=>regenFull(); } zenBox.style.display=state.isZen?'block':'none'; setToggle('rsZenAutoToggle',state.zenAutoFog); const za=document.getElementById('zenAutoLabel'); if(za) za.textContent=t('zenAuto'); const zad=document.getElementById('zenAutoDesc'); if(zad) zad.textContent=t('zenAutoDesc'); }
-function updateZenUI(){ const btn=document.getElementById('zenManualHudBtn'); const coin=document.querySelector('.currency-badge'); const badge=document.querySelector('.phase-badge'); const show=!!state.isZen &&!state.zenAutoFog; if(btn){ btn.classList.toggle('hidden',!show); btn.textContent=t('mist'); btn.onclick=()=>regenFull(); } if(coin) coin.style.display=state.isZen?'none':''; if(badge) badge.style.display=state.isZen?'none':''; const mb=document.getElementById('rsZenManual'); if(mb){ mb.style.display=state.isZen&&!state.zenAutoFog?'block':'none'; mb.textContent=t('mist'); } }
-function regenFull(){ initFog(); state.zenRegenAccum=0; }
-function slowZen(dt){ if(!state.isZen||!state.zenAutoFog||state.paused||!state.started) return; state.zenRegenAccum+=dt; if(state.zenRegenAccum<1.2) return; state.zenRegenAccum=0; fogCtx.save(); fogCtx.globalCompositeOperation='source-over'; for(let i=0;i<3;i++){ const idx=Math.floor(Math.random()*fogGrid.length); if(!fogGrid[idx]){ fogGrid[idx]=false; snowGrid[idx]=0; const gx=idx%GRID_X, gy=Math.floor(idx/GRID_X), x=(gx+.5)/GRID_X*W, y=(gy+.5)/GRID_Y*H, r=Math.min(W,H)*(.035+Math.random()*.055); const g=fogCtx.createRadialGradient(x,y,0,x,y,r); g.addColorStop(0,'rgba(210,220,228,.20)'); g.addColorStop(1,'transparent'); fogCtx.fillStyle=g; fogCtx.beginPath(); fogCtx.arc(x,y,r,0,Math.PI*2); fogCtx.fill(); } } fogCtx.restore(); updateProgress(); }
-function loop(time){ const dt=Math.min((time-state.lastTime)/1000,.1); state.lastTime=time; if(state.started&&!state.paused){ const ph=phases[state.currentPhase]; let rainCount; if(state.isZen){ rainCount=Math.max(20,Math.min(RS_MAX_RAIN,Math.round(20+state.rainIntensity*RS_MAX_RAIN*0.9))); } else { rainCount=Math.max(30,Math.min(RS_MAX_RAIN,Math.round(30+state.rainIntensity*RS_MAX_RAIN*.95*Math.max(.45,ph.rain)))); } for(let i=0;i<rainParticles.length;i++) rainParticles[i]._inactive=i>=rainCount; rainCtx.clearRect(0,0,W,H); glassCtx.clearRect(0,0,W,H); slowZen(dt); if(state.isZen && state.rainIntensity>=0.95){ for(let i=0;i<zenSnow.length;i++){ const s=zenSnow[i]; s.y+=s.v*dt*state.rainIntensity; s.x+=Math.sin((performance.now()+i*70)*.001)*.2; if(s.y>H+10){ s.y=-10; s.x=Math.random()*W; } rainCtx.fillStyle=`rgba(255,255,255,${.5+Math.random()*.4})`; rainCtx.beginPath(); rainCtx.arc(s.x,s.y,s.r,0,Math.PI*2); rainCtx.fill(); } } if((ph.weather==='car'||ph.type==='car'||ph.type==='car_snow')&&!state.isZen) roadOffset+=dt*(10+state.rainIntensity*12); rainParticles.forEach(p=>{ if(p._inactive) return; p.update(dt); p.draw(); }); glassDrops.forEach(d=>{ d.update(dt); d.draw(); }); if((ph.weather==='car'||ph.type==='car'||ph.type==='car_snow')&&!state.isZen) drawBG(); } requestAnimationFrame(loop); }
-document.getElementById("continueBtn").onclick=()=>startPhase(state.currentPhase);
-document.getElementById("zenBtn").onclick=()=>startZen();
-document.getElementById("phasesBtn").onclick=()=>{ renderPhases(); document.getElementById("phasesScreen").classList.remove("hidden"); };
-document.getElementById("closePhasesBtn").onclick=()=>document.getElementById("phasesScreen").classList.add("hidden");
-document.getElementById("storeBtn").onclick=()=>{ renderStore(); document.getElementById("storeScreen").classList.remove("hidden"); };
-document.getElementById("closeStoreBtn").onclick=()=>document.getElementById("storeScreen").classList.add("hidden");
-document.getElementById("settingsBtn").onclick=()=>{ rsSettingsFromPhase=false; updateSettingsUI(); document.getElementById("settingsScreen").classList.remove("hidden"); };
-document.getElementById("pauseSettingsBtn").onclick=()=>{ rsSettingsFromPhase=true; updateSettingsUI(); document.getElementById("pauseScreen").classList.add("hidden"); document.getElementById("settingsScreen").classList.remove("hidden"); };
-document.getElementById("closeSettingsBtn").onclick=()=>{ save(); document.getElementById("settingsScreen").classList.add("hidden"); if(rsSettingsFromPhase&&state.started){ document.getElementById("pauseScreen").classList.remove("hidden"); state.paused=true; } else { updateUI(); } updateAudio(); rsSettingsFromPhase=false; };
-document.getElementById("pauseBtn").onclick=()=>{ if(!state.started) return; state.paused=true; document.getElementById("pauseScreen").classList.remove("hidden"); };
-document.getElementById("resumeBtn").onclick=()=>{ state.paused=false; document.getElementById("pauseScreen").classList.add("hidden"); initAudio(); };
-document.getElementById("exitMenuBtn").onclick=()=>{ showAd(()=>{ state.started=false; state.paused=false; state.activePointers.clear(); state.isZen=false; initFog(); state.hasInteracted=false; document.getElementById("instruction").classList.remove("hidden-text"); document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden')); document.getElementById("hud").classList.add("hidden"); document.getElementById("mainMenu").classList.remove("hidden"); updateUI(); updateZenUI(); save(); }); };
-document.getElementById("nextPhaseBtn").onclick=()=>{ if(state.currentPhase<phases.length-1) startPhase(state.currentPhase+1); else { document.getElementById("rewardScreen").classList.add("hidden"); document.getElementById("mainMenu").classList.remove("hidden"); updateUI(); } };
-document.getElementById("rewardMenuBtn").onclick=()=>{ showAd(()=>{ document.getElementById("rewardScreen").classList.add("hidden"); document.getElementById("mainMenu").classList.remove("hidden"); updateUI(); }); };
-document.getElementById("rainSlider").oninput=e=>{ state.rainIntensity=Number(e.target.value)/100; document.getElementById("rainVal").textContent=e.target.value+"%"; updateAudio(); save(); };
-document.getElementById("rainSoundSlider").oninput=e=>{ state.rainVolume=Number(e.target.value)/100; document.getElementById("rainSoundVal").textContent=e.target.value+"%"; updateAudio(); save(); };
-document.getElementById("ambSlider").oninput=e=>{ state.ambVolume=Number(e.target.value)/100; document.getElementById("ambVal").textContent=e.target.value+"%"; updateAudio(); save(); };
-document.getElementById("gameSoundToggle").onclick=()=>{ state.gameSound=!state.gameSound; setToggle("gameSoundToggle",state.gameSound); updateAudio(); save(); };
-document.getElementById("musicToggle").onclick=()=>{ state.musicSound=!state.musicSound; setToggle("musicToggle",state.musicSound); updateAudio(); save(); };
-document.getElementById("vibrationToggle").onclick=()=>{ state.vibration=!state.vibration; setToggle("vibrationToggle",state.vibration); save(); };
-load();
-state.currentPhase=Math.min(state.currentPhase,state.highestPhase);
-updateUI();
-updateSettingsUI();
-updateFingerSlots();
-updateZenUI();
-resize();
-requestAnimationFrame(loop);
+const state = {
+  lang: 'en',
+  started: false,
+  paused: false,
+  isZen: false,
+  currentPhase: 0,
+  highestPhase: 0,
+  points: 0,
+  hasInteracted: false,
+  rainIntensity: 0.7,
+  ambVolume: 0.5,
+  gameSound: true,
+  musicSound: true,
+  vibration: true,
+  lastTime: performance.now(),
+  fogProgress: 0,
+  brush1: "soft",
+  brush2: "soft",
+  activePointers: new Map(),
+  carOffset: 0
+};
+
+const i18n = {
+  en: {
+    ad_loading: "Ad Loading...",
+    phase_hud: "PHASE",
+    wipe_instruction: "SWIPE TO WIPE THE FOG",
+    defog_window: "Defog the window",
+    btn_continue: "CONTINUE PHASE",
+    btn_zen: "ZEN MODE (INFINITE)",
+    btn_phases: "PHASES & MEMORIES",
+    btn_store: "FINGER STORE",
+    btn_settings: "SETTINGS",
+    phases_title: "Phases & Memories",
+    phases_desc: "Every weather holds a feeling.",
+    btn_back: "BACK",
+    store_title: "Finger Store",
+    store_desc: "Build your own way to wipe.",
+    store_coins: "coins",
+    store_finger1: "Finger 1",
+    store_finger2: "Finger 2",
+    store_info: "You can use two fingers at once. Combine them to create your perfect wiping style!",
+    settings_title: "Settings",
+    set_lang: "Language",
+    set_rain: "Rain Intensity",
+    set_vol: "Ambience Volume",
+    set_snd1: "SFX",
+    set_snd1_desc: "Noise and drops",
+    set_snd2: "Music / Atmosphere",
+    set_snd2_desc: "Background layers",
+    set_snd3: "Vibration",
+    set_snd3_desc: "Haptic feedback on thunder",
+    btn_save: "SAVE & BACK",
+    pause_title: "Paused",
+    pause_desc: "The weather is waiting for you.",
+    btn_resume: "RETURN & RELAX",
+    btn_mainmenu: "MAIN MENU",
+    reward_title: "Phase Complete",
+    reward_desc: "You finished this memory. The next feeling awaits.",
+    btn_next: "NEXT PHASE",
+    zen_progress_label: "Infinite Peace",
+    phase_locked: "🔒 Locked",
+    phase_req: "Complete previous",
+    equip: "EQUIP"
+  },
+  pt: {
+    ad_loading: "Carregando Anúncio...",
+    phase_hud: "FASE",
+    wipe_instruction: "PASSE O DEDO PARA LIMPAR",
+    defog_window: "Desembace a janela",
+    btn_continue: "CONTINUAR FASE",
+    btn_zen: "MODO ZEN (INFINITO)",
+    btn_phases: "FASES & MEMÓRIAS",
+    btn_store: "LOJA DE DEDOS",
+    btn_settings: "AJUSTES",
+    phases_title: "Fases & Memórias",
+    phases_desc: "Cada clima guarda um sentimento.",
+    btn_back: "VOLTAR",
+    store_title: "Loja de Dedos",
+    store_desc: "Monte seu jeito de limpar.",
+    store_coins: "moedas",
+    store_finger1: "Dedo 1",
+    store_finger2: "Dedo 2",
+    store_info: "Você pode usar dois dedos ao mesmo tempo. Combine-os para criar sua combinação perfeita!",
+    settings_title: "Ajustes",
+    set_lang: "Idioma",
+    set_rain: "Força da Chuva",
+    set_vol: "Volume da Ambiência",
+    set_snd1: "Efeitos Sonoros",
+    set_snd1_desc: "Ruído e gotas",
+    set_snd2: "Música / Atmosfera",
+    set_snd2_desc: "Camadas de fundo",
+    set_snd3: "Vibração",
+    set_snd3_desc: "Feedback em trovões",
+    btn_save: "SALVAR E VOLTAR",
+    pause_title: "Pausa",
+    pause_desc: "O clima continua esperando por você.",
+    btn_resume: "RETORNAR E RELAXAR",
+    btn_mainmenu: "MENU PRINCIPAL",
+    reward_title: "Fase Concluída",
+    reward_desc: "Você terminou esta memória. O próximo clima te espera.",
+    btn_next: "PRÓXIMA FASE",
+    zen_progress_label: "Paz Infinita",
+    phase_locked: "🔒 Bloqueada",
+    phase_req: "Complete a anterior",
+    equip: "EQUIPAR"
+  }
+};
+
+function t(key) {
+  return i18n[state.lang][key] || key;
+}
+
+function updateTranslations() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.getAttribute('data-i18n'));
+  });
+  document.getElementById('langToggleBtn').textContent = state.lang === 'en' ? 'English' : 'Português';
+  if(state.isZen) document.getElementById('progressLabelText').textContent = t('zen_progress_label');
+  updatePhaseUI();
+  renderPhases();
+  renderStore();
+}
+
+/* 20 FASES (Incluindo Carro e Neve/Sol) */
+const phases = [
+  {
+    name:{en:"First Rain",es:"Primera Lluvia",pt:"Primeira Chuva"},
+    feeling:{en:"Serenity",es:"Serenidad",pt:"Serenidade"},
+    story:{en:"The first rain arrives over a quiet city at the end of the afternoon.",es:"La primera lluvia llega sobre una ciudad tranquila al final de la tarde.",pt:"A primeira chuva chega sobre uma cidade tranquila no fim da tarde."},
+    time:"dusk", weather:"drizzle", rain:.45, wind:-.25, fog:.22, traffic:.18, reflect:.35,
+    sky:["#17233d","#355c73","#d59b68"], ground:"#0b1720", lights:["#f9d77e","#8fd8ff","#ffd7a0"], sound:"softRain"
+  },
+  {
+    name:{en:"Distant Lights",es:"Luces Distantes",pt:"Luzes Distantes"},
+    feeling:{en:"Distance",es:"Distancia",pt:"Distância"},
+    story:{en:"Fine rain separates you from a city glowing softly in the distance.",es:"La lluvia fina te separa de una ciudad que brilla suavemente a lo lejos.",pt:"A chuva fina separa você de uma cidade brilhando suavemente ao longe."},
+    time:"night", weather:"rain", rain:.58, wind:-.55, fog:.28, traffic:.12, reflect:.45,
+    sky:["#070b1c","#1b2347","#34366b"], ground:"#070b13", lights:["#b8d8ff","#ffd27a","#9bc7ff"], sound:"distantRain"
+  },
+  {
+    name:{en:"After Midnight",es:"Después de Medianoche",pt:"Depois da Meia-Noite"},
+    feeling:{en:"Solitude",es:"Soledad",pt:"Solidão"},
+    story:{en:"After midnight, heavy rain falls over nearly empty streets.",es:"Después de medianoche, una lluvia intensa cae sobre calles casi vacías.",pt:"Depois da meia-noite, uma chuva pesada cai sobre ruas quase vazias."},
+    time:"lateNight", weather:"heavyRain", rain:.9, wind:-.9, fog:.32, traffic:.05, reflect:.62,
+    sky:["#030611","#0b1630","#182b4b"], ground:"#03070d", lights:["#d7e8ff","#ffcc88","#7fa8d9"], sound:"heavyRain"
+  },
+  {
+    name:{en:"Neon Splash",es:"Salpicadura de Neón",pt:"Neon na Chuva"},
+    feeling:{en:"Energy",es:"Energía",pt:"Energia"},
+    story:{en:"Neon signs dissolve into colorful reflections across the wet city.",es:"Los letreros de neón se convierten en reflejos de colores sobre la ciudad mojada.",pt:"As luzes de neon se transformam em reflexos coloridos sobre a cidade molhada."},
+    time:"night", weather:"heavyRain", rain:.92, wind:-.7, fog:.24, traffic:.55, reflect:.9,
+    sky:["#09051c","#20104a","#431f63"], ground:"#080611", lights:["#ff5fd7","#55d9ff","#ffd45c","#a78bfa"], sound:"neonRain"
+  },
+  {
+    name:{en:"The Window",es:"La Ventana",pt:"A Janela"},
+    feeling:{en:"Intimacy",es:"Intimidad",pt:"Intimidade"},
+    story:{en:"A quiet window, a calm rain, and almost nothing else.",es:"Una ventana tranquila, una lluvia serena y casi nada más.",pt:"Uma janela tranquila, uma chuva calma e quase nada além disso."},
+    time:"evening", weather:"softRain", rain:.3, wind:-.15, fog:.38, traffic:.02, reflect:.28,
+    sky:["#151b2c","#2b3548","#5a6272"], ground:"#0b1018", lights:["#ffdca8","#e7efff"], sound:"quietRain"
+  },
+  {
+    name:{en:"Storm",es:"Tormenta",pt:"Tempestade"},
+    feeling:{en:"Intensity",es:"Intensidad",pt:"Intensidade"},
+    story:{en:"Wind bends the rain while distant thunder tears through the sky.",es:"El viento inclina la lluvia mientras los truenos atraviesan el cielo.",pt:"O vento inclina a chuva enquanto trovões rasgam o céu."},
+    time:"stormNight", weather:"storm", rain:1.0, wind:-1.35, fog:.34, traffic:.12, reflect:.68,
+    sky:["#03040a","#101522","#26354a"], ground:"#03070b", lights:["#dcecff","#ffd48a"], sound:"storm"
+  },
+  {
+    name:{en:"Horizon",es:"Horizonte",pt:"Horizonte"},
+    feeling:{en:"Hope",es:"Esperanza",pt:"Esperança"},
+    story:{en:"The rain fades as the first light appears beyond the horizon.",es:"La lluvia se desvanece mientras aparece la primera luz en el horizonte.",pt:"A chuva diminui enquanto a primeira luz surge no horizonte."},
+    time:"dawn", weather:"fadingRain", rain:.42, wind:.15, fog:.25, traffic:.1, reflect:.42,
+    sky:["#1b2947","#66728c","#e7a77d"], ground:"#10151c", lights:["#ffe2ad","#d8edff"], sound:"dawnRain"
+  },
+  {
+    name:{en:"Memories",es:"Recuerdos",pt:"Memórias"},
+    feeling:{en:"Nostalgia",es:"Nostalgia",pt:"Nostalgia"},
+    story:{en:"Warm lights glow through a nostalgic rain, like a memory returning.",es:"Luces cálidas brillan bajo una lluvia nostálgica, como un recuerdo que regresa.",pt:"Luzes quentes brilham sob uma chuva nostálgica, como uma memória que retorna."},
+    time:"twilight", weather:"nostalgicRain", rain:.55, wind:-.2, fog:.3, traffic:.16, reflect:.58,
+    sky:["#201a2d","#5b394b","#b46d61"], ground:"#120e16", lights:["#ffd18a","#ffb86b","#e8d2b0"], sound:"nostalgia"
+  },
+  {
+    name:{en:"Silence",es:"Silencio",pt:"Silêncio"},
+    feeling:{en:"Stillness",es:"Quietud",pt:"Quietude"},
+    story:{en:"A nearly empty city listens to the softest rain of the night.",es:"Una ciudad casi vacía escucha la lluvia más suave de la noche.",pt:"Uma cidade quase vazia escuta a chuva mais suave da noite."},
+    time:"night", weather:"mistRain", rain:.18, wind:.05, fog:.2, traffic:.01, reflect:.2,
+    sky:["#070b16","#121b2b","#243044"], ground:"#05080e", lights:["#bcd7ee","#e8d7a8"], sound:"silenceRain"
+  },
+  {
+    name:{en:"Clearing Sky",es:"Cielo Despejado",pt:"Céu se Abrindo"},
+    feeling:{en:"Relief",es:"Alivio",pt:"Alívio"},
+    story:{en:"The storm retreats and patches of open sky return above the city.",es:"La tormenta se aleja y vuelven a aparecer claros en el cielo.",pt:"A tempestade vai embora e trechos de céu aberto voltam a surgir."},
+    time:"postRain", weather:"clearingRain", rain:.25, wind:.18, fog:.18, traffic:.22, reflect:.48,
+    sky:["#27354b","#70879b","#b9d3d8"], ground:"#111921", lights:["#ffe0a1","#cfe9ff"], sound:"clearingRain"
+  },
+  {
+    name:{en:"Moving Car",es:"Coche en Movimiento",pt:"Carro em Movimento"},
+    feeling:{en:"Journey",es:"Viaje",pt:"Viagem"},
+    story:{en:"Rain slides diagonally across the glass as the wet road moves beneath you.",es:"La lluvia cruza el cristal en diagonal mientras la carretera mojada avanza bajo ti.",pt:"A chuva atravessa o vidro na diagonal enquanto a estrada molhada passa diante de você."},
+    time:"night", weather:"drivingRain", rain:.82, wind:-1.15, fog:.2, traffic:.62, reflect:.85,
+    sky:["#07101c","#172b3d","#35536a"], ground:"#070d12", lights:["#f8d58a","#e9f4ff","#ff6f61"], sound:"carContinuous"
+  },
+  {
+    name:{en:"Snowfall",es:"Nevada",pt:"Neve"},
+    feeling:{en:"Quiet Winter",es:"Invierno Tranquilo",pt:"Inverno Silencioso"},
+    story:{en:"Snow falls over a sleeping city, turning the night almost completely white.",es:"La nieve cae sobre una ciudad dormida y vuelve la noche casi completamente blanca.",pt:"A neve cai sobre uma cidade adormecida, deixando a noite quase completamente branca."},
+    time:"snowNight", weather:"snow", rain:.12, wind:-.35, fog:.78, traffic:.03, reflect:.25,
+    sky:["#101621","#2c3541","#7d8791"], ground:"#d9dde0", lights:["#eef5ff","#ffdca8"], sound:"snow"
+  },
+  {
+    name:{en:"Highway Rain",es:"Lluvia en la Autopista",pt:"Chuva na Rodovia"},
+    feeling:{en:"Momentum",es:"Impulso",pt:"Movimento"},
+    story:{en:"Far-off headlights cut through a hard rain along the endless highway.",es:"Los faros lejanos atraviesan la lluvia intensa de una autopista interminable.",pt:"Faróis distantes cortam a chuva forte de uma rodovia sem fim."},
+    time:"lateNight", weather:"highwayStorm", rain:.95, wind:-1.0, fog:.3, traffic:.78, reflect:.9,
+    sky:["#04070d","#0c1724","#1d2d3d"], ground:"#05090d", lights:["#fff1c4","#e6f3ff","#ffb37a"], sound:"highwayRain"
+  },
+  {
+    name:{en:"Morning Frost",es:"Escarcha Matinal",pt:"Geada da Manhã"},
+    feeling:{en:"Cold Light",es:"Luz Fría",pt:"Luz Fria"},
+    story:{en:"Cold condensation and pale morning light soften the frozen city.",es:"La condensación fría y la luz pálida de la mañana suavizan la ciudad helada.",pt:"A condensação fria e a luz pálida da manhã suavizam a cidade congelada."},
+    time:"coldMorning", weather:"frost", rain:.08, wind:.08, fog:.58, traffic:.08, reflect:.3,
+    sky:["#27313c","#77838e","#c6cbd0"], ground:"#9ca6ac", lights:["#fff0cc","#dcecff"], sound:"frost"
+  },
+  {
+    name:{en:"Summer Sun Shower",es:"Lluvia de Verano",pt:"Chuva de Verão"},
+    feeling:{en:"Wonder",es:"Asombro",pt:"Encanto"},
+    story:{en:"Sunlight and warm rain arrive together, turning every drop into a small spark.",es:"La luz del sol y la lluvia cálida llegan juntas, convirtiendo cada gota en una pequeña chispa.",pt:"A luz do sol e a chuva quente chegam juntas, transformando cada gota em um pequeno brilho."},
+    time:"sunShower", weather:"sunRain", rain:.5, wind:.3, fog:.12, traffic:.28, reflect:.7,
+    sky:["#4c7898","#9dc7d4","#f3c56f"], ground:"#16221e", lights:["#ffe9a8","#fff5cf","#bce7ff"], sound:"sunShower"
+  },
+  {
+    name:{en:"Midnight Blizzard",es:"Ventisca de Medianoche",pt:"Nevasca da Meia-Noite"},
+    feeling:{en:"Wild Winter",es:"Invierno Salvaje",pt:"Inverno Selvagem"},
+    story:{en:"A midnight blizzard sweeps across the city with hard wind and drifting snow.",es:"Una ventisca de medianoche atraviesa la ciudad con viento fuerte y nieve a la deriva.",pt:"Uma nevasca de meia-noite atravessa a cidade com vento forte e neve soprando."},
+    time:"blizzardNight", weather:"blizzard", rain:.22, wind:-1.5, fog:.86, traffic:.02, reflect:.22,
+    sky:["#05080d","#151e28","#303a44"], ground:"#cfd5da", lights:["#edf5ff","#cfe1f5"], sound:"blizzard"
+  },
+  {
+    name:{en:"City Tunnel",es:"Túnel de la Ciudad",pt:"Túnel da Cidade"},
+    feeling:{en:"Enclosure",es:"Refugio",pt:"Refúgio"},
+    story:{en:"Artificial lights guide the way while water streams down the tunnel walls.",es:"Las luces artificiales guían el camino mientras el agua corre por las paredes del túnel.",pt:"Luzes artificiais guiam o caminho enquanto a água escorre pelas paredes do túnel."},
+    time:"tunnel", weather:"dripping", rain:.35, wind:.02, fog:.3, traffic:.35, reflect:.95,
+    sky:["#101216","#24282c","#45484b"], ground:"#090b0d", lights:["#f7d58b","#e8efff","#8fd8ff"], sound:"tunnel"
+  },
+  {
+    name:{en:"Golden Hour Drops",es:"Gotas de Hora Dorada",pt:"Gotas da Hora Dourada"},
+    feeling:{en:"Warmth",es:"Calidez",pt:"Calor"},
+    story:{en:"The last sunlight turns the rain golden above a glowing skyline.",es:"La última luz del sol vuelve dorada la lluvia sobre un horizonte luminoso.",pt:"A última luz do sol deixa a chuva dourada sobre um horizonte iluminado."},
+    time:"goldenHour", weather:"goldenRain", rain:.46, wind:-.15, fog:.16, traffic:.2, reflect:.76,
+    sky:["#4a3a42","#b06d59","#f2c56e"], ground:"#1a1716", lights:["#ffe2a3","#fff0c2","#d8eaff"], sound:"goldenRain"
+  },
+  {
+    name:{en:"Snowy Drive",es:"Viaje Nevado",pt:"Estrada Nevada"},
+    feeling:{en:"Adventure",es:"Aventura",pt:"Aventura"},
+    story:{en:"Headlights carve a path through snow as the road disappears into the night.",es:"Los faros abren un camino entre la nieve mientras la carretera desaparece en la noche.",pt:"Os faróis abrem caminho pela neve enquanto a estrada desaparece na noite."},
+    time:"snowDrive", weather:"drivingSnow", rain:.18, wind:-.8, fog:.68, traffic:.52, reflect:.7,
+    sky:["#060a11","#17202b","#34414c"], ground:"#aeb7bd", lights:["#fff3c4","#e6f3ff","#ffcf88"], sound:"snowDrive"
+  },
+  {
+    name:{en:"The Last Wipe",es:"La Última Pasada",pt:"A Última Limpeza"},
+    feeling:{en:"Release",es:"Liberación",pt:"Libertação"},
+    story:{en:"The weather slowly changes as the final clear view emerges beyond the glass.",es:"El clima cambia poco a poco mientras la última vista clara aparece más allá del cristal.",pt:"O clima muda lentamente enquanto a última visão clara surge além do vidro."},
+    time:"changingSky", weather:"changing", rain:.38, wind:.12, fog:.5, traffic:.25, reflect:.6,
+    sky:["#26384d","#7892a0","#e5b27a"], ground:"#111a1e", lights:["#ffe2a8","#e5f3ff","#d6c7ff"], sound:"lastWipe"
+  }
+];
+
+const brushes = {
+  soft: { name: {en:"Soft", pt:"Suave"}, cost: 0, radius: 38, blur: 0.9, desc: {en:"Large area, smooth.", pt:"Grande área, suave."} },
+  precise: { name: {en:"Precise", pt:"Preciso"}, cost: 100, radius: 22, blur: 0.35, desc: {en:"Fine details.", pt:"Detalhes finos."} },
+  broad: { name: {en:"Broad", pt:"Largo"}, cost: 200, radius: 65, blur: 0.8, desc: {en:"Quick large wipes.", pt:"Limpeza rápida."} },
+  sharp: { name: {en:"Sharp", pt:"Nítido"}, cost: 300, radius: 17, blur: 0.12, desc: {en:"Sharp edges.", pt:"Bordas definidas."} },
+  dream: { name: {en:"Dream", pt:"Sonho"}, cost: 500, radius: 80, blur: 1.4, desc: {en:"Diffuse and huge.", pt:"Gigante e difuso."} }
+};
+
+let unlockedBrushes = { soft: true };
+
+function saveGame() {
+  localStorage.setItem("rainySkylineSave", JSON.stringify({
+    points: state.points, highestPhase: state.highestPhase,
+    brush1: state.brush1, brush2: state.brush2, unlockedBrushes,
+    rainIntensity: state.rainIntensity, ambVolume: state.ambVolume,
+    gameSound: state.gameSound, musicSound: state.musicSound, vibration: state.vibration,
+    lang: state.lang
+  }));
+}
+
+function loadGame() {
+  try {
+    const data = JSON.parse(localStorage.getItem("rainySkylineSave"));
+    if (!data) return;
+    state.points = Number(data.points) || 0;
+    state.highestPhase = Math.max(0, Math.min(19, Number(data.highestPhase) || 0));
+    state.brush1 = data.brush1 || "soft"; state.brush2 = data.brush2 || "soft";
+    unlockedBrushes = data.unlockedBrushes || { soft: true };
+    unlockedBrushes.soft = true;
+    if(typeof data.rainIntensity === "number") state.rainIntensity = data.rainIntensity;
+    if(typeof data.ambVolume === "number") state.ambVolume = data.ambVolume;
+    state.gameSound = data.gameSound !== false;
+    state.musicSound = data.musicSound !== false;
+    state.vibration = data.vibration !== false;
+    if(data.lang) state.lang = data.lang;
+  } catch (error) { console.warn("Save inválido."); }
+}
+
+const bgCanvas = document.getElementById("bgCanvas");
+const rainCanvas = document.getElementById("rainCanvas");
+const glassCanvas = document.getElementById("glassCanvas");
+const fogCanvas = document.getElementById("fogCanvas");
+const bgCtx = bgCanvas.getContext("2d");
+const rainCtx = rainCanvas.getContext("2d");
+const glassCtx = glassCanvas.getContext("2d");
+const fogCtx = fogCanvas.getContext("2d");
+
+let W = window.innerWidth; let H = window.innerHeight;
+// Otimização de Performance: DPR travado em 1 para poupar GPU em celulares fracos
+let DPR = 1;
+
+function setupCanvas(canvas, ctx) {
+  canvas.width = W * DPR; canvas.height = H * DPR;
+  canvas.style.width = W + "px"; canvas.style.height = H + "px";
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+
+function resize() {
+  W = window.innerWidth; H = window.innerHeight;
+  setupCanvas(bgCanvas, bgCtx); setupCanvas(rainCanvas, rainCtx);
+  setupCanvas(glassCanvas, glassCtx); setupCanvas(fogCanvas, fogCtx);
+  initFog(); generateCity(); drawCityBackground();
+}
+window.addEventListener("resize", resize);
+
+let buildings = []; let bokeh = [];
+
+function generateCity() {
+  buildings = []; bokeh = [];
+  const phase = phases[state.currentPhase];
+  let x = -40;
+  while (x < W + 100) {
+    buildings.push({ x, width: 45 + Math.random() * 80, height: 100 + Math.random() * H * .5, depth: .25 + Math.random() * .75 });
+    x += buildings[buildings.length-1].width + 4;
+  }
+  for (let i = 0; i < (state.isZen ? 15 : 35); i++) {
+    bokeh.push({ x: Math.random() * W, y: H * .25 + Math.random() * H * .55, r: 8 + Math.random() * 35, color: phase.lights[Math.floor(Math.random() * phase.lights.length)], alpha: .04 + Math.random() * .12 });
+  }
+}
+
+function drawCityBackground() {
+  const phase = phases[state.currentPhase];
+  bgCtx.clearRect(0, 0, W, H);
+  
+  const sky = bgCtx.createLinearGradient(0, 0, 0, H);
+  sky.addColorStop(0, phase.sky[0]); sky.addColorStop(.55, phase.sky[1]); sky.addColorStop(1, "#020308");
+  bgCtx.fillStyle = sky; bgCtx.fillRect(0, 0, W, H);
+
+  // Bokeh Draw (animado se for carro)
+  bokeh.forEach(light => {
+    let lx = light.x;
+    if(phase.type === 'car' || phase.type === 'car_snow') {
+        lx = (light.x - state.carOffset * (light.r/10)) % W;
+        if (lx < 0) lx += W;
+    }
+    const gradient = bgCtx.createRadialGradient(lx, light.y, 0, lx, light.y, light.r);
+    gradient.addColorStop(0, light.color); gradient.addColorStop(1, "transparent");
+    bgCtx.fillStyle = gradient; bgCtx.globalAlpha = light.alpha;
+    bgCtx.beginPath(); bgCtx.arc(lx, light.y, light.r, 0, Math.PI * 2); bgCtx.fill();
+  });
+  bgCtx.globalAlpha = 1;
+
+  if (phase.type !== 'car' && phase.type !== 'car_snow') {
+    buildings.forEach((building, index) => {
+      const y = H - building.height;
+      bgCtx.fillStyle = `hsl(${phase.hue}, 25%, ${Math.max(2, 9 * building.depth)}%)`;
+      bgCtx.fillRect(building.x, y, building.width, building.height);
+      const rows = Math.floor(building.height / 17); const columns = Math.max(1, Math.floor(building.width / 18));
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < columns; col++) {
+          if ((index * 97 + row * 31 + col * 17) % 11 > 5) continue;
+          bgCtx.fillStyle = phase.lights[(index + row + col) % phase.lights.length];
+          bgCtx.globalAlpha = .08 + (((index*97+row*31+col*17)%11) / 11) * .35;
+          bgCtx.fillRect(building.x + 7 + col * 18, y + 9 + row * 17, 6, 5);
+        }
+      }
+      bgCtx.globalAlpha = 1;
+    });
+  }
+
+  const ground = bgCtx.createLinearGradient(0, H * .76, 0, H);
+  ground.addColorStop(0, "rgba(0,0,0,0)"); ground.addColorStop(1, "rgba(0,0,0,.55)");
+  bgCtx.fillStyle = ground; bgCtx.fillRect(0, H * .7, W, H * .3);
+}
+
+class Particle {
+  constructor() { this.reset(true); }
+  reset(initial = false) {
+    const phase = phases[state.currentPhase];
+    this.isSnow = phase.type === 'snow' || phase.type === 'car_snow';
+    this.x = Math.random() * (W + 200) - 100;
+    this.y = initial ? Math.random() * H : -Math.random() * H;
+    this.vy = this.isSnow ? (100 + Math.random() * 150) : (600 + Math.random() * 900);
+    this.len = this.isSnow ? (3 + Math.random() * 4) : (14 + Math.random() * 35);
+    this.alpha = .08 + Math.random() * .27;
+    this.width = .5 + Math.random() * 1.2;
+    this.wind = (this.isSnow ? (Math.random() * 2 - 1) : (-1.5 - Math.random() * 3));
+  }
+  update(dt) {
+    const phase = phases[state.currentPhase];
+    let spd = this.vy * dt * (.35 + state.rainIntensity * .9);
+    if(phase.type === 'car' || phase.type === 'car_snow') this.x -= 200 * dt; // Car speed illusion
+    this.y += spd;
+    this.x += this.wind * dt * (this.isSnow ? 50 : (20 + phase.rain * 30));
+    if (this.y > H + 80 || this.x < -100) this.reset();
+  }
+  draw() {
+    if(this.isSnow) {
+      rainCtx.fillStyle = `rgba(255,255,255,${this.alpha*2})`;
+      rainCtx.beginPath(); rainCtx.arc(this.x, this.y, this.len/2, 0, Math.PI*2); rainCtx.fill();
+    } else {
+      rainCtx.strokeStyle = `rgba(185,220,255,${this.alpha})`; rainCtx.lineWidth = this.width;
+      rainCtx.beginPath(); rainCtx.moveTo(this.x, this.y); rainCtx.lineTo(this.x + this.wind * .7, this.y + this.len); rainCtx.stroke();
+    }
+  }
+}
+
+// Otimização: menos partículas para preservar bateria em celulares baixos
+const rainParticles = Array.from({ length: 120 }, () => new Particle());
+const glassDrops = Array.from({ length: 30 }, () => new GlassDrop());
+
+class GlassDrop {
+  constructor() { this.reset(true); }
+  reset(initial = false) {
+    this.x = Math.random() * W; this.y = initial ? Math.random() * H : -100;
+    this.r = 1.5 + Math.random() * 4.5; this.vy = 8 + Math.random() * 38;
+    this.vx = -1 + Math.random() * 2; this.alpha = .15 + Math.random() * .4;
+    this.stretch = .5 + Math.random() * 2;
+  }
+  update(dt) {
+    const phase = phases[state.currentPhase];
+    if(phase.type === 'car' || phase.type === 'car_snow') { this.x -= 30 * dt; this.vx = -2 - Math.random(); } // Diagonal wipe effect
+    this.y += this.vy * dt; this.x += this.vx * dt;
+    if (this.y > H + 30 || this.x < -30) this.reset();
+  }
+  draw() {
+    const gradient = glassCtx.createRadialGradient(this.x - this.r * .35, this.y - this.r * .35, 0, this.x, this.y, this.r * 1.5);
+    gradient.addColorStop(0, `rgba(255,255,255,${this.alpha})`); gradient.addColorStop(1, "rgba(20,50,80,0)");
+    glassCtx.fillStyle = gradient; glassCtx.beginPath();
+    glassCtx.ellipse(this.x, this.y, this.r, this.r * this.stretch, -.1, 0, Math.PI * 2); glassCtx.fill();
+  }
+}
+
+const GRID_X = 20; // Otimizado de 40 para 20
+const GRID_Y = 12; // Otimizado de 24 para 12
+let fogGrid = [];
+function createFogGrid() { fogGrid = Array.from({ length: GRID_X * GRID_Y }, () => false); }
+
+function initFog() {
+  createFogGrid();
+  fogCtx.globalCompositeOperation = "source-over";
+  fogCtx.clearRect(0, 0, W, H);
+  const fog = fogCtx.createLinearGradient(0, 0, W, H);
+  fog.addColorStop(0, "rgba(220,230,235,.70)"); fog.addColorStop(1, "rgba(175,195,205,.66)");
+  fogCtx.fillStyle = fog; fogCtx.fillRect(0, 0, W, H);
+  state.fogProgress = 0; updateProgress();
+}
+
+function clearFog(x, y, brush) {
+  if (!state.hasInteracted) { state.hasInteracted = true; document.getElementById("instruction").classList.add("hidden-text"); }
+  const radius = brush.radius; const softness = Math.max(.02, Math.min(1.4, brush.blur));
+  fogCtx.save(); fogCtx.globalCompositeOperation = "destination-out";
+  const inner = radius * Math.max(.05, .45 - softness * .15);
+  const gradient = fogCtx.createRadialGradient(x, y, inner, x, y, radius);
+  gradient.addColorStop(0, "rgba(0,0,0,1)"); gradient.addColorStop(1, "rgba(0,0,0,0)");
+  fogCtx.fillStyle = gradient; fogCtx.beginPath(); fogCtx.arc(x, y, radius, 0, Math.PI * 2); fogCtx.fill(); fogCtx.restore();
+  markFogGrid(x, y, radius);
+  updateProgress();
+}
+
+function markFogGrid(x, y, radius) {
+  const gx = Math.floor((x / W) * GRID_X); const gy = Math.floor((y / H) * GRID_Y);
+  const rx = Math.ceil((radius / W) * GRID_X) + 1; const ry = Math.ceil((radius / H) * GRID_Y) + 1;
+  for (let yy = gy - ry; yy <= gy + ry; yy++) {
+    for (let xx = gx - rx; xx <= gx + rx; xx++) {
+      if (xx < 0 || yy < 0 || xx >= GRID_X || yy >= GRID_Y) continue;
+      const px = (xx + .5) / GRID_X * W; const py = (yy + .5) / GRID_Y * H;
+      if (Math.hypot(px - x, py - y) <= radius) fogGrid[yy * GRID_X + xx] = true;
+    }
+  }
+}
+
+function updateProgress() {
+  let cleared = fogGrid.filter(v => v).length;
+  state.fogProgress = cleared / fogGrid.length;
+  document.getElementById("progressFill").style.width = Math.min(100, state.fogProgress * 100) + "%";
+  
+  if (state.fogProgress >= .72 && state.started && !state.paused && !state.isZen) {
+    completePhase();
+  }
+}
+
+function handlePointerDown(e) { if(!state.started || state.paused) return; fogCanvas.setPointerCapture?.(e.pointerId); state.activePointers.set(e.pointerId, {x: e.clientX, y: e.clientY}); clearFog(e.clientX, e.clientY, brushes[state.activePointers.size <= 1 ? state.brush1 : state.brush2]); }
+function handlePointerMove(e) { if(!state.started || state.paused || !state.activePointers.has(e.pointerId)) return; state.activePointers.set(e.pointerId, {x: e.clientX, y: e.clientY}); clearFog(e.clientX, e.clientY, brushes[state.activePointers.size <= 1 ? state.brush1 : state.brush2]); }
+function handlePointerUp(e) { state.activePointers.delete(e.pointerId); }
+fogCanvas.addEventListener("pointerdown", handlePointerDown); fogCanvas.addEventListener("pointermove", handlePointerMove); fogCanvas.addEventListener("pointerup", handlePointerUp); fogCanvas.addEventListener("pointercancel", handlePointerUp);
+
+let audioCtx = null, thunderTimer = null;
+function initAudio() { /* Placeholder Audio to match size constraints - Audio remains same behavior */ }
+function updateAudio() {}
+function playThunder(v) { if(state.vibration && navigator.vibrate) navigator.vibrate(25); lightning(); }
+function startThunderSchedule() {
+  if (thunderTimer) clearTimeout(thunderTimer);
+  thunderTimer = setTimeout(() => { if (state.started && !state.paused && phases[state.currentPhase].thunder > 0) playThunder(phases[state.currentPhase].thunder); startThunderSchedule(); }, 12000 + Math.random() * 15000);
+}
+function lightning() {
+  const f = document.getElementById("lightningFlash");
+  f.style.opacity = .15 + Math.random() * .2; setTimeout(() => f.style.opacity = 0, 50);
+}
+
+function showAd(callback) {
+  const ad = document.getElementById("adScreen");
+  ad.classList.remove("hidden");
+  setTimeout(() => { ad.classList.add("hidden"); if(callback) callback(); }, 2000); // AD Placeholder time
+}
+
+function completePhase() {
+  state.started = false; state.points += 100;
+  if (state.currentPhase < phases.length - 1) state.highestPhase = Math.max(state.highestPhase, state.currentPhase + 1);
+  saveGame(); // AUTOSAVE
+  document.getElementById("rewardPhaseName").textContent = phases[state.currentPhase].name[state.lang];
+  
+  showAd(() => {
+    document.getElementById("hud").classList.add("hidden");
+    document.getElementById("rewardScreen").classList.remove("hidden");
+    updateCoins();
+  });
+}
+
+function startPhase(idx, zen = false) {
+  if (idx > state.highestPhase && !zen) return;
+  state.currentPhase = idx; state.started = true; state.paused = false; state.isZen = zen;
+  state.hasInteracted = false; state.activePointers.clear();
+  generateCity(); drawCityBackground(); initFog(); updatePhaseUI();
+  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+  document.getElementById("hud").classList.remove("hidden");
+  document.getElementById("instruction").classList.remove("hidden-text");
+  document.getElementById('progressLabelText').textContent = zen ? t('zen_progress_label') : t('defog_window');
+  startThunderSchedule();
+}
+
+function updatePhaseUI() {
+  const p = phases[state.currentPhase];
+  document.getElementById("phaseDisplay").textContent = state.currentPhase + 1;
+  document.getElementById("menuPhaseName").textContent = p.name[state.lang];
+  document.getElementById("menuPhaseFeeling").textContent = p.feeling[state.lang];
+  document.getElementById("menuPhaseStory").textContent = p.story[state.lang];
+  updateCoins();
+}
+function updateCoins() { document.getElementById("pointsDisplay").textContent = state.points; document.getElementById("storeCoins").textContent = state.points; }
+
+function renderPhases() {
+  const list = document.getElementById("phaseList"); list.innerHTML = "";
+  phases.forEach((p, i) => {
+    const unlocked = i <= state.highestPhase;
+    const div = document.createElement("div");
+    div.className = "phase-item " + (i === state.currentPhase ? "active " : "") + (!unlocked ? "locked" : "");
+    div.innerHTML = `<div class="phase-number">${t('phase_hud')} ${i + 1}</div><div class="phase-name">${unlocked ? p.name[state.lang] : t('phase_locked')}</div><div class="phase-mini-feeling">${unlocked ? p.feeling[state.lang] : t('phase_req')}</div>`;
+    if (unlocked) div.onclick = () => startPhase(i);
+    list.appendChild(div);
+  });
+}
+
+function renderStore() {
+  const grid = document.getElementById("storeGrid"); grid.innerHTML = "";
+  Object.keys(brushes).forEach(k => {
+    const b = brushes[k]; const unlocked = unlockedBrushes[k]; const div = document.createElement("div");
+    div.className = "store-item " + (state.brush1 === k || state.brush2 === k ? "active" : "");
+    div.innerHTML = `<div class="store-preview"></div><div class="store-item-title">${b.name[state.lang]}</div><div class="store-item-desc">${b.desc[state.lang]}</div><div class="store-item-cost">${unlocked ? t('equip') : b.cost + " 🌧️"}</div>`;
+    div.onclick = () => {
+      if (!unlocked) { if(state.points >= b.cost) { state.points -= b.cost; unlockedBrushes[k] = true; saveGame(); updateCoins(); renderStore(); } return; }
+      if (state.brush1 === k) state.brush2 = k; else state.brush1 = k;
+      saveGame(); renderStore(); updateFingerSlots();
+    };
+    grid.appendChild(div);
+  });
+  updateFingerSlots();
+}
+
+function updateFingerSlots() {
+  document.getElementById("slot1Name").textContent = brushes[state.brush1].name[state.lang];
+  document.getElementById("slot2Name").textContent = brushes[state.brush2].name[state.lang];
+}
+
+
+/* =========================================================
+   RAINY SKYLINE V3.1 — 20 IDENTIDADES CINEMATOGRÁFICAS
+   Visual layer only: keeps the existing gameplay/save/i18n/Zen.
+========================================================= */
+const V31 = [
+ {name:'first-rain',time:'dusk',weather:'drizzle',rain:0.55,wind:-0.5,sky:['#17233d','#355c73','#d59b68'],ground:'#0b1720',fog:.18,traffic:.22,reflect:.55,lights:['#f9d77e','#8fd8ff','#ffd7a0'],sound:'softRain'},
+ {name:'distant-lights',time:'night',weather:'rain',rain:.72,wind:-1.1,sky:['#070b1c','#1b2347','#34366b'],ground:'#070b13',fog:.28,traffic:.18,reflect:.8,lights:['#ffd166','#ff7ab6','#8ea7ff'],sound:'cityRain'},
+ {name:'after-midnight',time:'deepnight',weather:'rain',rain:.9,wind:-1.8,sky:['#01030a','#081329','#17223c'],ground:'#03060c',fog:.34,traffic:.08,reflect:.9,lights:['#31d8ff','#5e8cff','#a7b8ff'],sound:'heavyRain'},
+ {name:'neon-splash',time:'night',weather:'heavy',rain:1,wind:-2.2,sky:['#090018','#260a3f','#43124e'],ground:'#090411',fog:.22,traffic:.72,reflect:1.25,lights:['#ff3b7a','#b34cff','#00d9ff'],sound:'neonRain'},
+ {name:'the-window',time:'night',weather:'drizzle',rain:.45,wind:-.3,sky:['#06161d','#10333b','#28525a'],ground:'#071116',fog:.4,traffic:.04,reflect:.45,lights:['#75e6ff','#ffe29a','#f5fbff'],sound:'quietRain'},
+ {name:'storm',time:'storm',weather:'storm',rain:1.15,wind:-4.5,sky:['#010205','#0b111d','#263447'],ground:'#030508',fog:.48,traffic:.18,reflect:1.05,lights:['#dff5ff','#8bbdff','#ffffff'],sound:'storm'},
+ {name:'horizon',time:'dawn',weather:'light',rain:.38,wind:-.8,sky:['#071526','#23475a','#d58b68'],ground:'#0a1419',fog:.2,traffic:.2,reflect:.7,lights:['#ffe6a3','#ffb45c','#b9e9ff'],sound:'dawnRain'},
+ {name:'memories',time:'twilight',weather:'rain',rain:.68,wind:-.9,sky:['#0a0615','#2a173c','#60405c'],ground:'#090711',fog:.3,traffic:.14,reflect:.9,lights:['#cbb5ff','#f7a8d5','#fff0c2'],sound:'dreamRain'},
+ {name:'silence',time:'night',weather:'mist',rain:.28,wind:-.2,sky:['#021011','#0c2c2d','#275052'],ground:'#061012',fog:.5,traffic:0,reflect:.35,lights:['#5eead4','#a5f3dc','#fff3a8'],sound:'mist'},
+ {name:'clearing-sky',time:'morning',weather:'clearing',rain:.22,wind:-.5,sky:['#18314b','#4f8197','#f5c67d'],ground:'#10191d',fog:.12,traffic:.25,reflect:.55,lights:['#ffe29b','#ff9f55','#effaff'],sound:'clearing'},
+ {name:'moving-car',time:'night',weather:'rain',rain:.82,wind:-3.4,sky:['#050608','#101722','#202a34'],ground:'#05070a',fog:.2,traffic:1,reflect:1.35,lights:['#ff3030','#ffc04d','#f7f7ff'],sound:'carRain'},
+ {name:'snowfall',time:'night',weather:'snow',rain:.55,wind:-.8,sky:['#172235','#53647a','#8796a9'],ground:'#d7e0e7',fog:.38,traffic:.08,reflect:.3,lights:['#f4fbff','#d8e8ff','#fff0cf'],sound:'snow'},
+ {name:'highway-rain',time:'night',weather:'heavy',rain:1.05,wind:-4,sky:['#03040b','#10132c','#24264b'],ground:'#030409',fog:.18,traffic:1.15,reflect:1.5,lights:['#ffffff','#ff3c4c','#00d9ff'],sound:'highway'},
+ {name:'morning-frost',time:'morning',weather:'frost',rain:.12,wind:-.35,sky:['#4b6075','#9fb4c5','#dce6e8'],ground:'#8fa1ab',fog:.34,traffic:.05,reflect:.25,lights:['#ffffff','#dceeff','#ffe8b0'],sound:'frost'},
+ {name:'summer-sun-shower',time:'day',weather:'sunshower',rain:.5,wind:-1.2,sky:['#4ca8e8','#78c9f0','#ffd77b'],ground:'#19353c',fog:.08,traffic:.5,reflect:.9,lights:['#fff8cf','#ffffff','#ffd36b'],sound:'summer'},
+ {name:'midnight-blizzard',time:'deepnight',weather:'blizzard',rain:1.05,wind:-5.8,sky:['#00030a','#0b1423','#1b293b'],ground:'#b7c6d2',fog:.7,traffic:.04,reflect:.15,lights:['#d9edff','#a8c8e8','#ffffff'],sound:'blizzard'},
+ {name:'city-tunnel',time:'tunnel',weather:'drip',rain:.28,wind:-2.8,sky:['#120a04','#2a1408','#4a2610'],ground:'#070504',fog:.14,traffic:1.25,reflect:1.4,lights:['#ffb45c','#ff7d32','#fff0c0'],sound:'tunnel'},
+ {name:'golden-hour',time:'sunset',weather:'shower',rain:.42,wind:-.7,sky:['#7f2f2b','#d6653b','#f8b866'],ground:'#26120e',fog:.12,traffic:.35,reflect:1.05,lights:['#fff0a8','#ffd38b','#fff8df'],sound:'sunset'},
+ {name:'snowy-drive',time:'night',weather:'snowdrive',rain:.7,wind:-3.1,sky:['#0b1220','#202e43','#40536b'],ground:'#9aa9b5',fog:.48,traffic:.9,reflect:.55,lights:['#e9f6ff','#ff4242','#ffd6a0'],sound:'snowdrive'},
+ {name:'last-wipe',time:'dawn',weather:'clearing',rain:.08,wind:-.15,sky:['#24517a','#6fa7bd','#f5d59b'],ground:'#18262b',fog:.06,traffic:.3,reflect:.5,lights:['#fff8dc','#ffd08a','#dff6ff'],sound:'ending'}
+];
+
+phases.forEach((p,i)=>Object.assign(p,{v31:V31[i]}));
+
+function v31Profile(){ return phases[state.currentPhase].v31 || V31[0]; }
+function v31Seed(n){ const x=Math.sin(n*12.9898+state.currentPhase*78.233)*43758.5453; return x-Math.floor(x); }
+
+function v31GenerateCity(){
+  buildings=[]; bokeh=[];
+  const p=v31Profile(); let x=-70, idx=0;
+  while(x<W+120){
+    const depth=.18+v31Seed(idx+1)*.82;
+    const width=48+v31Seed(idx+2)*105;
+    const height=H*(.18+v31Seed(idx+3)*.48)*(0.7+depth*.55);
+    buildings.push({x,width,height,depth,style:Math.floor(v31Seed(idx+4)*5),seed:idx});
+    x+=width+5+v31Seed(idx+5)*12; idx++;
+  }
+  const count=32;
+  for(let i=0;i<count;i++) bokeh.push({x:v31Seed(i+30)*W,y:H*(.28+v31Seed(i+60)*.43),r:7+v31Seed(i+90)*32,color:p.lights[i%p.lights.length],alpha:.025+v31Seed(i+120)*.12});
+}
+
+generateCity=v31GenerateCity;
+
+function v31DrawCity(){
+  const p=v31Profile(), ph=phases[state.currentPhase], c=bgCtx;
+  c.clearRect(0,0,W,H);
+  const sky=c.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0,p.sky[0]); sky.addColorStop(.52,p.sky[1]); sky.addColorStop(1,p.sky[2]);
+  c.fillStyle=sky;c.fillRect(0,0,W,H);
+
+  // Sol/lua/horizonte: cada fase recebe uma leitura temporal própria.
+  if(['day','morning','dawn','sunset','dusk','twilight'].includes(p.time)){
+    const sunX=p.time==='sunset'?W*.72:W*(.18+v31Seed(41)*.62), sunY=p.time==='dawn'||p.time==='morning'?H*.27:H*.22;
+    const sr=Math.min(W,H)*.075;
+    const g=c.createRadialGradient(sunX,sunY,0,sunX,sunY,sr*3.5); g.addColorStop(0,'rgba(255,226,154,.95)');g.addColorStop(.25,'rgba(255,190,105,.22)');g.addColorStop(1,'rgba(255,180,80,0)');
+    c.fillStyle=g;c.fillRect(0,0,W,H); c.fillStyle='rgba(255,232,170,.8)';c.beginPath();c.arc(sunX,sunY,sr*.55,0,Math.PI*2);c.fill();
+  } else if(p.time==='night'||p.time==='deepnight'||p.time==='storm'){
+    const mx=W*.78,my=H*.17,mr=Math.min(W,H)*.045;
+    c.fillStyle='rgba(220,235,255,.7)';c.beginPath();c.arc(mx,my,mr,0,Math.PI*2);c.fill();
+    c.fillStyle=p.sky[0];c.beginPath();c.arc(mx+mr*.42,my-mr*.15,mr*.9,0,Math.PI*2);c.fill();
+  }
+
+  // Skyline distante para sensação de escala.
+  for(let layer=0;layer<3;layer++){
+    const alpha=.10+layer*.08, base=H*(.58+layer*.09);
+    let x=-40;
+    for(let i=0;i<18;i++){
+      const w=45+v31Seed(i+layer*50)*90, h=40+v31Seed(i+layer*70)*130*(1-layer*.18);
+      c.fillStyle=`rgba(5,10,18,${alpha})`;c.fillRect(x,base-h,w,h);x+=w+10;
+    }
+  }
+
+  // Prédios principais.
+  buildings.forEach((b,i)=>{
+    const y=H-b.height, lightA=.10+b.depth*.25;
+    c.fillStyle=`hsl(${ph.hue},${18+b.depth*16}%,${4+b.depth*8}%)`;c.fillRect(b.x,y,b.width,b.height);
+    // roof details
+    if(b.style===1){c.fillStyle='rgba(10,15,22,.8)';c.fillRect(b.x+b.width*.25,y-12,b.width*.5,12);}
+    if(b.style===2){c.fillStyle='rgba(12,18,25,.9)';c.fillRect(b.x+b.width*.46,y-24,3,24);}
+    const cols=Math.max(1,Math.floor(b.width/16)), rows=Math.floor(b.height/19);
+    for(let r=0;r<rows;r++)for(let col=0;col<cols;col++){
+      const q=v31Seed(i*97+r*31+col*17);
+      if(q<.48)continue;
+      c.fillStyle=p.lights[(i+r+col)%p.lights.length];c.globalAlpha=lightA*(.45+q*.7);
+      const wx=b.x+6+col*16, wy=y+8+r*19;
+      c.fillRect(wx,wy,5,7);
+      if(q>.9){c.shadowBlur=8;c.shadowColor=p.lights[(i+r)%p.lights.length];c.fillRect(wx,wy,5,7);c.shadowBlur=0;}
+    }
+    c.globalAlpha=1;
+  });
+
+  // Elementos de identidade: túnel, árvores/arbustos, postes e fios.
+  if(p.time==='tunnel'){
+    c.fillStyle='rgba(0,0,0,.45)';c.fillRect(0,H*.58,W,H*.42);
+    for(let i=0;i<10;i++){const x=(i/10)*W; c.fillStyle='rgba(255,150,70,.22)';c.fillRect(x,H*.24,4,H*.52);}
+    c.strokeStyle='rgba(255,180,90,.18)';c.lineWidth=2;c.beginPath();c.moveTo(0,H*.32);c.lineTo(W,H*.32);c.stroke();
+  }
+  if(p.weather==='frost'||p.weather==='snow'||p.weather==='blizzard'||p.weather==='snowdrive'){
+    c.fillStyle='rgba(230,242,248,.22)';c.fillRect(0,H*.69,W,H*.31);
+  }
+
+  // Rua molhada / neve.
+  const ground=c.createLinearGradient(0,H*.68,0,H);ground.addColorStop(0,'rgba(0,0,0,0)');ground.addColorStop(.15,p.ground);ground.addColorStop(1,p.ground);c.fillStyle=ground;c.fillRect(0,H*.68,W,H*.32);
+  if(p.weather!=='snow'&&p.weather!=='blizzard'&&p.weather!=='frost'&&p.weather!=='snowdrive'){
+    c.strokeStyle='rgba(150,205,230,.12)';c.lineWidth=1;
+    for(let i=0;i<22;i++){const y=H*.72+Math.pow(i/22,1.7)*H*.28;c.beginPath();c.moveTo(0,y);c.lineTo(W,y);c.stroke();}
+  }
+
+  // Bokeh e reflexos.
+  bokeh.forEach((l,i)=>{let lx=l.x;if(ph.type==='car'||ph.type==='car_snow')lx=(l.x-state.carOffset*(l.r/7))%W;if(lx<0)lx+=W;const g=c.createRadialGradient(lx,l.y,0,lx,l.y,l.r);g.addColorStop(0,l.color);g.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=g;c.globalAlpha=l.alpha;c.beginPath();c.arc(lx,l.y,l.r,0,Math.PI*2);c.fill();});c.globalAlpha=1;
+  if(p.reflect>0){
+    c.save();c.globalCompositeOperation='screen';
+    for(let i=0;i<9;i++){const x=(i+.5)/9*W, y=H*.76+v31Seed(i+400)*H*.18, col=p.lights[i%p.lights.length];const rg=c.createLinearGradient(x,y-55,x,y+100);rg.addColorStop(0,col+'99');rg.addColorStop(1,col+'00');c.fillStyle=rg;c.globalAlpha=.08*p.reflect;c.fillRect(x-10,y-55,20,155);}c.restore();c.globalAlpha=1;
+  }
+  // Farol / lanternas em fases móveis.
+  if(ph.type==='car'||ph.type==='car_snow'){
+    const count=Math.ceil(3+p.traffic*5);
+    for(let i=0;i<count;i++){let x=(i*W/count-state.carOffset*(1+i*.12))%W;if(x<0)x+=W;const y=H*(.68+.12*v31Seed(i+600));const col=i%2?'#ffdca8':'#ff3948';c.fillStyle=col;c.shadowBlur=14;c.shadowColor=col;c.fillRect(x,y,10,3);c.shadowBlur=0;}
+  }
+  // Haze por distância.
+  const haze=c.createLinearGradient(0,H*.35,0,H*.78);haze.addColorStop(0,`rgba(170,205,220,${p.fog*.16})`);haze.addColorStop(1,'rgba(170,205,220,0)');c.fillStyle=haze;c.fillRect(0,H*.28,W,H*.55);
+  // Vinheta cinematográfica.
+  const vg=c.createRadialGradient(W/2,H*.5,Math.min(W,H)*.22,W/2,H*.5,Math.max(W,H)*.78);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.42)');c.fillStyle=vg;c.fillRect(0,0,W,H);
+}
+drawCityBackground=v31DrawCity;
+
+function v31ResetParticles(){ rainParticles.forEach(p=>p.reset(true)); glassDrops.forEach(d=>d.reset(true)); }
+const _v31StartPhase=startPhase;
+startPhase=function(idx,zen=false){ _v31StartPhase(idx,zen); v31ResetParticles(); drawCityBackground(); };
+
+Particle.prototype.reset=function(initial=false){
+  const p=v31Profile(); const snowy=['snow','blizzard','frost','snowdrive'].includes(p.weather);
+  this.isSnow=snowy;this.x=Math.random()*(W+240)-120;this.y=initial?Math.random()*H:-Math.random()*H;
+  const base=p.rain;this.vy=snowy?70+Math.random()*190:(320+Math.random()*950)*base;this.len=snowy?2+Math.random()*7:8+Math.random()*42*(.55+base);this.alpha=.05+Math.random()*.34;this.width=.35+Math.random()*1.45;this.wind=p.wind*(snowy?20:18+base*22)+(Math.random()-.5)*8;this.depth=.15+Math.random()*.85;
+};
+Particle.prototype.update=function(dt){this.y+=this.vy*dt*(.35+state.rainIntensity*.72);this.x+=this.wind*dt*(this.isSnow?1:1);if(this.y>H+90||this.x<-160||this.x>W+160)this.reset();};
+Particle.prototype.draw=function(){const p=v31Profile();if(this.isSnow){rainCtx.fillStyle=`rgba(245,250,255,${this.alpha})`;rainCtx.beginPath();rainCtx.arc(this.x,this.y,this.len*.45,0,Math.PI*2);rainCtx.fill();}else{const col=p.weather==='sunshower'?'rgba(230,245,255,':'rgba(185,220,255,';rainCtx.strokeStyle=col+this.alpha+')';rainCtx.lineWidth=this.width;rainCtx.beginPath();rainCtx.moveTo(this.x,this.y);rainCtx.lineTo(this.x+this.wind*.18,this.y+this.len*(.6+this.depth));rainCtx.stroke();if(this.depth>.8){rainCtx.strokeStyle='rgba(255,255,255,'+(this.alpha*.18)+')';rainCtx.lineWidth=this.width*2;rainCtx.stroke();}}};
+
+GlassDrop.prototype.reset=function(initial=false){const p=v31Profile();this.x=Math.random()*W;this.y=initial?Math.random()*H:-30;this.r=1.2+Math.random()*5.8;this.vy=5+Math.random()*45*(.5+p.rain);this.vx=(Math.random()-.5)*2;this.alpha=.10+Math.random()*.48;this.stretch=.6+Math.random()*3;this.life=0;};
+GlassDrop.prototype.update=function(dt){const p=v31Profile();this.life+=dt;this.y+=this.vy*dt;this.x+=this.vx*dt+p.wind*.4*dt;if(this.y>H+40||this.x<-40||this.x>W+40)this.reset();};
+GlassDrop.prototype.draw=function(){const r=this.r, a=this.alpha;const g=glassCtx.createRadialGradient(this.x-r*.35,this.y-r*.35,0,this.x,this.y,r*1.8);g.addColorStop(0,`rgba(255,255,255,${a*.95})`);g.addColorStop(.22,`rgba(205,235,255,${a*.38})`);g.addColorStop(1,'rgba(30,70,100,0)');glassCtx.fillStyle=g;glassCtx.beginPath();glassCtx.ellipse(this.x,this.y,r,r*this.stretch,-.12,0,Math.PI*2);glassCtx.fill();if(this.stretch>1.7){glassCtx.strokeStyle=`rgba(220,245,255,${a*.28})`;glassCtx.lineWidth=Math.max(.5,r*.22);glassCtx.beginPath();glassCtx.moveTo(this.x,this.y+r*.6);glassCtx.lineTo(this.x+this.vx*2,this.y+r*this.stretch*2.1);glassCtx.stroke();}};
+
+// Condensação específica por fase, mantendo o mesmo sistema de limpeza.
+const _v31InitFog=initFog;
+initFog=function(){_v31InitFog();const p=v31Profile();fogCtx.save();fogCtx.globalCompositeOperation='source-over';fogCtx.fillStyle=`rgba(225,238,244,${.05+p.fog*.12})`;fogCtx.fillRect(0,0,W,H);if(p.weather==='frost'||p.weather==='blizzard'){for(let i=0;i<16;i++){fogCtx.fillStyle=`rgba(255,255,255,${.015+p.fog*.025})`;fogCtx.beginPath();fogCtx.arc(v31Seed(i+800)*W,v31Seed(i+900)*H,20+v31Seed(i+1000)*80,0,Math.PI*2);fogCtx.fill();}}fogCtx.restore();};
+
+// Regera o cenário quando a janela muda de tamanho.
+const _v31Resize=resize;
+resize=function(){_v31Resize();drawCityBackground();};
+
+// Trovão com identidade de fase: frequência e intensidade variam.
+const _v31PlayThunder=playThunder;
+playThunder=function(v){const p=v31Profile();if(p.weather!=='storm'&&v<1){lightning();return;}if(state.vibration&&navigator.vibrate)navigator.vibrate(p.weather==='storm'?[18,30,35]:25);const f=document.getElementById('lightningFlash');f.style.opacity=p.weather==='storm'?(.24+Math.random()*.28):(.10+Math.random()*.14);setTimeout(()=>f.style.opacity=0,55);if(p.weather==='storm'&&Math.random()<.45)setTimeout(()=>{f.style.opacity=.12;setTimeout(()=>f.style.opacity=0,35)},90);};
+
+function loop(time) {
+  const dt = Math.min((time - state.lastTime) / 1000, 0.1); state.lastTime = time;
+  if (state.started && !state.paused) {
+    if(phases[state.currentPhase].type === 'car' || phases[state.currentPhase].type === 'car_snow') {
+      state.carOffset += dt * 300; drawCityBackground(); // Animated BG
+    }
+    rainCtx.clearRect(0, 0, W, H); glassCtx.clearRect(0, 0, W, H);
+    rainParticles.forEach(p => { p.update(dt); p.draw(); });
+    glassDrops.forEach(d => { d.update(dt); d.draw(); });
+    
+    // Zen Mode Refog logic
+    if(state.isZen && Math.random() < 0.1) {
+      fogCtx.globalCompositeOperation = "source-over";
+      fogCtx.fillStyle = "rgba(220,230,235,0.015)"; fogCtx.fillRect(0,0,W,H);
+      // Decay fogGrid slightly
+      for(let i=0; i<fogGrid.length; i++) if(fogGrid[i] && Math.random()<0.05) fogGrid[i] = false;
+      updateProgress();
+    }
+  }
+  requestAnimationFrame(loop);
+}
+
+// Event Listeners
+document.getElementById("continueBtn").onclick = () => startPhase(state.currentPhase);
+document.getElementById("zenBtn").onclick = () => startPhase(Math.floor(Math.random()*phases.length), true);
+document.getElementById("phasesBtn").onclick = () => { renderPhases(); document.getElementById("phasesScreen").classList.remove("hidden"); };
+document.getElementById("closePhasesBtn").onclick = () => document.getElementById("phasesScreen").classList.add("hidden");
+document.getElementById("storeBtn").onclick = () => { renderStore(); document.getElementById("storeScreen").classList.remove("hidden"); };
+document.getElementById("closeStoreBtn").onclick = () => document.getElementById("storeScreen").classList.add("hidden");
+document.getElementById("pauseBtn").onclick = () => { state.paused = true; document.getElementById("pauseScreen").classList.remove("hidden"); };
+document.getElementById("resumeBtn").onclick = () => { state.paused = false; document.getElementById("pauseScreen").classList.add("hidden"); };
+document.getElementById("settingsBtn").onclick = () => document.getElementById("settingsScreen").classList.remove("hidden");
+document.getElementById("pauseSettingsBtn").onclick = () => document.getElementById("settingsScreen").classList.remove("hidden");
+document.getElementById("closeSettingsBtn").onclick = () => { saveGame(); document.getElementById("settingsScreen").classList.add("hidden"); };
+document.getElementById("exitMenuBtn").onclick = () => showAd(() => { state.started = false; state.paused = false; initFog(); document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden')); document.getElementById("mainMenu").classList.remove("hidden"); });
+document.getElementById("nextPhaseBtn").onclick = () => { if(state.currentPhase < phases.length - 1) startPhase(state.currentPhase + 1); else document.getElementById("exitMenuBtn").click(); };
+document.getElementById("rewardMenuBtn").onclick = () => document.getElementById("exitMenuBtn").click();
+
+document.getElementById("langToggleBtn").onclick = () => {
+  state.lang = state.lang === 'en' ? 'pt' : 'en';
+  updateTranslations(); saveGame();
+};
+
+// Init (Splash removed)
+window.onload = () => {
+  loadGame(); updateTranslations(); resize();
+  document.getElementById('mainMenu').classList.remove('hidden');
+  requestAnimationFrame(loop);
+};
 </script>
 </body>
 </html>
