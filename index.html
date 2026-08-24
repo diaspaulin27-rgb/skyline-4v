@@ -763,7 +763,8 @@ const GRID_X = 28;
 const GRID_Y = 17;
 let fogGrid = [];
 let snowPassGrid = [];
-function createFogGrid() { fogGrid = Array.from({ length: GRID_X * GRID_Y }, () => false); snowPassGrid = Array.from({ length: GRID_X * GRID_Y }, () => false); }
+let snowPassCount = 0;
+function createFogGrid() { fogGrid = Array.from({ length: GRID_X * GRID_Y }, () => false); snowPassGrid = Array.from({ length: GRID_X * GRID_Y }, () => false); snowPassCount = 0; }
 
 function initFog() {
   createFogGrid();
@@ -780,28 +781,10 @@ function initFog() {
 
 function clearFog(x, y, brush) {
   const isSnow = phases[state.currentPhase].type === "snow" || phases[state.currentPhase].type === "car_snow";
-  if (isSnow) {
-    const gx = Math.floor((x / W) * GRID_X); const gy = Math.floor((y / H) * GRID_Y);
-    const rx = Math.ceil((brush.radius / W) * GRID_X) + 1; const ry = Math.ceil((brush.radius / H) * GRID_Y) + 1;
-    let hasSecondPass = false;
-    for (let yy = gy - ry; yy <= gy + ry; yy++) for (let xx = gx - rx; xx <= gx + rx; xx++) {
-      if (xx < 0 || yy < 0 || xx >= GRID_X || yy >= GRID_Y) continue;
-      const px = (xx + .5) / GRID_X * W; const py = (yy + .5) / GRID_Y * H;
-      if (Math.hypot(px - x, py - y) <= brush.radius && snowPassGrid[yy * GRID_X + xx]) hasSecondPass = true;
-    }
-    if (!hasSecondPass) {
-      markSnowPassGrid(x, y, brush.radius);
-      fogCtx.save(); fogCtx.globalCompositeOperation = "destination-out"; fogCtx.globalAlpha = .18;
-      fogCtx.beginPath(); fogCtx.arc(x, y, brush.radius, 0, Math.PI * 2); fogCtx.fill(); fogCtx.restore();
-      return;
-    }
-    for (let yy = gy - ry; yy <= gy + ry; yy++) for (let xx = gx - rx; xx <= gx + rx; xx++) {
-      if (xx < 0 || yy < 0 || xx >= GRID_X || yy >= GRID_Y) continue;
-      if (Math.hypot(((xx + .5) / GRID_X * W) - x, ((yy + .5) / GRID_Y * H) - y) <= brush.radius) {
-        fogGrid[yy * GRID_X + xx] = true;
-        snowPassGrid[yy * GRID_X + xx] = false;
-      }
-    }
+  if (isSnow && snowPassCount === 1) {
+    fogCtx.save(); fogCtx.globalCompositeOperation = "destination-out"; fogCtx.globalAlpha = .18;
+    fogCtx.beginPath(); fogCtx.arc(x, y, brush.radius, 0, Math.PI * 2); fogCtx.fill(); fogCtx.restore();
+    return;
   }
   if (!state.hasInteracted) { state.hasInteracted = true; document.getElementById("instruction").classList.add("hidden-text"); }
   const radius = brush.radius; const softness = Math.max(.02, Math.min(1.4, brush.blur));
@@ -854,7 +837,7 @@ function updateProgress() {
   if (state.fogProgress >= .99 && state.started && !state.paused && !state.isZen) completePhase();
 }
 
-function handlePointerDown(e) { if(!state.started || state.paused) return; initAudio(); fogCanvas.setPointerCapture?.(e.pointerId); state.activePointers.set(e.pointerId, {x: e.clientX, y: e.clientY}); clearFog(e.clientX, e.clientY, brushes[state.activePointers.size <= 1 ? state.brush1 : state.brush2]); }
+function handlePointerDown(e) { if(!state.started || state.paused) return; initAudio(); fogCanvas.setPointerCapture?.(e.pointerId); state.activePointers.set(e.pointerId, {x: e.clientX, y: e.clientY}); if(phases[state.currentPhase].type === "snow" || phases[state.currentPhase].type === "car_snow") snowPassCount = Math.min(2, snowPassCount + 1); clearFog(e.clientX, e.clientY, brushes[state.activePointers.size <= 1 ? state.brush1 : state.brush2]); }
 function handlePointerMove(e) { if(!state.started || state.paused || !state.activePointers.has(e.pointerId)) return; state.activePointers.set(e.pointerId, {x: e.clientX, y: e.clientY}); clearFog(e.clientX, e.clientY, brushes[state.activePointers.size <= 1 ? state.brush1 : state.brush2]); }
 function handlePointerUp(e) { state.activePointers.delete(e.pointerId); }
 fogCanvas.addEventListener("pointerdown", handlePointerDown); fogCanvas.addEventListener("pointermove", handlePointerMove); fogCanvas.addEventListener("pointerup", handlePointerUp); fogCanvas.addEventListener("pointercancel", handlePointerUp);
