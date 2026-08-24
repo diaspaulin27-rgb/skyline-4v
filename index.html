@@ -807,7 +807,7 @@ function clearFog(x, y, brush) {
   // moisture ring around a fresh wipe
   glassCtx.save(); glassCtx.globalAlpha=.18; glassCtx.strokeStyle="rgba(210,240,255,.8)"; glassCtx.lineWidth=1; glassCtx.beginPath(); glassCtx.arc(x,y,radius*.9,0,Math.PI*2); glassCtx.stroke(); glassCtx.restore();
   markFogGrid(x, y, radius);
-  if(state.cleanStreak>18 && Math.random()<.008) showToast(t('perfect'));
+  if(state.cleanStreak>18 && Math.random()<.0005) showToast(t('perfect'));
   updateProgress();
 }
 
