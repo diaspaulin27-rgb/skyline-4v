@@ -1,238 +1,193 @@
-===============================================================================
-RAINY SKYLINE - ENGINE & GAMEPLAY LOGIC CODE (100% ATUALIZADO)
-Desenvolvedor: Zanon Games
-Versão do Documento: 2.0 - Progressão & Mecânicas Atualizadas
-===============================================================================
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#030712">
+<title>Rainy Skyline — Atmospheric Experience</title>
+<style>
+:root {
+  --primary: #38bdf8;
+  --primary-glow: rgba(56, 189, 248, 0.4);
+  --bg-dark: #030712;
+  --panel-bg: rgba(15, 23, 42, 0.78);
+  --panel-border: rgba(255, 255, 255, 0.12);
+}
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-dark);
+  color: #f8fafc;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  touch-action: none;
+}
+#adScreen {
+  position: fixed;
+  inset: 0;
+  z-index: 8000;
+  background: rgba(0,0,0,0.95);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.3s ease;
+}
+#game {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+}
+canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+#bgCanvas { z-index: 1; }
+#rainCanvas { z-index: 3; }
+#glassCanvas { z-index: 5; }
+#fogCanvas { z-index: 7; touch-action: none; }
+#lightningFlash {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  background: white;
+  opacity: 0;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+#vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  pointer-events: none;
+  background: radial-gradient(circle at center, transparent 35%, rgba(3, 7, 18, 0.78) 100%);
+}
+#hud {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: calc(20px + env(safe-area-inset-top)) calc(20px + env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) calc(20px + env(safe-area-inset-left));
+  transition: opacity 0.5s ease;
+}
+#hud.hidden { opacity: 0; pointer-events: none; }
+.hud-header { display: flex; justify-content: space-between; align-items: center; }
+.hud-left, .hud-right { display: flex; align-items: center; gap: 10px; }
+.hud-btn {
+  width: 48px; height: 48px;
+  border-radius: 50%; border: 1px solid var(--panel-border);
+  background: rgba(15, 23, 42, 0.62);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  color: white; font-size: 18px; display: grid; place-items: center;
+  cursor: pointer; pointer-events: auto; transition: all 0.2s ease;
+}
 
--------------------------------------------------------------------------------
-1. CONFIGURAÇÕES GERAIS E ESTADO DO JOGO (GAME STATE)
--------------------------------------------------------------------------------
+nder: 0, type: "rain" }
+];
 
-const CONFIG = {
-    TOTAL_LEVELS: 20,
-    WIN_THRESHOLD: 0.99, // Alterado de 0.72 para 0.99 (99% de limpeza necessária)
-    PERFECT_CLEAR_THRESHOLD: 1.0, // Requer 100% de área limpa
-    PERFECT_CLEAR_TIME_LIMIT: 8.0, // Limite de tempo em segundos para acionar "Limpeza Perfeita"
-    BRUSH_RADIUS: 25,
-    SNOW_LEVELS: [11, 12, 13, 14, 15] // Fases de neve com mecânica em 2 etapas
+const brushes = {
+  soft: { name: {en:"Soft", pt:"Suave"}, cost: 0, radius: 38, blur: 0.9, desc: {en:"Large area, smooth.", pt:"Grande área, suave."} },
+  precise: { name: {en:"Precise", pt:"Preciso"}, cost: 100, radius: 22, blur: 0.35, desc: {en:"Fine details.", pt:"Detalhes finos."} },
+  broad: { name: {en:"Broad", pt:"Largo"}, cost: 200, radius: 65, blur: 0.8, desc: {en:"Quick large wipes.", pt:"Limpeza rápida."} },
+  sharp: { name: {en:"Sharp", pt:"Nítido"}, cost: 300, radius: 17, blur: 0.12, desc: {en:"Sharp edges.", pt:"Bordas definidas."} },
+  dream: { name: {en:"Dream", pt:"Sonho"}, cost: 500, radius: 80, blur: 1.4, desc: {en:"Diffuse and huge.", pt:"Gigante e difuso."} }
 };
 
-let gameState = {
-    currentLevel: parseInt(localStorage.getItem('lastSelectedLevel')) || 1,
-    unlockedLevels: parseInt(localStorage.getItem('unlockedLevels')) || 1,
-    isPaused: false,
-    clearedPercentage: 0.0,
-    startTime: 0,
-    isLevelComplete: false
-};
+let unlockedBrushes = { soft: true };
 
+function saveGame() {
+  localStorage.setItem("rainySkylineSave", JSON.stringify({
+    points: state.points, stars: state.stars, highestPhase: state.highestPhase,
+    brush1: state.brush1, brush2: state.brush2, unlockedBrushes,
+    rainIntensity: state.rainIntensity, ambVolume: state.ambVolume,
+    gameSound: state.gameSound, musicSound: state.musicSound, vibration: state.vibration,
+    lang: state.lang
+  }));
+}
 
--------------------------------------------------------------------------------
-2. INICIALIZAÇÃO DO MENU PRINCIPAL & SELEÇÃO DE FASES
--------------------------------------------------------------------------------
+function loadGame() {
+  try {
+    const data = JSON.parse(localStorage.getItem("rainySkylineSave"));
+    if (!data) return;
+    state.points = Number(data.points) || 0; state.stars = Number(data.stars) || 0;
+    state.highestPhase = Math.max(0, Math.min(19, Number(data.highestPhase) || 0));
+    state.brush1 = data.brush1 || "soft"; state.brush2 = data.brush2 || "soft";
+    unlockedBrushes = data.unlockedBrushes || { soft: true };
+    unlockedBrushes.soft = true;
+  } catch (error) { console.warn("Save inválido."); }
+}
 
-function initMainMenu() {
-    // Carrega a fase atual ou a última que o jogador selecionou (fim da seleção aleatória)
-    let savedLevel = parseInt(localStorage.getItem('lastSelectedLevel'));
-    if (!savedLevel || savedLevel < 1 || savedLevel > CONFIG.TOTAL_LEVELS) {
-        savedLevel = gameState.unlockedLevels;
+const bgCanvas = document.getElementById("bgCanvas");
+const rainCanvas = document.getElementById("rainCanvas");
+const glassCanvas = document.getElementById("glassCanvas");
+const fogCanvas = document.getElementById("fogCanvas");
+const bgCtx = bgCanvas.getContext("2d");
+const rainCtx = rainCanvas.getContext("2d");
+const glassCtx = glassCanvas.getContext("2d");
+const fogCtx = fogCanvas.getContext("2d");
+
+let W = window.innerWidth; let H = window.innerHeight;
+let DPR = 1;
+
+function setupCanvas(canvas, ctx) {
+  canvas.width = W * DPR; canvas.height = H * DPR;
+  canvas.style.width = W + "px"; canvas.style.height = H + "px";
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+
+function resize() {
+  W = window.innerWidth; H = window.innerHeight;
+  setupCanvas(bgCanvas, bgCtx); setupCanvas(rainCanvas, rainCtx);
+  setupCanvas(glassCanvas, glassCtx); setupCanvas(fogCanvas, fogCtx);
+  initFog(); generateCity(); drawCityBackground();
+}
+window.addEventListener("resize", resize);
+
+let buildings = []; let bokeh = [];
+let streetLights = []; let traffic = [];
+
+function generateCity() {
+  buildings = []; bokeh = []; streetLights = []; traffic = [];
+  const phase = phases[state.currentPhase];
+  let x = -40;
+  while (x < W + 100) {
+    buildings.push({ x, width: 45 + Math.random() * 80, height: 100 + Math.random() * H *.5, depth:.25 + Math.random() *.75 });
+    x += buildings[buildings.length-1].width + 4;
+  }
+  for (let i = 0; i < (state.isZen? 18 : 42); i++) {
+    bokeh.push({ x: Math.random() * W, y: H *.25 + Math.random() * H *.55, r: 8 + Math.random() * 35, color: phase.lights[Math.floor(Math.random() * phase.lights.length)], alpha:.04 + Math.random() *.12 });
+  }
+}
+
+function drawCityBackground() {
+  const phase = phases[state.currentPhase];
+  bgCtx.clearRect(0, 0, W, H);
+  const sky = bgCtx.createLinearGradient(0, 0, 0, H);
+  sky.addColorStop(0, phase.sky[0]); sky.addColorStop(.55, phase.sky[1]); sky.addColorStop(1, "#020308");
+  bgCtx.fillStyle = sky; bgCtx.fillRect(0, 0, W, H);
+  bokeh.forEach(light => {
+    let lx = light.x;
+    if(phase.type === 'car' || phase.type === 'car_snow') {
+        lx = (light.x - state.carOffset * (light.r/10)) % W;
+        if (lx < 0) lx += W;
     }
-    
-    gameState.currentLevel = savedLevel;
-    renderLevelSelectorUI(savedLevel);
+    const gradient = bgCtx.createRadialGradient(lx, light.y, 0, lx, light.y, light.r);
+    gradient.addColorStop(0, light.color); gradient.addColorStop(1, "transparent");
+    bgCtx.fillStyle = gradient; bgCtx.globalAlpha = light.alpha;
+    bgCtx.beginPath(); bgCtx.arc(lx, light.y, light.r, 0, Math.PI * 2); bgCtx.fill();
+  });
+  bgCtx.globalAlpha = 1;
 }
-
-function renderLevelSelectorUI(activeLevel) {
-    console.log(`Exibindo no Menu Principal: Fase ${activeLevel} de ${CONFIG.TOTAL_LEVELS}`);
-    // Atualiza a interface gráfica do Menu para destacar a fase selecionada
-    const levelDisplayElement = document.getElementById('selected-level-card');
-    if (levelDisplayElement) {
-        levelDisplayElement.innerText = `Fase ${activeLevel}`;
-    }
-}
-
-function selectLevel(levelNumber) {
-    if (levelNumber >= 1 && levelNumber <= gameState.unlockedLevels) {
-        gameState.currentLevel = levelNumber;
-        localStorage.setItem('lastSelectedLevel', levelNumber);
-        renderLevelSelectorUI(levelNumber);
-    }
-}
-
-
--------------------------------------------------------------------------------
-3. CARREGAMENTO E FLUXO DAS 20 FASES
--------------------------------------------------------------------------------
-
-function startLevel(levelNumber) {
-    if (levelNumber < 1 || levelNumber > CONFIG.TOTAL_LEVELS) return;
-    
-    gameState.currentLevel = levelNumber;
-    localStorage.setItem('lastSelectedLevel', levelNumber);
-    gameState.clearedPercentage = 0.0;
-    gameState.startTime = Date.now();
-    gameState.isLevelComplete = false;
-
-    setupFogCanvas(levelNumber);
-    console.log(`Fase ${levelNumber} iniciada com sucesso.`);
-}
-
-
--------------------------------------------------------------------------------
-4. LÓGICA DE LIMPEZA DO VIDRO & MECÂNICA DA FASE DE NEVE (2 ETAPAS)
--------------------------------------------------------------------------------
-
-// Estrutura de dados da malha de cobertura do vidro
-let gridMap = []; // Array de células com estados: 'fog', 'frost', 'cleared'
-
-function setupFogCanvas(levelNumber) {
-    const isSnowLevel = CONFIG.SNOW_LEVELS.includes(levelNumber);
-    const gridCols = 50;
-    const gridRows = 100;
-    
-    gridMap = [];
-    for (let r = 0; r < gridRows; r++) {
-        let row = [];
-        for (let c = 0; c < gridCols; c++) {
-            row.push({
-                state: isSnowLevel ? 'fog' : 'fog', // 'fog' -> 'frost' -> 'cleared'
-                opacity: 1.0
-            });
-        }
-        gridMap.push(row);
-    }
-}
-
-function handleTouchMove(touchX, touchY) {
-    if (gameState.isLevelComplete) return;
-
-    const isSnowLevel = CONFIG.SNOW_LEVELS.includes(gameState.currentLevel);
-    const affectedCells = getCellsInRadius(touchX, touchY, CONFIG.BRUSH_RADIUS);
-
-    affectedCells.forEach(cell => {
-        if (isSnowLevel) {
-            // Mecânica de Neve: Requer 2x passadas do dedo
-            if (cell.state === 'fog') {
-                cell.state = 'frost'; // 1ª passada: Apenas clareia
-                cell.opacity = 0.4;
-            } else if (cell.state === 'frost') {
-                cell.state = 'cleared'; // 2ª passada: Limpa de vez
-                cell.opacity = 0.0;
-            }
-        } else {
-            // Mecânica Padrão de Chuva / Neblina: Limpa na 1ª passada
-            cell.state = 'cleared';
-            cell.opacity = 0.0;
-        }
-    });
-
-    calculateProgress();
-}
-
-function calculateProgress() {
-    let totalCells = gridMap.length * gridMap[0].length;
-    let clearedCells = 0;
-
-    for (let r = 0; r < gridMap.length; r++) {
-        for (let c = 0; c < gridMap[r].length; c++) {
-            if (gridMap[r][c].state === 'cleared') {
-                clearedCells++;
-            }
-        }
-    }
-
-    gameState.clearedPercentage = clearedCells / totalCells;
-    checkWinCondition();
-}
-
-
--------------------------------------------------------------------------------
-5. CONDIÇÃO DE VITÓRIA E "LIMPEZA PERFEITA"
--------------------------------------------------------------------------------
-
-function checkWinCondition() {
-    if (gameState.isLevelComplete) return;
-
-    // Condição de Vitória: Ajustado para 99% (0.99)
-    if (gameState.clearedPercentage >= CONFIG.WIN_THRESHOLD) {
-        gameState.isLevelComplete = true;
-        
-        const timeTaken = (Date.now() - gameState.startTime) / 1000;
-        
-        // Verifica se cumpre o critério RARO de "Limpeza Perfeita"
-        if (gameState.clearedPercentage >= CONFIG.PERFECT_CLEAR_THRESHOLD && 
-            timeTaken <= CONFIG.PERFECT_CLEAR_TIME_LIMIT) {
-            triggerPerfectClearReward();
-        }
-
-        onLevelComplete();
-    }
-}
-
-function triggerPerfectClearReward() {
-    console.log("★ LIMPEZA PERFEITA! ★");
-    // Exibe efeito raro, áudio de recompensa especial e pontuação bônus
-    showSpecialUIEffect("LIMPEZA PERFEITA!");
-}
-
-
--------------------------------------------------------------------------------
-6. FLUXO DE ANÚNCIOS (ADS) E TRANSIÇÕES DE TELA
--------------------------------------------------------------------------------
-
-function showAd() {
-    return new Promise((resolve) => {
-        console.log("Exibindo Anúncio Intersticial...");
-        // Integração com SDK de Ads (e.g. AdMob / Unity Ads)
-        setTimeout(() => {
-            console.log("Anúncio Concluído.");
-            resolve();
-        }, 1500); // Simulação do término do anúncio
-    });
-}
-
-function onLevelComplete() {
-    // Atualiza progresso salvo
-    if (gameState.currentLevel === gameState.unlockedLevels && gameState.unlockedLevels < CONFIG.TOTAL_LEVELS) {
-        gameState.unlockedLevels++;
-        localStorage.setItem('unlockedLevels', gameState.unlockedLevels);
-    }
-
-    // Exibe Anúncio ao passar de fase
-    showAd().then(() => {
-        if (gameState.currentLevel < CONFIG.TOTAL_LEVELS) {
-            let nextLvl = gameState.currentLevel + 1;
-            localStorage.setItem('lastSelectedLevel', nextLvl);
-            startLevel(nextLvl);
-        } else {
-            returnToMainMenu();
-        }
-    });
-}
-
-function returnToMainMenu() {
-    // Exibe Anúncio ao voltar pro menu principal
-    showAd().then(() => {
-        initMainMenu();
-        showScreen('main-menu-screen');
-    });
-}
-
-
--------------------------------------------------------------------------------
-7. TABELA DE PROGRESSÃO DAS 20 FASES
--------------------------------------------------------------------------------
-
-/*
-+---------+--------------------+-------------------------+--------------------+
-| Fase    | Tema               | Mecânica de Limpeza     | Vitória (Threshold)|
-+---------+--------------------+-------------------------+--------------------+
-| 01 - 10 | Chuva Urbana / Fog | 1 Passada (Padrão)       | 99%                |
-| 11 - 15 | Neve Intensa       | 2 Passadas (Clareia/Lim)| 99%                |
-| 16 - 20 | Tempestade Noturna | 1 Passada (Gotas Lentas)| 99%                |
-+---------+--------------------+-------------------------+--------------------+
-*/
-
-===============================================================================
-FIM DO ARQUIVO DE CÓDIGO - RAINY SKYLINE
-===============================================================================
