@@ -673,6 +673,11 @@ canvas {
   margin-bottom: 15px;
 }
 
+
+/* V4: return-to-menu transition keeps the selected phase and uses the existing ad screen. */
+const rsExitMenuOriginal=document.getElementById('exitMenuBtn').onclick;
+document.getElementById('exitMenuBtn').onclick=()=>{ if(rsExitMenuOriginal) rsExitMenuOriginal(); saveGame(); showAd(()=>{}); };
+
 /* =========================================================
    SETTINGS
 ========================================================= */
@@ -2908,7 +2913,7 @@ function updateProgress() {
   */
 
   if (
-    progress >= .72 &&
+    progress >= RS_PHASE_COMPLETE &&
     state.started &&
     !state.paused
   ) {
@@ -4761,8 +4766,8 @@ function rsCloseSettings(){
 
 /* 3 — rare perfect wipe reward. */
 function rsPerfectWipe(){
-  if(state.isZen && Math.random()>.0025) return;
-  if(!state.isZen && Math.random()>.0018) return;
+  if(state.isZen && Math.random()>.0010) return;
+  if(!state.isZen && Math.random()>.00045) return;
   if(state.fogProgress < .28 || phaseCompleted) return;
   state.points += 25;
   saveGame();
@@ -4777,9 +4782,33 @@ function rsPerfectWipe(){
 
 const rsOriginalClearFog=clearFog;
 clearFog=function(x,y,brush){
+  if(state.isZen || !(phases[state.currentPhase]?.weather==='snow')){
+    rsOriginalClearFog(x,y,brush);
+    return;
+  }
+  if((state.snowPass||0)<2){
+    const before=fogGrid.slice();
+    fogCtx.save();
+    fogCtx.globalAlpha=.42;
+    rsOriginalClearFog(x,y,brush);
+    fogCtx.restore();
+    fogGrid=before;
+    state.fogProgress=0;
+    const fill=document.getElementById('progressFill'); if(fill) fill.style.width='0%';
+    return;
+  }
   rsOriginalClearFog(x,y,brush);
-  if(state.hasInteracted && Math.random()<0.0035) rsPerfectWipe();
+  if(state.hasInteracted) rsPerfectWipe();
 };
+state.snowPass=0; state.snowPointerActive=false;
+fogCanvas.addEventListener('pointerdown',()=>{
+  if(state.started && !state.paused && phases[state.currentPhase]?.weather==='snow' && !state.snowPointerActive){
+    state.snowPointerActive=true;
+    state.snowPass=Math.min(2,(state.snowPass||0)+1);
+  }
+},true);
+fogCanvas.addEventListener('pointerup',()=>{state.snowPointerActive=false;},true);
+fogCanvas.addEventListener('pointercancel',()=>{state.snowPointerActive=false;},true);
 
 /* 14 — intensity changes quantity AND speed. */
 const RS_MAX_RAIN=rainParticles.length;
@@ -4911,17 +4940,27 @@ function rsDrawSpecialWeather(){
   }
   if(phase.weather==='car' || /car|carro|drive|highway/i.test(phase.name)){
     bgCtx.save();
-    const y=H*.72, speed=.25; const x=(performance.now()*.03*speed)%(W+220)-110;
+    const y=H*.72, speed=.08; const x=(performance.now()*.03*speed)%(W+220)-110;
     bgCtx.fillStyle='rgba(20,25,35,.88)'; bgCtx.fillRect(x,y-22,95,22); bgCtx.fillRect(x+18,y-34,52,18); bgCtx.fillStyle='rgba(255,235,170,.8)'; bgCtx.fillRect(x+88,y-16,5,7); bgCtx.fillStyle='#080a0f'; bgCtx.beginPath(); bgCtx.arc(x+20,y,9,0,Math.PI*2); bgCtx.arc(x+75,y,9,0,Math.PI*2); bgCtx.fill();
     bgCtx.restore();
   }
 }
+function rsDrawZenAtmosphere(){
+  if(!state.isZen) return;
+  bgCtx.save();
+  const g=bgCtx.createLinearGradient(0,0,0,H); g.addColorStop(0,'rgba(5,10,25,.30)'); g.addColorStop(.55,'rgba(12,28,45,.10)'); g.addColorStop(1,'rgba(2,8,16,.24)'); bgCtx.fillStyle=g; bgCtx.fillRect(0,0,W,H);
+  bgCtx.fillStyle='rgba(235,245,255,.72)'; bgCtx.beginPath(); bgCtx.arc(W*.78,H*.20,30,0,Math.PI*2); bgCtx.fill();
+  bgCtx.fillStyle='rgba(8,18,30,.72)'; bgCtx.beginPath(); bgCtx.moveTo(0,H*.72); bgCtx.quadraticCurveTo(W*.22,H*.55,W*.45,H*.70); bgCtx.quadraticCurveTo(W*.68,H*.48,W,H*.69); bgCtx.lineTo(W,H); bgCtx.lineTo(0,H); bgCtx.closePath(); bgCtx.fill();
+  bgCtx.restore();
+}
+
 drawCityBackground=function(){
   rsOriginalDrawCityBackground();
   rsDrawSkyTexture();
   rsDrawLandmark(phases[state.currentPhase].landmark);
   rsDrawGrass();
   rsDrawSpecialWeather();
+  rsDrawZenAtmosphere();
 };
 
 
@@ -4941,13 +4980,14 @@ RainDrop.prototype.draw=function(){
   rainCtx.lineWidth=this.width;
   rainCtx.beginPath();
   rainCtx.moveTo(this.x,this.y);
-  rainCtx.lineTo(this.x-28,this.y+this.len);
+  rainCtx.lineTo(this.x-22,this.y+this.len);
   rainCtx.stroke();
 };
 
 /* 6 — deeper textured snow fog whenever a snow phase is present. */
 const rsOriginalInitFog=initFog;
 initFog=function(){
+  state.snowPass=0; state.snowPointerActive=false;
   rsOriginalInitFog();
   const phase=phases[state.currentPhase]||phases[0];
   if(phase.weather==='snow'||/snow|neve/i.test(phase.name)){
@@ -4978,9 +5018,24 @@ function rsUpdateMusic(){
   rsMusicGain.gain.setTargetAtTime(state.musicSound ? (.008+state.ambVolume*.028) : 0,audioCtx.currentTime,.3);
 }
 const rsOriginalInitAudio=initAudio;
-initAudio=function(){ rsOriginalInitAudio(); rsEnsureMusic(); rsUpdateMusic(); if(!rsMusicTimer) rsMusicTimer=setInterval(rsUpdateMusic,1800); };
+initAudio=function(){ rsOriginalInitAudio(); rsEnsureMusic(); rsUpdateMusic(); rsEnsureCarAudio(); if(!rsMusicTimer) rsMusicTimer=setInterval(rsUpdateMusic,1800); rsUpdateCarAudio(); };
 const rsOriginalUpdateAudio=updateAudio;
-updateAudio=function(){ rsOriginalUpdateAudio(); if(rainGain) rainGain.gain.value=state.gameSound ? state.rainVolume * .22 : 0; rsUpdateMusic(); };
+let rsCarOsc=null, rsCarGain=null;
+function rsEnsureCarAudio(){
+  if(!audioCtx||!masterGain||rsCarOsc) return;
+  rsCarOsc=audioCtx.createOscillator(); rsCarGain=audioCtx.createGain();
+  rsCarOsc.type='sine'; rsCarOsc.frequency.value=62; rsCarGain.gain.value=0;
+  rsCarOsc.connect(rsCarGain).connect(masterGain); rsCarOsc.start();
+}
+function rsUpdateCarAudio(){
+  if(!audioCtx||!rsCarGain) return;
+  const p=phases[state.currentPhase]||phases[0];
+  const car=p.weather==='car'||/car|carro|drive|highway|rodovia/i.test(p.name);
+  const active=car&&state.started&&!state.paused&&state.gameSound;
+  rsCarGain.gain.setTargetAtTime(active?.016:0,audioCtx.currentTime,.6);
+  rsCarOsc.frequency.setTargetAtTime(58+state.rainIntensity*7,audioCtx.currentTime,.8);
+}
+updateAudio=function(){ rsOriginalUpdateAudio(); if(rainGain) rainGain.gain.value=state.gameSound ? state.rainVolume * .22 : 0; rsUpdateMusic(); rsUpdateCarAudio(); };
 
 /* 12 — language only appears in main-menu settings. */
 function rsBuildSettingsExtras(){
@@ -5000,10 +5055,9 @@ function rsBuildSettingsExtras(){
   let zenBox=document.getElementById('rsZenSettings');
   if(!zenBox){
     zenBox=document.createElement('div'); zenBox.id='rsZenSettings'; zenBox.style.marginTop='24px'; zenBox.style.paddingTop='18px'; zenBox.style.borderTop='1px solid rgba(255,255,255,.1)';
-    zenBox.innerHTML='<h3 id="rsZenTitle" style="margin:0 0 12px">Modo Zen</h3><div class="toggle-row"><div class="toggle-text"><strong id="rsZenAuto">Regenerar névoa automaticamente</strong><span id="rsZenAutoDesc">Deixe a névoa voltar lentamente sozinha.</span></div><div id="rsZenAutoToggle" class="toggle on"></div></div><button id="rsZenManual" class="btn" style="width:100%;margin-top:14px">REGENERAR NÉVOA 100%</button>';
+    zenBox.innerHTML='<h3 id="rsZenTitle" style="margin:0 0 12px">Modo Zen</h3><div class="toggle-row"><div class="toggle-text"><strong id="rsZenAuto">Regenerar névoa automaticamente</strong><span id="rsZenAutoDesc">Deixe a névoa voltar lentamente sozinha.</span></div><div id="rsZenAutoToggle" class="toggle on"></div></div>';
     content.appendChild(zenBox);
     document.getElementById('rsZenAutoToggle').onclick=()=>{state.zenAutoFog=!state.zenAutoFog;setToggle('rsZenAutoToggle',state.zenAutoFog);rsUpdateZenManualHud();saveGame();};
-    document.getElementById('rsZenManual').onclick=()=>rsRegenerateFogFull();
   }
   zenBox.style.display=state.isZen?'block':'none';
   setToggle('rsZenAutoToggle',state.zenAutoFog);
@@ -5027,7 +5081,7 @@ function rsUpdateZenManualHud(){
   if(!b||!c) return;
   const show=!!state.isZen && !state.zenAutoFog;
   b.classList.toggle('hidden',!show); c.style.display=show?'none':'';
-  b.textContent=rsText('zenManual');
+  b.textContent='MIST';
   b.onclick=()=>rsRegenerateFogFull();
 }
 
@@ -5127,7 +5181,7 @@ loop=function(time){
 /* 4/7 — if a future phase is marked as car/drive, cap its movement speed. */
 const rsOriginalUpdateCars=typeof updateCars==='function'?updateCars:null;
 if(rsOriginalUpdateCars){
-  updateCars=function(dt){ rsOriginalUpdateCars(dt*.35); };
+  updateCars=function(dt){ rsOriginalUpdateCars(dt*.22); };
 }
 
 /* Initialize new UI and translations. */
@@ -5163,6 +5217,5 @@ requestAnimationFrame(
 </script>
 
 
-<!-- V4 targeted update: missing/imperfect items patched; all other UI/graphics preserved. -->
 </body>
 </html>
