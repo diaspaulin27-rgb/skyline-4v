@@ -775,13 +775,56 @@ function drawParallax(ctx, speed) {
   }
 }
 
+// --- NOVO: CARREGA AS 20 FOTOS ---
+const phaseImages = [];
+for(let i=0;i<20;i++){
+  let img = new Image();
+  img.src = `fase${i}.jpg`; // mesmo nome que você upou no GitHub
+  phaseImages[i] = img;
+}
+
 function drawCityBackground() {
   const phase = phases[state.currentPhase];
   bgCtx.clearRect(0, 0, W, H);
-  if (state.currentPhase === 0) {
-    drawPhase1_FirstRain(bgCtx, W, H);
-    return;
+  
+  // SE A FOTO JÁ CARREGOU, DESENHA ELA
+  if(phaseImages[state.currentPhase] && phaseImages[state.currentPhase].complete){
+    bgCtx.drawImage(phaseImages[state.currentPhase], 0, 0, W, H);
+  } else {
+    // enquanto carrega, mostra o gradiente antigo
+    const sky = bgCtx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, phase.sky[0]); sky.addColorStop(.55, phase.sky[1]); sky.addColorStop(1, "#020308");
+    bgCtx.fillStyle = sky; 
+    bgCtx.fillRect(0,0,W,H);
   }
+
+  // EFEITOS QUE VOCÊ QUER: árvore mexendo, luz piscando
+  drawAnimatedDetails(state.currentPhase, bgCtx, W, H);
+}
+
+// FUNÇÃO DOS DETALHES QUE MEXEM
+let animT = 0;
+function drawAnimatedDetails(fase, ctx, W, H){
+  animT += 0.02;
+  
+  // Luzes piscando nas fases 2,3,9
+  if([1,2,8].includes(fase)){
+    let pisca = 0.4 + Math.sin(animT*2)*0.6;
+    ctx.fillStyle = `rgba(255,200,80,${pisca})`;
+    ctx.beginPath(); ctx.arc(W*0.15, H*0.25, 6, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(W*0.78, H*0.35, 5, 0, Math.PI*2); ctx.fill();
+  }
+  
+  // Galho balançando na fase 0 e 7
+  if(fase==0 || fase==7){
+    ctx.save();
+    ctx.translate(W*0.85, H*0.15);
+    ctx.rotate(Math.sin(animT)*0.03);
+    ctx.fillStyle = "rgba(0,0,0,0.6)";
+    ctx.fillRect(-80,0,160,20);
+    ctx.restore();
+  }
+}
   
   const sky = bgCtx.createLinearGradient(0, 0, 0, H);
   sky.addColorStop(0, phase.sky[0]); sky.addColorStop(.55, phase.sky[1]); sky.addColorStop(1, "#020308");
