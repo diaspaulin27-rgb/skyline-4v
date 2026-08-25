@@ -600,7 +600,7 @@ phase1MapImage.onload = () => {
   if (state.currentPhase === 0) drawCityBackground();
 };
 
-function drawPhase1ExternalMap() {
+function drawPhase1ExternalMap(time = 0) {
   if (!phase1MapImage.complete || !phase1MapImage.naturalWidth) return false;
 
   const imageRatio = phase1MapImage.naturalWidth / phase1MapImage.naturalHeight;
@@ -619,7 +619,48 @@ function drawPhase1ExternalMap() {
     dy = (H - dh) * 0.5;
   }
 
+  // Base: a paisagem inteira permanece estável.
   bgCtx.drawImage(phase1MapImage, dx, dy, dw, dh);
+
+  // Movimento EXCLUSIVO da água: deslocamento horizontal muito sutil
+  // em faixas finas, criando uma ondulação contínua sem balançar a foto.
+  const waterTop = Math.max(0, dy + dh * 0.55);
+  const waterBottom = Math.min(H, dy + dh * 0.92);
+  const sliceH = 3;
+  const amplitude = 1.35;
+  const waveLength = 34;
+
+  bgCtx.save();
+  bgCtx.beginPath();
+  bgCtx.rect(0, waterTop, W, waterBottom - waterTop);
+  bgCtx.clip();
+
+  for (let y = waterTop; y < waterBottom; y += sliceH) {
+    const wave = Math.sin((y - waterTop) / waveLength + time * 0.75) * amplitude;
+    const sourceY = ((y - dy) / dh) * phase1MapImage.naturalHeight;
+    const sourceH = (sliceH / dh) * phase1MapImage.naturalHeight;
+
+    bgCtx.drawImage(
+      phase1MapImage,
+      0, sourceY, phase1MapImage.naturalWidth, sourceH,
+      dx + wave, y, dw, sliceH + 0.5
+    );
+  }
+  bgCtx.restore();
+
+  // Reflexos já existentes na foto ganham uma variação luminosa mínima,
+  // reforçando a sensação de água viva sem criar uma camada artificial.
+  bgCtx.save();
+  bgCtx.globalAlpha = 0.055;
+  bgCtx.globalCompositeOperation = "screen";
+  for (let i = 0; i < 9; i++) {
+    const ry = waterTop + (i + 1) * ((waterBottom - waterTop) / 10);
+    const pulse = 0.65 + 0.35 * Math.sin(time * 0.9 + i * 1.7);
+    bgCtx.fillStyle = `rgba(255,210,150,${0.18 * pulse})`;
+    bgCtx.fillRect(W * 0.18, ry, W * 0.62, 1);
+  }
+  bgCtx.restore();
+
   return true;
 }
 
@@ -717,7 +758,7 @@ function drawCityBackground() {
   
   
   if (state.currentPhase === 0) {
-    if (drawPhase1ExternalMap()) return;
+    if (drawPhase1ExternalMap(phase1AnimTime)) return;
     bgCtx.fillStyle = "#5a5f9a";
     bgCtx.fillRect(0, 0, W, H);
     return;
@@ -1054,10 +1095,16 @@ function updateFingerSlots() {
   document.getElementById("slot2Name").textContent = brushes[state.brush2].name[state.lang];
 }
 
+let phase1AnimTime = 0;
+
 function loop(time) {
   const dt = Math.min((time - state.lastTime) / 1000, 0.1); state.lastTime = time;
   if (state.started && !state.paused) {
     state.elapsed += dt; updateAudio();
+    if (state.currentPhase === 0) {
+      phase1AnimTime += dt;
+      drawCityBackground();
+    }
     if(phases[state.currentPhase].type === 'car' || phases[state.currentPhase].type === 'car_snow') {
       state.carOffset += dt * carSpeed; drawCityBackground(); // Animated BG
     }
