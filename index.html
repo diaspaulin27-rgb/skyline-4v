@@ -400,6 +400,7 @@ const state = {
   brush2: "soft",
   activePointers: new Map(),
   carOffset: 0,
+  carSpeed: 2.5,
   elapsed: 0,
   cleanStreak: 0,
   lastWipe: 0,
@@ -522,29 +523,31 @@ function updateTranslations() {
 
 /* 20 FASES (Incluindo Carro e Neve/Sol) */
 const phases = [
-  { name: {en:"First Rain", pt:"Primeira Chuva"}, feeling: {en:"Serenity", pt:"Serenidade"}, story: {en:"Quiet city rain.", pt:"Chuva quieta."}, hue: 215, sky: ["#030712", "#0f2740"], lights: ["#38bdf8", "#7dd3fc", "#fef3c7"], rain: 0.72, thunder: 0, type: "rain" },
-  { name: {en:"Distant Lights", pt:"Luzes Distantes"}, feeling: {en:"Nostalgia", pt:"Nostalgia"}, story: {en:"Windows across the street.", pt:"Janelas do outro lado da rua."}, hue: 235, sky: ["#080817", "#202044"], lights: ["#fbbf24", "#f472b6", "#818cf8"], rain: 0.76, thunder: 1, type: "rain" },
-  { name: {en:"After Midnight", pt:"Depois da Meia-Noite"}, feeling: {en:"Loneliness", pt:"Solidão"}, story: {en:"The city sleeps.", pt:"A cidade dormiu."}, hue: 225, sky: ["#020617", "#111827"], lights: ["#22d3ee", "#60a5fa", "#a5b4fc"], rain: 0.84, thunder: 2, type: "rain" },
-  { name: {en:"Neon Splash", pt:"Neon"}, feeling: {en:"Contemplation", pt:"Contemplação"}, story: {en:"Liquid reflections.", pt:"Reflexos líquidos."}, hue: 285, sky: ["#10051c", "#321344"], lights: ["#f43f5e", "#a855f7", "#06b6d4"], rain: 0.88, thunder: 3, type: "rain" },
-  { name: {en:"The Window", pt:"A Janela"}, feeling: {en:"Intimacy", pt:"Intimidade"}, story: {en:"Protected behind glass.", pt:"Protegido atrás do vidro."}, hue: 195, sky: ["#03151b", "#12323c"], lights: ["#67e8f9", "#fde68a", "#f0f9ff"], rain: 0.68, thunder: 4, type: "rain" },
-  { name: {en:"Storm", pt:"Tempestade"}, feeling: {en:"Tension", pt:"Tensão"}, story: {en:"Heavy winds and flashes.", pt:"Ventos fortes e flashes."}, hue: 210, sky: ["#02040a", "#16202d"], lights: ["#e0f2fe", "#93c5fd", "#f8fafc"], rain: 1, thunder: 5, type: "rain" },
-  { name: {en:"Horizon", pt:"Horizonte"}, feeling: {en:"Hope", pt:"Esperança"}, story: {en:"A tiny strip of light.", pt:"Uma pequena faixa de luz."}, hue: 205, sky: ["#07111c", "#24485d"], lights: ["#fde68a", "#fbbf24", "#bae6fd"], rain: 0.65, thunder: 6, type: "rain" },
-  { name: {en:"Memories", pt:"Memórias"}, feeling: {en:"Longing", pt:"Saudade"}, story: {en:"Drops carrying past moments.", pt:"Gotas carregando o passado."}, hue: 260, sky: ["#090613", "#2b183b"], lights: ["#c4b5fd", "#f9a8d4", "#fef3c7"], rain: 0.78, thunder: 7, type: "rain" },
-  { name: {en:"Silence", pt:"Silêncio"}, feeling: {en:"Peace", pt:"Paz"}, story: {en:"No cars, just water.", pt:"Sem carros, só água."}, hue: 175, sky: ["#020d0d", "#123638"], lights: ["#5eead4", "#99f6e4", "#fef9c3"], rain: 0.55, thunder: 8, type: "rain" },
-  { name: {en:"Clearing Sky", pt:"O Céu Clareia"}, feeling: {en:"Rebirth", pt:"Renascimento"}, story: {en:"Storm is leaving.", pt:"A tempestade está indo embora."}, hue: 35, sky: ["#17100a", "#513b20"], lights: ["#fde68a", "#fb923c", "#fef3c7"], rain: 0.48, thunder: 9, type: "rain" },
-  
-  // NOVAS 10 FASES (Carro, Neve, Sol)
-  { name: {en:"Moving Car", pt:"Carro em Movimento"}, feeling: {en:"Journey", pt:"Jornada"}, story: {en:"Watching lines blur past.", pt:"Vendo as luzes borradas passando."}, hue: 200, sky: ["#0a0a0a", "#1a1a1a"], lights: ["#ff0000", "#ffaa00"], rain: 0.8, thunder: 1, type: "car" },
-  { name: {en:"Snowfall", pt:"Nevasca"}, feeling: {en:"Cold", pt:"Frio"}, story: {en:"Soft white silence.", pt:"Silêncio branco e suave."}, hue: 200, sky: ["#2d3748", "#4a5568"], lights: ["#e2e8f0", "#cbd5e0"], rain: 0.4, thunder: 0, type: "snow" },
-  { name: {en:"Highway Rain", pt:"Chuva na Rodovia"}, feeling: {en:"Speed", pt:"Velocidade"}, story: {en:"Fast drops hitting the windshield.", pt:"Gotas rápidas batendo no para-brisa."}, hue: 220, sky: ["#050510", "#151530"], lights: ["#fff", "#ff0000", "#00ffff"], rain: 0.9, thunder: 2, type: "car" },
-  { name: {en:"Morning Frost", pt:"Geada Matinal"}, feeling: {en:"Crisp", pt:"Cristalino"}, story: {en:"Ice melting on the glass.", pt:"Gelo derretendo no vidro."}, hue: 190, sky: ["#4a5568", "#a0aec0"], lights: ["#fff", "#e2e8f0"], rain: 0.3, thunder: 0, type: "snow" },
-  { name: {en:"Summer Sun Shower", pt:"Chuva de Verão"}, feeling: {en:"Warmth", pt:"Calor"}, story: {en:"Rain while the sun shines.", pt:"Chuva enquanto o sol brilha."}, hue: 50, sky: ["#ecc94b", "#f6e05e"], lights: ["#fff"], rain: 0.5, thunder: 0, type: "rain" },
-  { name: {en:"Midnight Blizzard", pt:"Nevasca à Meia-Noite"}, feeling: {en:"Isolation", pt:"Isolamento"}, story: {en:"Fierce wind and blinding snow.", pt:"Vento feroz e neve cegante."}, hue: 230, sky: ["#000", "#111"], lights: ["#718096", "#a0aec0"], rain: 0.8, thunder: 3, type: "snow" },
-  { name: {en:"City Tunnel", pt:"Túnel da Cidade"}, feeling: {en:"Echo", pt:"Eco"}, story: {en:"Orange lights rushing by.", pt:"Luzes laranjas passando rápido."}, hue: 30, sky: ["#1a1005", "#3a2010"], lights: ["#f6ad55", "#ed8936"], rain: 0.5, thunder: 0, type: "car" },
-  { name: {en:"Golden Hour Drops", pt:"Gotas Douradas"}, feeling: {en:"Beautiful", pt:"Beleza"}, story: {en:"Sunsets reflecting in the water.", pt:"Pôr do sol refletindo na água."}, hue: 20, sky: ["#c53030", "#ed8936"], lights: ["#fefcbf", "#fbd38d"], rain: 0.6, thunder: 1, type: "rain" },
-  { name: {en:"Snowy Drive", pt:"Passeio na Neve"}, feeling: {en:"Cozy", pt:"Aconchego"}, story: {en:"Warm inside, frozen outside.", pt:"Quente por dentro, congelado por fora."}, hue: 210, sky: ["#1a202c", "#2d3748"], lights: ["#e2e8f0", "#ff0000"], rain: 0.6, thunder: 0, type: "car_snow" },
-  { name: {en:"The Last Wipe", pt:"A Última Limpeza"}, feeling: {en:"Closure", pt:"Despedida"}, story: {en:"The glass is finally clear.", pt:"O vidro finalmente está limpo."}, hue: 200, sky: ["#2b6cb0", "#4299e1"], lights: ["#fff", "#bee3f8"], rain: 0.2, thunder: 0, type: "rain" }
+ {id:1, name:"First Rain", type:"rain", landmark:"rio", sky:["#ff7e5f","#feb47b","#6a82fb"]},
+ {id:2, name:"Distant Lights", type:"rain", landmark:"rio", sky:["#0f0c29","#302b63","#24243e"]},
+ {id:3, name:"After Midnight", type:"rain", landmark:"rio", sky:["#000000","#0f0c29","#1a1a2e"]},
+ {id:4, name:"Neon Splash", type:"rain", landmark:"rio", sky:["#ff00cc","#333399","#000000"]},
+ {id:5, name:"The Window", type:"rain", landmark:"rio", sky:["#2c3e50","#4ca1af","#c4c4c4"]},
+ {id:6, name:"Storm", type:"rain", landmark:"ny", sky:["#141e30","#243b55","#000000"]},
+ {id:7, name:"Horizon", type:"rain", landmark:"ny", sky:["#ff9966","#ff5e62","#ffe259"]},
+ {id:8, name:"Memories", type:"rain", landmark:"ny", sky:["#ff9a9e","#fecfef","#fecfef"]},
+ {id:9, name:"Silence", type:"rain", landmark:"ny", sky:["#616161","#9bc5c3","#616161"]},
+ {id:10, name:"Clearing Sky", type:"rain", landmark:"ny", sky:["#56ccf2","#2f80ed","#ffffff"]},
+ {id:11, name:"Moving Car", type:"car", landmark:"paris", sky:["#2c3e50","#2c3e50","#34495e"]},
+ {id:12, name:"Snowfall", type:"snow", landmark:"paris", sky:["#e6dada","#274046","#0f0c29"]},
+ {id:13, name:"Highway Rain", type:"car", landmark:"paris", sky:["#000000","#232526","#414345"]},
+ {id:14, name:"Morning Frost", type:"snow", landmark:"paris", sky:["#f5efef","#feada6","#f5efef"]},
+ {id:15, name:"Summer Sun Shower", type:"rain", landmark:"paris", sky:["#fceabb","#f8b500","#fceabb"]},
+ {id:16, name:"Midnight Blizzard", type:"snow", landmark:"mix", sky:["#000000","#434343","#000000"]},
+ {id:17, name:"City Tunnel", type:"car", landmark:"mix", sky:["#000000","#000000","#232526"]},
+ {id:18, name:"Golden Hour Drops", type:"rain", landmark:"mix", sky:["#f12711","#f5af19","#f12711"]},
+ {id:19, name:"Snowy Drive", type:"car_snow", landmark:"mix", sky:["#0f0c29","#302b63","#24243e"]},
+ {id:20, name:"The Last Wipe", type:"rain", landmark:"mix", sky:["#a8edea","#fed6e3","#ffffff"]},
 ];
+
+function phaseName(p) { return typeof p.name === "string" ? p.name : p.name[state.lang]; }
+function phaseFeeling(p) { return p.feeling ? (typeof p.feeling === "string" ? p.feeling : p.feeling[state.lang]) : ""; }
+function phaseStory(p) { return p.story ? (typeof p.story === "string" ? p.story : p.story[state.lang]) : ""; }
 
 const brushes = {
   soft: { name: {en:"Soft", pt:"Suave"}, cost: 0, radius: 38, blur: 0.9, desc: {en:"Large area, smooth.", pt:"Grande área, suave."} },
@@ -624,72 +627,91 @@ function generateCity() {
     x += buildings[buildings.length-1].width + 4;
   }
   for (let i = 0; i < (state.isZen ? 18 : 42); i++) {
-    bokeh.push({ x: Math.random() * W, y: H * .25 + Math.random() * H * .55, r: 8 + Math.random() * 35, color: phase.lights[Math.floor(Math.random() * phase.lights.length)], alpha: .04 + Math.random() * .12 });
+    bokeh.push({ x: Math.random() * W, y: H * .25 + Math.random() * H * .55, r: 8 + Math.random() * 35, color: (phase.lights || phase.sky)[Math.floor(Math.random() * (phase.lights || phase.sky).length)], alpha: .04 + Math.random() * .12 });
   }
-  for(let i=0;i<10;i++) streetLights.push({x:Math.random()*W,y:H*(.60+Math.random()*.18),h:45+Math.random()*90,glow:phase.lights[i%phase.lights.length]});
-  for(let i=0;i<7;i++) traffic.push({x:Math.random()*W,y:H*(.72+Math.random()*.14),speed:35+Math.random()*100,scale:.5+Math.random()*.8,tail:phase.lights[(i+1)%phase.lights.length]});
+  for(let i=0;i<10;i++) streetLights.push({x:Math.random()*W,y:H*(.60+Math.random()*.18),h:45+Math.random()*90,glow:(phase.lights || phase.sky)[i%(phase.lights || phase.sky).length]});
+  for(let i=0;i<7;i++) traffic.push({x:Math.random()*W,y:H*(.72+Math.random()*.14),speed:35+Math.random()*100,scale:.5+Math.random()*.8,tail:(phase.lights || phase.sky)[(i+1)%(phase.lights || phase.sky).length]});
+}
+
+function drawLandmark(ctx, W, H, type, alpha=1, scale=1, offsetX=0) {
+  ctx.save(); ctx.globalAlpha = alpha; ctx.fillStyle = "#0a1930";
+  const base = H * .70, s = scale, ox = offsetX;
+  function rect(x,y,w,h){ctx.fillRect(ox+x*s,y,w*s,h*s)}
+  function circle(x,y,r){ctx.beginPath();ctx.arc(ox+x*s,y,r*s,0,Math.PI*2);ctx.fill()}
+  function e(x,y,rx,ry){ctx.beginPath();ctx.ellipse(ox+x*s,y,rx*s,ry*s,0,0,Math.PI*2);ctx.fill()}
+  if(type === "rio" || type === "mix") {
+    if(type === "rio") {
+      rect(48,base-170,18,170); rect(40,base-150,34,14); rect(54,base-205,6,35); circle(57,base-220,8);
+      ctx.beginPath(); ctx.arc(57*s+ox,base-184,31*s,Math.PI,Math.PI*2); ctx.fill();
+      for(let i=0;i<5;i++){rect(95+i*18,base-28-(i%2)*9,13,28+(i%2)*9);}
+      circle(150,base-58,16); circle(168,base-52,20); circle(188,base-48,24);
+      rect(144,base-35,7,35); rect(185,base-32,7,32);
+      for(let i=0;i<6;i++) rect(210+i*24,base-55-(i%3)*15,18,55+(i%3)*15);
+      for(let i=0;i<4;i++){rect(335+i*28,base-65,5,65);circle(337+i*28,base-76,12);}
+    }
+  }
+  if(type === "ny" || type === "mix") {
+    const bx=type==="ny"?30:255;
+    rect(bx,base-125,42,125); rect(bx+8,base-170,28,170); rect(bx+14,base-215,16,215);
+    rect(bx+18,base-255,8,40); circle(bx+22,base-267,7);
+    for(let i=0;i<10;i++) rect(bx+55+i*25,base-(80+(i%5)*30),18,80+(i%5)*30);
+  }
+  if(type === "paris" || type === "mix") {
+    const px=type==="paris"?55:150;
+    rect(px,base-170,7,170); rect(px-28,base-135,63,6); rect(px-18,base-92,48,5);
+    ctx.beginPath();ctx.moveTo(ox+(px+3.5)*s,base-260);ctx.lineTo(ox+(px-25)*s,base-135);ctx.lineTo(ox+(px+32)*s,base-135);ctx.fill();
+    for(let i=0;i<8;i++) rect(px+48+i*24,base-55-(i%2)*12,18,55+(i%2)*12);
+  }
+  // Lua e reflexo d'água: code-only shapes.
+  ctx.fillStyle="#dcecff"; circle(W/(2*s)-ox/s, H*.18, 22);
+  ctx.fillStyle="#0a1930"; circle(W/(2*s)-ox/s+8, H*.16, 20);
+  ctx.fillStyle="rgba(220,236,255,.12)"; e(W/(2*s)-ox/s,H*.79,35,5); e(W/(2*s)-ox/s,H*.82,22,3);
+  ctx.restore();
+}
+
+function drawParallax(ctx, speed) {
+  const p = phases[state.currentPhase];
+  const moving = p.type === "car" || p.type === "car_snow";
+  const base = moving ? state.carOffset : 0;
+  ctx.save();
+  drawLandmark(ctx,W,H,p.landmark,.20,.55,-(base*.15)%W);
+  drawLandmark(ctx,W,H,p.landmark,.42,.78,-(base*.35)%W);
+  drawLandmark(ctx,W,H,p.landmark,.78,1,-(base*speed)%W);
+  ctx.restore();
 }
 
 function drawCityBackground() {
   const phase = phases[state.currentPhase];
   bgCtx.clearRect(0, 0, W, H);
-  
-  const sky = bgCtx.createLinearGradient(0, 0, 0, H);
-  sky.addColorStop(0, phase.sky[0]); sky.addColorStop(.55, phase.sky[1]); sky.addColorStop(1, "#020308");
-  bgCtx.fillStyle = sky; bgCtx.fillRect(0, 0, W, H);
-
-  // Bokeh Draw (animado se for carro)
-  bokeh.forEach(light => {
-    let lx = light.x;
-    if(phase.type === 'car' || phase.type === 'car_snow') {
-        lx = (light.x - state.carOffset * (light.r/10)) % W;
-        if (lx < 0) lx += W;
-    }
-    const gradient = bgCtx.createRadialGradient(lx, light.y, 0, lx, light.y, light.r);
-    gradient.addColorStop(0, light.color); gradient.addColorStop(1, "transparent");
-    bgCtx.fillStyle = gradient; bgCtx.globalAlpha = light.alpha;
-    bgCtx.beginPath(); bgCtx.arc(lx, light.y, light.r, 0, Math.PI * 2); bgCtx.fill();
-  });
-  bgCtx.globalAlpha = 1;
-
-  if (phase.type !== 'car' && phase.type !== 'car_snow') {
-    buildings.forEach((building, index) => {
-      const y = H - building.height;
-      bgCtx.fillStyle = `hsl(${phase.hue}, 25%, ${Math.max(2, 9 * building.depth)}%)`;
-      bgCtx.fillRect(building.x, y, building.width, building.height);
-      const rows = Math.floor(building.height / 17); const columns = Math.max(1, Math.floor(building.width / 18));
-      for (let row = 0; row < rows; row++) {
-        for (let col = 0; col < columns; col++) {
-          if ((index * 97 + row * 31 + col * 17) % 11 > 5) continue;
-          bgCtx.fillStyle = phase.lights[(index + row + col) % phase.lights.length];
-          bgCtx.globalAlpha = .08 + (((index*97+row*31+col*17)%11) / 11) * .35;
-          bgCtx.fillRect(building.x + 7 + col * 18, y + 9 + row * 17, 6, 5);
-        }
-      }
-      bgCtx.globalAlpha = 1;
-    });
+  const sky = bgCtx.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0,phase.sky[0]); sky.addColorStop(.55,phase.sky[1]); sky.addColorStop(1,phase.sky[2]);
+  bgCtx.fillStyle=sky; bgCtx.fillRect(0,0,W,H);
+  // 40 cloud-texture circles on every phase.
+  for(let i=0;i<40;i++){
+    const x=(i*97+state.currentPhase*31)%W, y=H*(.12+((i*37)%50)/100), r=18+(i%9)*9;
+    bgCtx.globalAlpha=.06; bgCtx.fillStyle="#ffffff"; bgCtx.beginPath(); bgCtx.arc(x,y,r,0,Math.PI*2); bgCtx.fill();
   }
-
-  // Wet road + reflections
-  const roadY = H * .72;
-  bgCtx.fillStyle = "rgba(2,5,10,.68)"; bgCtx.fillRect(0,roadY,W,H-roadY);
-  bgCtx.strokeStyle = "rgba(255,255,255,.035)"; bgCtx.lineWidth=1;
-  for(let y=roadY+18;y<H;y+=22){ bgCtx.beginPath(); bgCtx.moveTo(0,y); bgCtx.lineTo(W,y+Math.sin(y*.03)*8); bgCtx.stroke(); }
+  bgCtx.globalAlpha=1;
+  drawParallax(bgCtx, .35);
+  const roadY=H*.72;
+  bgCtx.fillStyle="rgba(2,5,10,.68)"; bgCtx.fillRect(0,roadY,W,H-roadY);
+  // Grass: bottom 15% with 120 vertical strokes.
+  bgCtx.fillStyle="#1a3d1a"; bgCtx.fillRect(0,H*.85,W,H*.15);
+  for(let i=0;i<120;i++){
+    const x=(i/120)*W+(i%3)*.7, h=2+(i%4), col=i%2?"#2d5a2d":"#3a7a3a";
+    bgCtx.strokeStyle=col; bgCtx.lineWidth=1; bgCtx.beginPath(); bgCtx.moveTo(x,H*.85); bgCtx.lineTo(x,H*.85-h); bgCtx.stroke();
+  }
+  bgCtx.globalAlpha=1;
+  // Wet road and lights remain, but landmarks now provide the city silhouette.
+  bgCtx.strokeStyle="rgba(255,255,255,.035)"; bgCtx.lineWidth=1;
+  for(let y=roadY+18;y<H*.85;y+=22){bgCtx.beginPath();bgCtx.moveTo(0,y);bgCtx.lineTo(W,y+Math.sin(y*.03)*8);bgCtx.stroke();}
   streetLights.forEach(l=>{
     bgCtx.strokeStyle="rgba(170,200,220,.18)"; bgCtx.lineWidth=2; bgCtx.beginPath(); bgCtx.moveTo(l.x,l.y); bgCtx.lineTo(l.x,l.y-l.h); bgCtx.stroke();
-    const g=bgCtx.createRadialGradient(l.x,l.y-l.h,0,l.x,l.y-l.h,24); g.addColorStop(0,l.glow); g.addColorStop(1,"transparent"); bgCtx.fillStyle=g; bgCtx.globalAlpha=.22; bgCtx.beginPath(); bgCtx.arc(l.x,l.y-l.h,24,0,Math.PI*2); bgCtx.fill(); bgCtx.globalAlpha=1;
+    const g=bgCtx.createRadialGradient(l.x,l.y-l.h,0,l.x,l.y-l.h,24);g.addColorStop(0,l.glow);g.addColorStop(1,"transparent");bgCtx.fillStyle=g;bgCtx.globalAlpha=.22;bgCtx.beginPath();bgCtx.arc(l.x,l.y-l.h,24,0,Math.PI*2);bgCtx.fill();bgCtx.globalAlpha=1;
   });
-  traffic.forEach(c=>{
-    let x=(c.x-state.carOffset*c.speed/100)% (W+180); if(x< -120)x+=W+180;
-    const y=c.y, sc=c.scale;
-    bgCtx.fillStyle="rgba(8,12,18,.9)"; bgCtx.fillRect(x,y,42*sc,10*sc);
-    const rg=bgCtx.createRadialGradient(x+5*sc,y+5*sc,0,x+5*sc,y+5*sc,18*sc); rg.addColorStop(0,c.tail); rg.addColorStop(1,"transparent"); bgCtx.fillStyle=rg; bgCtx.globalAlpha=.35; bgCtx.beginPath(); bgCtx.arc(x+5*sc,y+5*sc,18*sc,0,Math.PI*2); bgCtx.fill(); bgCtx.globalAlpha=1;
-  });
-
-  const ground = bgCtx.createLinearGradient(0, H * .76, 0, H);
-  ground.addColorStop(0, "rgba(0,0,0,0)"); ground.addColorStop(1, "rgba(0,0,0,.55)");
-  bgCtx.fillStyle = ground; bgCtx.fillRect(0, H * .7, W, H * .3);
+  bgCtx.fillStyle="rgba(0,0,0,.28)"; bgCtx.fillRect(0,H*.7,W,H*.3);
 }
+
 
 class Particle {
   constructor() { this.reset(true); }
@@ -709,9 +731,11 @@ class Particle {
   update(dt) {
     const phase = phases[state.currentPhase];
     let spd = this.vy * dt * (.35 + state.rainIntensity * .9);
-    if(phase.type === 'car' || phase.type === 'car_snow') this.x -= 200 * dt; // Car speed illusion
-    this.y += spd;
-    this.x += this.wind * dt * (this.isSnow ? 50 : (20 + phase.rain * 30));
+    const car = phase.type === 'car' || phase.type === 'car_snow';
+    const rainAngle = car ? 25 * Math.PI / 180 : 0;
+    if(car) this.x += state.carSpeed * 2 * dt;
+    this.y += spd * Math.cos(rainAngle);
+    this.x += Math.sin(rainAngle) * spd + this.wind * dt * (this.isSnow ? 50 : (20 + (phase.rain ?? 0.7) * 30));
     if (!this.isSnow && this.y > H*.74 && Math.random()<.035) this.splash=.12;
     if(this.splash>0) this.splash-=dt;
     if (this.y > H + 80 || this.x < -100) this.reset();
@@ -743,7 +767,7 @@ class GlassDrop {
   }
   update(dt) {
     const phase = phases[state.currentPhase];
-    if(phase.type === 'car' || phase.type === 'car_snow') { this.x -= 30 * dt; this.vx = -2 - Math.random(); } // Diagonal wipe effect
+    if(phase.type === 'car' || phase.type === 'car_snow') { this.x -= state.carSpeed * 2 * dt; this.vx = -0.5 - Math.random()*.5; } // Diagonal wipe effect
     this.y += this.vy * dt; this.x += this.vx * dt;
     this.trail.unshift({x:this.x,y:this.y}); if(this.trail.length>5)this.trail.pop();
     this.mergeCooldown -= dt;
@@ -764,17 +788,36 @@ const GRID_Y = 17;
 let fogGrid = [];
 function createFogGrid() { fogGrid = Array.from({ length: GRID_X * GRID_Y }, () => 0); }
 
-function initFog() {
-  createFogGrid();
-  fogCtx.globalCompositeOperation = "source-over";
-  fogCtx.clearRect(0, 0, W, H);
-  const fog = fogCtx.createRadialGradient(W*.48,H*.45,0,W*.5,H*.5,Math.max(W,H)*.85);
-  fog.addColorStop(0, "rgba(235,242,245,.78)"); fog.addColorStop(.5, "rgba(205,220,228,.72)"); fog.addColorStop(1, "rgba(150,175,190,.64)");
-  fogCtx.fillStyle = fog; fogCtx.fillRect(0, 0, W, H);
-  fogCtx.globalAlpha=.13;
-  for(let i=0;i<120;i++){ let x=Math.random()*W,y=Math.random()*H,r=10+Math.random()*50; fogCtx.fillStyle="rgba(255,255,255,.08)"; fogCtx.beginPath(); fogCtx.arc(x,y,r,0,Math.PI*2); fogCtx.fill(); }
+let snowTexture = [];
+function renderSnowFog() {
+  const isSnow = phases[state.currentPhase].type === "snow" || phases[state.currentPhase].type === "car_snow";
+  if(!isSnow) return;
+  fogCtx.clearRect(0,0,W,H);
+  const fog=fogCtx.createRadialGradient(W*.5,H*.45,0,W*.5,H*.5,Math.max(W,H)*.9);
+  fog.addColorStop(0,"#e8e8e8"); fog.addColorStop(1,"#ffffff");
+  const cw=W/GRID_X,ch=H/GRID_Y;
+  for(let yy=0;yy<GRID_Y;yy++) for(let xx=0;xx<GRID_X;xx++){
+    const v=fogGrid[yy*GRID_X+xx]; if(v>=2) continue;
+    fogCtx.globalAlpha=v===1?.45:1; fogCtx.fillStyle=fog; fogCtx.fillRect(xx*cw,yy*ch,cw+1,ch+1);
+  }
+  fogCtx.globalAlpha=.1; fogCtx.fillStyle="#ffffff";
+  snowTexture.forEach(q=>{fogCtx.beginPath();fogCtx.arc(q.x,q.y,q.r,0,Math.PI*2);fogCtx.fill();});
   fogCtx.globalAlpha=1;
-  state.fogProgress = 0; updateProgress();
+}
+function initFog() {
+  createFogGrid(); fogCtx.globalCompositeOperation="source-over"; fogCtx.clearRect(0,0,W,H);
+  const isSnow=phases[state.currentPhase].type==="snow" || phases[state.currentPhase].type==="car_snow";
+  if(isSnow){
+    snowTexture=Array.from({length:150},()=>({x:Math.random()*W,y:Math.random()*H,r:2+Math.random()*18}));
+    renderSnowFog();
+  } else {
+    const fog=fogCtx.createRadialGradient(W*.48,H*.45,0,W*.5,H*.5,Math.max(W,H)*.85);
+    fog.addColorStop(0,"rgba(235,242,245,.78)"); fog.addColorStop(.5,"rgba(205,220,228,.72)"); fog.addColorStop(1,"rgba(150,175,190,.64)");
+    fogCtx.fillStyle=fog; fogCtx.fillRect(0,0,W,H); fogCtx.globalAlpha=.13;
+    for(let i=0;i<120;i++){let x=Math.random()*W,y=Math.random()*H,r=10+Math.random()*50;fogCtx.fillStyle="rgba(255,255,255,.08)";fogCtx.beginPath();fogCtx.arc(x,y,r,0,Math.PI*2);fogCtx.fill();}
+    fogCtx.globalAlpha=1;
+  }
+  state.fogProgress=0; updateProgress();
 }
 
 function clearFog(x, y, brush) {
@@ -797,6 +840,7 @@ function clearFog(x, y, brush) {
     fogCtx.globalAlpha=secondCoat ? 1 : .5;
     fogCtx.beginPath(); fogCtx.arc(x,y,brush.radius,0,Math.PI*2); fogCtx.fill();
     fogCtx.restore();
+    renderSnowFog();
     updateProgress();
     return;
   }
@@ -844,6 +888,22 @@ function handlePointerUp(e) { state.activePointers.delete(e.pointerId); }
 fogCanvas.addEventListener("pointerdown", handlePointerDown); fogCanvas.addEventListener("pointermove", handlePointerMove); fogCanvas.addEventListener("pointerup", handlePointerUp); fogCanvas.addEventListener("pointercancel", handlePointerUp);
 
 let audioCtx = null, masterGain = null, rainGain = null, droneGain = null, windNode = null, thunderTimer = null;
+let carLoop = null;
+function createCarLoop() {
+  if(carLoop) return;
+  const samples=8000, rate=8000, bytes=new Uint8Array(44+samples*2), view=new DataView(bytes.buffer);
+  function w(o,str){for(let i=0;i<str.length;i++)view.setUint8(o+i,str.charCodeAt(i));}
+  w(0,"RIFF");view.setUint32(4,36+samples*2,true);w(8,"WAVEfmt ");view.setUint32(16,16,true);view.setUint16(20,1,true);view.setUint16(22,1,true);view.setUint32(24,rate,true);view.setUint32(28,rate*2,true);view.setUint16(32,2,true);view.setUint16(34,16,true);w(36,"data");view.setUint32(40,samples*2,true);
+  for(let i=0;i<samples;i++){const t=i/rate;let n=(Math.sin(t*42)+.45*Math.sin(t*73)+.2*Math.sin(t*117))*.18;view.setInt16(44+i*2,Math.max(-1,Math.min(1,n))*32767,true);}
+  let bin="";for(let i=0;i<bytes.length;i++)bin+=String.fromCharCode(bytes[i]);
+  carLoop=new Audio("data:audio/wav;base64,"+btoa(bin)); carLoop.loop=true; carLoop.volume=.22;
+}
+function updateCarAudio(){
+  const car=phases[state.currentPhase].type==='car'||phases[state.currentPhase].type==='car_snow';
+  if(car){createCarLoop(); if(carLoop.paused)carLoop.play().catch(()=>{}); carLoop.loop=true; carLoop.volume=.22;}
+  else if(carLoop&&!carLoop.paused){carLoop.pause();carLoop.currentTime=0;}
+}
+
 function initAudio(){
   if(audioCtx){ if(audioCtx.state==='suspended') audioCtx.resume(); return; }
   try{
@@ -880,7 +940,7 @@ function completePhase() {
   state.points += 100+bonus; state.stars += star;
   if (state.currentPhase < phases.length - 1) state.highestPhase = Math.max(state.highestPhase, state.currentPhase + 1);
   saveGame(); // AUTOSAVE
-  document.getElementById("rewardPhaseName").textContent = phases[state.currentPhase].name[state.lang] + "  ·  " + star + " ★" + (bonus?"  +"+bonus:"");
+  document.getElementById("rewardPhaseName").textContent = phaseName(phases[state.currentPhase]) + "  ·  " + star + " ★" + (bonus?"  +"+bonus:"");
   
   showAd(() => {
     document.getElementById("hud").classList.add("hidden");
@@ -898,15 +958,15 @@ function startPhase(idx, zen = false) {
   document.getElementById("hud").classList.remove("hidden");
   document.getElementById("instruction").classList.remove("hidden-text");
   document.getElementById('progressLabelText').textContent = zen ? t('zen_progress_label') : t('defog_window');
-  initAudio(); updateAudio(); startThunderSchedule();
+  initAudio(); updateAudio(); updateCarAudio(); startThunderSchedule();
 }
 
 function updatePhaseUI() {
   const p = phases[state.currentPhase];
   document.getElementById("phaseDisplay").textContent = state.currentPhase + 1;
-  document.getElementById("menuPhaseName").textContent = p.name[state.lang];
-  document.getElementById("menuPhaseFeeling").textContent = p.feeling[state.lang];
-  document.getElementById("menuPhaseStory").textContent = p.story[state.lang];
+  document.getElementById("menuPhaseName").textContent = phaseName(p);
+  document.getElementById("menuPhaseFeeling").textContent = phaseFeeling(p);
+  document.getElementById("menuPhaseStory").textContent = phaseStory(p);
   updateCoins();
 }
 function updateCoins() { document.getElementById("pointsDisplay").textContent = state.points; document.getElementById("storeCoins").textContent = state.points; }
@@ -917,7 +977,7 @@ function renderPhases() {
     const unlocked = i <= state.highestPhase;
     const div = document.createElement("div");
     div.className = "phase-item " + (i === state.currentPhase ? "active " : "") + (!unlocked ? "locked" : "");
-    div.innerHTML = `<div class="phase-number">${t('phase_hud')} ${i + 1}</div><div class="phase-name">${unlocked ? p.name[state.lang] : t('phase_locked')}</div><div class="phase-mini-feeling">${unlocked ? p.feeling[state.lang] : t('phase_req')}</div>`;
+    div.innerHTML = `<div class="phase-number">${t('phase_hud')} ${i + 1}</div><div class="phase-name">${unlocked ? phaseName(p) : t('phase_locked')}</div><div class="phase-mini-feeling">${unlocked ? phaseFeeling(p) : t('phase_req')}</div>`;
     if (unlocked) div.onclick = () => startPhase(i);
     list.appendChild(div);
   });
@@ -949,7 +1009,7 @@ function loop(time) {
   if (state.started && !state.paused) {
     state.elapsed += dt; updateAudio();
     if(phases[state.currentPhase].type === 'car' || phases[state.currentPhase].type === 'car_snow') {
-      state.carOffset += dt * 300; drawCityBackground(); // Animated BG
+      state.carOffset += dt * state.carSpeed; drawCityBackground(); updateCarAudio();
     }
     rainCtx.clearRect(0, 0, W, H); glassCtx.clearRect(0, 0, W, H);
     rainParticles.forEach(p => { p.update(dt); p.draw(); });
