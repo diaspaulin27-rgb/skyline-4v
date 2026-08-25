@@ -1,505 +1,655 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rainy Skyline - Zanon Games</title>
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      user-select: none;
-    }
-    body, html {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background-color: #05070a;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      color: #ffffff;
-    }
-    #game-container {
-      position: relative;
-      width: 100vw;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    canvas {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
-    #bgCanvas {
-      z-index: 1;
-    }
-    #glassCanvas {
-      z-index: 2;
-      cursor: pointer;
-    }
-    #ui-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 10;
-      pointer-events: none;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 20px;
-    }
-    .ui-element {
-      pointer-events: auto;
-      background: rgba(15, 20, 30, 0.65);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 12px;
-      padding: 12px 20px;
-      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-    }
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    h1 {
-      font-size: 1.4rem;
-      font-weight: 600;
-      letter-spacing: 1px;
-      color: #e2e8f0;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-    }
-    .phase-badge {
-      font-size: 0.9rem;
-      background: rgba(255, 255, 255, 0.1);
-      padding: 4px 12px;
-      border-radius: 20px;
-      color: #38bdf8;
-      border: 1px solid rgba(56, 189, 248, 0.3);
-    }
-    footer {
-      display: flex;
-      gap: 15px;
-      align-items: center;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-    button {
-      background: rgba(255, 255, 255, 0.12);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      color: #fff;
-      padding: 10px 18px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      font-weight: 500;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    button:hover {
-      background: rgba(255, 255, 255, 0.25);
-      transform: translateY(-2px);
-    }
-    button:active {
-      transform: translateY(0);
-    }
-    .control-group {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 0.85rem;
-      color: #cbd5e1;
-    }
-    input[type=range] {
-      accent-color: #38bdf8;
-      cursor: pointer;
-    }
-    #hint {
-      position: absolute;
-      bottom: 85px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 0.85rem;
-      color: rgba(255, 255, 255, 0.6);
-      text-shadow: 0 1px 3px rgba(0,0,0,0.8);
-      pointer-events: none;
-      animation: pulse 2s infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 0.4; }
-      50% { opacity: 0.9; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#030712">
+<title>Rainy Skyline — Atmospheric Experience</title>
+<style>
+:root {
+  --primary: #38bdf8;
+  --primary-glow: rgba(56, 189, 248, 0.4);
+  --bg-dark: #030712;
+  --panel-bg: rgba(15, 23, 42, 0.78);
+  --panel-border: rgba(255, 255, 255, 0.12);
+}
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-dark);
+  color: #f8fafc;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  touch-action: none;
+}
+#adScreen {
+  position: fixed;
+  inset: 0;
+  z-index: 8000;
+  background: rgba(0,0,0,0.95);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.3s ease;
+}
+#game {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+}
+canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+#bgCanvas { z-index: 1; }
+#rainCanvas { z-index: 3; }
+#glassCanvas { z-index: 5; }
+#fogCanvas { z-index: 7; touch-action: none; }
+#lightningFlash {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  background: white;
+  opacity: 0;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+#vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  pointer-events: none;
+  background: radial-gradient(circle at center, transparent 35%, rgba(3, 7, 18, 0.78) 100%);
+}
+#hud {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: calc(20px + env(safe-area-inset-top)) calc(20px + env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) calc(20px + env(safe-area-inset-left));
+  transition: opacity 0.5s ease;
+}
+#hud.hidden { opacity: 0; pointer-events: none; }
+.hud-header { display: flex; justify-content: space-between; align-items: center; }
+.hud-left,.hud-right { display: flex; align-items: center; gap: 10px; }
+.hud-btn {
+  width: 48px; height: 48px;
+  border-radius: 50%; border: 1px solid var(--panel-border);
+  background: rgba(15, 23, 42, 0.62);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  color: white; font-size: 18px; display: grid; place-items: center;
+  cursor: pointer; pointer-events: auto; transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px rgba(255,255,255,0.06);
+}
+.currency-badge {
+  pointer-events: auto; background: rgba(15, 23, 42, 0.62);
+  border: 1px solid var(--panel-border); backdrop-filter: blur(12px);
+  padding: 8px 16px; border-radius: 20px; display: flex;
+  align-items: center; gap: 8px; font-size: 14px; font-weight: 600;
+  color: var(--primary); box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+.phase-badge {
+  background: rgba(15,23,42,0.55); border: 1px solid var(--panel-border);
+  backdrop-filter: blur(12px); padding: 8px 13px; border-radius: 18px;
+  font-size: 11px; letter-spacing: 1px; color: rgba(255,255,255,.8);
+}
+#instruction {
+  text-align: center; color: rgba(255, 255, 255, 0.72);
+  font-size: 11px; letter-spacing: 4px; text-transform: uppercase;
+  animation: pulse 2s infinite ease-in-out; text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+#instruction.hidden-text { opacity: 0; visibility: hidden; }
+.progress-wrap { width: min(380px, 70vw); margin: 0 auto 18px; text-align: center; opacity:.8; }
+.progress-label { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 7px; color: rgba(255,255,255,.6); }
+.progress-bar { width: 100%; height: 4px; border-radius: 10px; background: rgba(255,255,255,.1); overflow: hidden; }
+#progressFill { height: 100%; width: 0%; border-radius: inherit; background: linear-gradient(90deg, #38bdf8, #7dd3fc, #ffffff); box-shadow: 0 0 12px rgba(56,189,248,.7); transition: width.2s ease; }
+@keyframes pulse { 0%, 100% { opacity:.4; } 50% { opacity:.9; } }
+.screen {
+  position: absolute; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center;
+  padding: 20px; background: rgba(3,7,18,.7); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  transition: opacity.4s ease, visibility.4s ease;
+}
+.screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+.menu-card {
+  width: min(450px, 100%); max-height: calc(100vh - 40px); overflow-y: auto;
+  background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 28px;
+  padding: 32px 24px; box-shadow: 0 20px 50px rgba(0,0,0,.6), inset 0 1px rgba(255,255,255,.04);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); text-align: center;
+}
+.menu-card::-webkit-scrollbar { width: 0; }
+.menu-title { font-family: Georgia, serif; font-size: 38px; font-weight: 400; margin: 0; background: linear-gradient(180deg, #ffffff 0%, rgba(255,255,255,.7) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.menu-subtitle { color: rgba(255,255,255,.5); font-size: 11px; letter-spacing: 3px; margin: 8px 0 32px; text-transform: uppercase; }
+.phase-title { margin: 0; font-family: Georgia, serif; font-weight: 400; font-size: 27px; }
+.phase-feeling { margin: 7px 0 4px; color: var(--primary); font-size: 11px; letter-spacing: 2px; text-transform: uppercase; }
+.phase-story { color: rgba(255,255,255,.55); line-height: 1.55; font-size: 12px; margin: 0 0 22px; }
+.btn-stack { display: flex; flex-direction: column; gap: 12px; }
+.btn {
+  min-height: 52px; border-radius: 16px; border: 1px solid var(--panel-border);
+  background: rgba(255,255,255,.05); color: white; font-size: 13px; font-weight: 600;
+  letter-spacing: 1px; cursor: pointer; transition: all.2s ease; display: flex;
+  align-items: center; justify-content: center; gap: 10px; padding: 10px 16px;
+}
+.btn:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.25); transform: translateY(-2px); }
+.btn:active { transform: scale(.98); }
+.btn-primary { background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border-color: rgba(56,189,248,.4); box-shadow: 0 8px 20px var(--primary-glow); }
+.btn-zen { background: linear-gradient(135deg, #10b981 0%, #047857 100%); border-color: rgba(16, 185, 129, 0.4); box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3); }
+.phase-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; max-height: 330px; overflow-y: auto; }
+.phase-item { border: 1px solid var(--panel-border); border-radius: 16px; padding: 14px; background: rgba(255,255,255,.035); text-align: left; cursor: pointer; transition:.2s ease; }
+.phase-item:hover { background: rgba(255,255,255,.08); }
+.phase-item.active { border-color: var(--primary); background: rgba(56,189,248,.1); box-shadow: 0 0 20px rgba(56,189,248,.08); }
+.phase-item.locked { opacity:.35; cursor: not-allowed; }
+.phase-number { font-size: 9px; letter-spacing: 2px; color: rgba(255,255,255,.4); }
+.phase-name { font-size: 13px; margin-top: 4px; font-weight: 600; }
+.phase-mini-feeling { font-size: 10px; color: var(--primary); margin-top: 5px; }
+.coin-big { font-size: 13px; color: var(--primary); margin: 10px 0 20px; }
+.store-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; max-height: 350px; overflow-y: auto; }
+.store-item { border: 1px solid var(--panel-border); border-radius: 16px; padding: 13px; background: rgba(255,255,255,.03); cursor: pointer; text-align: left; transition: all.2s ease; }
+</style>
 </head>
 <body>
+<div id="adScreen" style="display:none;">
+  <div style="text-align:center; color:white;">
+    <div style="font-size: 18px; letter-spacing: 2px; margin-bottom: 20px;">ANÚNCIO</div>
+    <div style="width: 300px; height: 250px; background: rgba(255,255,255,0.08); border-radius: 12px; display: grid; place-items: center; margin: 0 auto 20px;">Publicidade</div>
+    <button id="closeAdBtn" class="btn btn-primary" style="min-width: 160px;">Fechar (5)</button>
+  </div>
+</div>
 
-  <div id="game-container">
-    <canvas id="bgCanvas"></canvas>
-    <canvas id="glassCanvas"></canvas>
+<div id="game">
+  <canvas id="bgCanvas"></canvas>
+  <canvas id="rainCanvas"></canvas>
+  <canvas id="glassCanvas"></canvas>
+  <canvas id="fogCanvas"></canvas>
+  <div id="lightningFlash"></div>
+  <div id="vignette"></div>
 
-    <div id="hint">ð¡ Arraste o mouse/dedo para limpar o vidro embaÃ§ado</div>
-
-    <div id="ui-overlay">
-      <header class="ui-element">
-        <div>
-          <h1>Rainy Skyline</h1>
-          <span style="font-size: 0.75rem; color: #94a3b8;">Zanon Games</span>
-        </div>
-        <div class="phase-badge" id="phase-title">Fase 01 / 20</div>
-      </header>
-
-      <footer class="ui-element">
-        <button id="btn-prev">â Anterior</button>
-        <button id="btn-audio">ð Ãudio: ON</button>
-        <button id="btn-wipe">ð§¹ Limpar Vidro</button>
-        <button id="btn-next">PrÃ³xima âº</button>
-
-        <div class="control-group">
-          <label for="rain-slider">Chuva:</label>
-          <input type="range" id="rain-slider" min="10" max="200" value="80">
-        </div>
-      </footer>
+  <div id="hud">
+    <div class="hud-header">
+      <div class="hud-left">
+        <button id="pauseBtn" class="hud-btn">❚❚</button>
+        <div class="phase-badge"><span id="phaseNumber">FASE 01</span></div>
+      </div>
+      <div class="hud-right">
+        <div class="currency-badge">◍ <span id="coinCount">0</span></div>
+        <button id="settingsBtn" class="hud-btn">⚙</button>
+      </div>
+    </div>
+    <div>
+      <div class="progress-wrap">
+        <div class="progress-label">Progresso</div>
+        <div class="progress-bar"><div id="progressFill"></div></div>
+      </div>
+      <div id="instruction">Deslize o dedo para limpar a janela</div>
     </div>
   </div>
 
-  <script>
-    // --- ESTADO GLOBAL ---
-    const state = {
-      currentPhase: 0,
-      audioEnabled: true,
-      rainIntensity: 80,
-      isMouseDown: false,
-      lastMousePos: { x: 0, y: 0 }
-    };
+  <div id="mainMenu" class="screen">
+    <div class="menu-card">
+      <h1 class="menu-title">Rainy Skyline</h1>
+      <div class="menu-subtitle">Atmospheric Experience</div>
+      <div class="btn-stack">
+        <button id="continueBtn" class="btn btn-primary">Continuar</button>
+        <button id="zenBtn" class="btn btn-zen">Modo Zen</button>
+        <button id="phasesBtn" class="btn">Fases</button>
+        <button id="storeBtn" class="btn">Loja</button>
+      </div>
+    </div>
+  </div>
 
-    // DefiniÃ§Ã£o das 20 fases com paleta e configuraÃ§Ãµes de chuva
-    const phases = Array.from({ length: 20 }, (_, i) => {
-      const pad = String(i + 1).padStart(2, '0');
-      return {
-        id: i,
-        name: `Fase ${pad}`,
-        sky: [
-          `hsl(${(i * 18 + 200) % 360}, 40%, ${10 + (i % 5) * 2}%)`,
-          `hsl(${(i * 18 + 220) % 360}, 50%, ${3 + (i % 3) * 2}%)`
-        ],
-        type: i % 2 === 0 ? 'city' : 'car'
-      };
+  <div id="phasesScreen" class="screen hidden">
+    <div class="menu-card">
+      <h2 class="phase-title">Fases</h2>
+      <div id="phasesList" class="phase-list"></div>
+      <button id="closePhasesBtn" class="btn">Fechar</button>
+    </div>
+  </div>
+
+  <div id="storeScreen" class="screen hidden">
+    <div class="menu-card">
+      <h2 class="phase-title">Loja</h2>
+      <div id="coinDisplay" class="coin-big"></div>
+      <div id="storeGrid" class="store-grid"></div>
+      <button id="closeStoreBtn" class="btn">Fechar</button>
+    </div>
+  </div>
+
+  <div id="pauseScreen" class="screen hidden">
+    <div class="menu-card">
+      <h2 class="phase-title">Pausado</h2>
+      <div class="btn-stack">
+        <button id="resumeBtn" class="btn btn-primary">Voltar</button>
+        <button id="pauseSettingsBtn" class="btn">Configurações</button>
+        <button id="exitMenuBtn" class="btn">Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="phaseCompleteScreen" class="screen hidden">
+    <div class="menu-card">
+      <h2 class="phase-title">Fase Completa</h2>
+      <div id="completeStats" style="margin: 16px 0; color: rgba(255,255,255,.6); font-size: 13px;"></div>
+      <div class="btn-stack">
+        <button id="nextPhaseBtn" class="btn btn-primary">Próxima Fase</button>
+        <button id="rewardMenuBtn" class="btn">Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="settingsScreen" class="screen hidden">
+    <div class="menu-card">
+      <h2 class="phase-title">Configurações</h2>
+      <div style="text-align:left; margin: 20px 0;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
+          <span>Chuva</span><span id="rainVal">50%</span>
+        </div>
+        <input id="rainSlider" type="range" min="0" max="100" value="50" style="width:100%">
+        <div style="display:flex; justify-content:space-between; margin: 18px 0 12px;">
+          <span>Ambiente</span><span id="ambVal">50%</span>
+        </div>
+        <input id="ambSlider" type="range" min="0" max="100" value="50" style="width:100%">
+        <div style="display:flex; gap:10px; margin-top:20px;">
+          <button id="gameSoundToggle" class="btn on" style="flex:1">Som</button>
+          <button id="musicToggle" class="btn on" style="flex:1">Música</button>
+          <button id="vibrationToggle" class="btn on" style="flex:1">Vibrar</button>
+        </div>
+        <button id="langToggleBtn" class="btn" style="width:100%; margin-top:12px;">PT / EN</button>
+      </div>
+      <button id="closeSettingsBtn" class="btn btn-primary">Fechar</button>
+    </div>
+  </div>
+
+  <div id="toast" style="position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: rgba(15,23,42,0.9); border: 1px solid rgba(255,255,255,0.12); padding: 12px 20px; border-radius: 20px; font-size: 13px; z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.3s;"></div>
+</div>
+
+<script>
+// --- CONFIG
+const W = window.innerWidth;
+const H = window.innerHeight;
+let carSpeed = 0.6;
+
+let state = {
+  currentPhase: 0,
+  highestPhase: 0,
+  coins: 0,
+  rainIntensity: 0.5,
+  ambVolume: 0.5,
+  gameSound: true,
+  musicSound: true,
+  vibration: true,
+  lang: 'pt',
+  started: false,
+  paused: false,
+  carOffset: 0,
+  activePointers: new Set(),
+  progress: 0
+};
+
+const phases = [
+  { sky: ["#0a1835","#123060"], hue: 210, lights: ["#ffcc66","#ffffff","#66ccff"], type: 'city', rainDrops: [] },
+  { sky: ["#101a3a","#1e2f5a"], hue: 220, lights: ["#ffcc66","#ffffff"], type: 'city', rainDrops: [] },
+  { sky: ["#0e1a38","#1a2d5a"], hue: 215, lights: ["#ffcc66","#ffffff","#ff9966"], type: 'city', rainDrops: [] },
+  { sky: ["#0a1e3a","#1c355c"], hue: 210, lights: ["#ffffff","#66ccff"], type: 'city', rainDrops: [] },
+  { sky: ["#122040","#22365e"], hue: 220, lights: ["#ffcc66","#ffffff"], type: 'city', rainDrops: [] },
+  { sky: ["#0d1c36","#1e3358"], hue: 225, lights: ["#ffffff","#66ffcc"], type: 'car', rainDrops: [] },
+  { sky: ["#0a1830","#1a2c50"], hue: 210, lights: ["#ffcc66","#ffffff"], type: 'car', rainDrops: [] },
+  { sky: ["#0f1e3e","#1f3660"], hue: 215, lights: ["#ffffff","#ffcc66"], type: 'car', rainDrops: [] },
+  { sky: ["#101e40","#20355e"], hue: 220, lights: ["#66ccff","#ffffff"], type: 'city', rainDrops: [] },
+  { sky: ["#0e1c38","#1d325a"], hue: 210, lights: ["#ffffff"], type: 'city', rainDrops: [] },
+  { sky: ["#0a1630","#182a50"], hue: 215, lights: ["#ffcc66","#ffffff"], type: 'city', rainDrops: [] },
+  { sky: ["#0d1a36","#1c2f56"], hue: 220, lights: ["#ffffff","#66ccff"], type: 'city', rainDrops: [] },
+  { sky: ["#0f2042","#223860"], hue: 210, lights: ["#ffcc66","#ffffff"], type: 'city', rainDrops: [] },
+  { sky: ["#0a1a38","#1a305a"], hue: 215, lights: ["#ffffff","#ff9966"], type: 'city', rainDrops: [] },
+  { sky: ["#111e3e","#21365c"], hue: 225, lights: ["#66ccff","#ffffff"], type: 'city', rainDrops: [] },
+  { sky: ["#0e1e3c","#1e355c"], hue: 210, lights: ["#ffffff","#ffcc66"], type: 'car', rainDrops: [] },
+  { sky: ["#0c1a34","#1b2e56"], hue: 220, lights: ["#ffffff"], type: 'car', rainDrops: [] },
+  { sky: ["#0a1830","#182a50"], hue: 215, lights: ["#ffcc66","#66ccff"], type: 'city', rainDrops: [] },
+  { sky: ["#0d2040","#20365e"], hue: 210, lights: ["#ffffff","#ffcc66"], type: 'city', rainDrops: [] },
+  { sky: ["#0f1c3a","#1d3258"], hue: 220, lights: ["#ffffff","#66ffcc"], type: 'city', rainDrops: [] },
+];
+
+let bokeh = [];
+let skyTexture = [];
+let streetLights = [];
+let buildings = [];
+
+// --- CANVAS SETUP
+const bgCanvas = document.getElementById('bgCanvas');
+const bgCtx = bgCanvas.getContext('2d');
+const rainCanvas = document.getElementById('rainCanvas');
+const rainCtx = rainCanvas.getContext('2d');
+const glassCanvas = document.getElementById('glassCanvas');
+const glassCtx = glassCanvas.getContext('2d');
+const fogCanvas = document.getElementById('fogCanvas');
+const fogCtx = fogCanvas.getContext('2d');
+
+function resize(){
+  const w = window.innerWidth, h = window.innerHeight;
+  [bgCanvas, rainCanvas, glassCanvas, fogCanvas].forEach(c => { c.width = w; c.height = h; });
+}
+resize();
+window.addEventListener('resize', resize);
+
+let Ww = window.innerWidth, Hh = window.innerHeight;
+function refreshDims(){ Ww = window.innerWidth; Hh = window.innerHeight; }
+
+// --- BUILDINGS AND EFFECTS
+function initScene(){
+  buildings = [];
+  for(let i=0;i<18;i++){
+    buildings.push({
+      x: (i*Ww/18)+Math.random()*20,
+      width: Ww/18*0.7,
+      height: 80+Math.random()*180,
+      depth: Math.random(),
     });
+  }
+  bokeh = [];
+  for(let i=0;i<18;i++){
+    bokeh.push({
+      x: Math.random()*Ww,
+      y: Hh*0.15+Math.random()*Hh*0.5,
+      r: 12+Math.random()*28,
+      color: `hsla(${200+Math.random()*40}, 80%, 70%, 0.4)`,
+      alpha: 0.15+Math.random()*0.35
+    });
+  }
+  skyTexture = [];
+  for(let i=0;i<90;i++){
+    skyTexture.push({ x: Math.random()*Ww, y: Math.random()*Hh*0.6, r: Math.random()*1.6 });
+  }
+  streetLights = [];
+  for(let i=0;i<6;i++){
+    streetLights.push({ x: (i+0.5)*(Ww/6), y: Hh*0.72 });
+  }
+}
+initScene();
 
-    // --- CANVAS & CONTEXTO ---
-    const bgCanvas = document.getElementById('bgCanvas');
-    const bgCtx = bgCanvas.getContext('2d');
-    const glassCanvas = document.getElementById('glassCanvas');
-    const glassCtx = glassCanvas.getContext('2d');
+function drawLandmark(ctx,W,H,type,alpha,sx){
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = "#08152d";
+  const base = H*0.72;
+  ctx.fillRect(-100+sx,base-2,W+200,2);
+  if(type === "rio" || type === "mix") {
+    ctx.beginPath(); ctx.arc(W*.48+sx,H*.58,58,Math.PI,Math.PI*2); ctx.fill();
+    for(let i=0;i<8;i++) ctx.fillRect(W*.06+i*W*.055+sx,base-(18+(i%3)*12),W*.045,18+(i%3)*12);
+    for(let i=0;i<3;i++){const x=W*(.72+i*.07)+sx;ctx.fillRect(x,base-55,3,55);ctx.beginPath();ctx.arc(x+2,base-58,17,0,Math.PI*2);ctx.fill();}
+  }
+  if(type === "ny" || type === "mix") {
+    const cx=W*.23+sx, cy=H*.48; ctx.fillRect(cx-3,cy-48,6,48); ctx.fillRect(cx-10,cy-4,20,4); ctx.fillRect(cx-3,cy-66,6,18); ctx.beginPath();ctx.arc(cx,cy-72,7,0,Math.PI*2);ctx.fill(); ctx.fillRect(cx-20,cy-76,16,3);
+    for(let i=0;i<9;i++){const h=70+(i%4)*35;ctx.fillRect(W*.42+i*W*.065+sx,base-h,W*.05,h);}
+  }
+  if(type === "paris" || type === "mix") {
+    const cx=W*.70+sx, top=H*.38; ctx.fillRect(cx-2,top,4,base-top); ctx.fillRect(cx-25,base-3,50,4); ctx.beginPath();ctx.arc(cx,top+3,5,0,Math.PI*2);ctx.fill(); ctx.fillRect(cx-14,top+45,28,4); ctx.fillRect(cx-20,top+75,40,4);
+    for(let i=0;i<6;i++) ctx.fillRect(W*.52+i*W*.055+sx,base-(35+(i%2)*18),W*.045,35+(i%2)*18);
+  }
+  ctx.fillStyle="#dbe7f5"; ctx.beginPath();ctx.arc(W*.82+sx,H*.22,26,0,Math.PI*2);ctx.fill();
+  ctx.globalAlpha=alpha*.16; ctx.fillStyle="#dbe7f5"; for(let i=0;i<7;i++) ctx.beginPath(),ctx.arc(W*.82+sx+i*9,base+20+i*11,3+(i%3),0,Math.PI*2),ctx.fill();
+  ctx.restore();
+}
 
-    let W = window.innerWidth;
-    let H = window.innerHeight;
+function getLandmarkType() {
+  if (state.currentPhase < 5) return "rio";
+  if (state.currentPhase < 10) return "ny";
+  if (state.currentPhase < 15) return "paris";
+  return "mix";
+}
 
-    function resize() {
-      W = window.innerWidth;
-      H = window.innerHeight;
-      bgCanvas.width = W;
-      bgCanvas.height = H;
-      glassCanvas.width = W;
-      glassCanvas.height = H;
-      initFog();
+function drawParallax(ctx, speed) {
+  const p=phases[state.currentPhase]; const t=state.carOffset; const landmark=getLandmarkType();
+  for(let layer=0;layer<3;layer++){
+    const factor=.12+layer*.13; const ox=-((t*speed*factor)%(W+260));
+    drawLandmark(ctx,W,H,landmark,.32+layer*.18, ox);
+    drawLandmark(ctx,W,H,landmark,.32+layer*.18, ox+W+260);
+  }
+}
+
+// --- FOTOS DAS 20 FASES ---
+const phaseImages = [];
+for(let i=0;i<20;i++){
+  let img = new Image();
+  img.src = `fase${i}.jpg`;
+  phaseImages[i] = img;
+}
+
+function drawCityBackground() {
+  const phase = phases[state.currentPhase];
+  bgCtx.clearRect(0, 0, W, H);
+  if(phaseImages[state.currentPhase] && phaseImages[state.currentPhase].complete && phaseImages[state.currentPhase].naturalWidth > 0){
+    bgCtx.drawImage(phaseImages[state.currentPhase], 0, 0, W, H);
+  } else {
+    const sky = bgCtx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, phase.sky[0]); sky.addColorStop(.55, phase.sky[1]); sky.addColorStop(1, "#020308");
+    bgCtx.fillStyle = sky;
+    bgCtx.fillRect(0,0,W,H);
+  }
+  drawAnimatedDetails(state.currentPhase, bgCtx, W, H);
+}
+
+let animT = 0;
+function drawAnimatedDetails(fase, ctx, W, H){
+  animT += 0.02;
+  if([1,2,8].includes(fase)){
+    let pisca = 0.4 + Math.sin(animT*2)*0.6;
+    ctx.fillStyle = `rgba(255,200,80,${pisca})`;
+    ctx.beginPath(); ctx.arc(W*0.15, H*0.25, 6, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(W*0.78, H*0.35, 5, 0, Math.PI*2); ctx.fill();
+  }
+  if(fase==0 || fase==7){
+    ctx.save();
+    ctx.translate(W*0.85, H*0.15);
+    ctx.rotate(Math.sin(animT)*0.03);
+    ctx.fillStyle = "rgba(0,0,0,0.6)";
+    ctx.fillRect(-80,0,160,20);
+    ctx.restore();
+  }
+}
+
+function drawRain(){
+  rainCtx.clearRect(0,0,W,H);
+  // chuva simples funcionando
+  const count = 80 + state.rainIntensity*120;
+  rainCtx.strokeStyle = "rgba(180,200,255,0.25)";
+  rainCtx.lineWidth = 1;
+  for(let i=0;i<count;i++){
+    const x = (i*37 + state.carOffset*0.1) % W;
+    const y = (i*53 + Date.now()*0.2) % H;
+    rainCtx.beginPath();
+    rainCtx.moveTo(x, y);
+    rainCtx.lineTo(x-2, y+12);
+    rainCtx.stroke();
+  }
+  if(phases[state.currentPhase].type === 'car' || phases[state.currentPhase].type === 'car_snow'){
+    state.carOffset += carSpeed + state.rainIntensity;
+  }
+}
+
+function createFogGrid() {
+  const GRID_X = 40, GRID_Y = 30;
+  window.GRID_X = GRID_X; window.GRID_Y = GRID_Y;
+  window.fogGrid = Array.from({ length: GRID_X * GRID_Y }, () => true);
+}
+
+function initFog() {
+  createFogGrid();
+  fogCtx.globalCompositeOperation = "source-over";
+  fogCtx.fillStyle = "rgba(210,225,232,0.88)";
+  fogCtx.fillRect(0,0,W,H);
+}
+
+function clearFog(x, y, brush) {
+  const isSnow = phases[state.currentPhase].type === 'car_snow' || phases[state.currentPhase].type === 'snow';
+  fogCtx.globalCompositeOperation = "destination-out";
+  fogCtx.beginPath();
+  fogCtx.arc(x, y, brush, 0, Math.PI*2);
+  fogCtx.fill();
+  markFogGrid(x, y, brush);
+}
+
+function markFogGrid(x, y, radius) {
+  const gx = Math.floor((x / W) * GRID_X);
+  const gy = Math.floor((y / H) * GRID_Y);
+  const r = Math.ceil(radius / 30);
+  for(let ix=-r; ix<=r; ix++){
+    for(let iy=-r; iy<=r; iy++){
+      const idx = (gy+iy)*GRID_X + (gx+ix);
+      if(fogGrid[idx]) fogGrid[idx] = false;
+    }
+  }
+}
+
+function updateProgress() {
+  const total = GRID_X * GRID_Y;
+  const cleared = fogGrid.filter(v=>!v).length;
+  state.progress = cleared / total;
+  document.getElementById('progressFill').style.width = (state.progress*100)+'%';
+  if(state.progress > 0.72){
+    completePhase();
+  }
+}
+
+function handlePointerDown(e) { if(!state.started || state.paused) return; initAudio(); state.activePointers.add(e.pointerId); clearFog(e.clientX, e.clientY, 55); }
+function handlePointerMove(e) { if(!state.started || state.paused ||!state.activePointers.has(e.pointerId)) return; clearFog(e.clientX, e.clientY, 55); }
+function handlePointerUp(e) { state.activePointers.delete(e.pointerId); }
+fogCanvas.addEventListener('pointerdown', handlePointerDown);
+fogCanvas.addEventListener('pointermove', handlePointerMove);
+fogCanvas.addEventListener('pointerup', handlePointerUp);
+fogCanvas.addEventListener('pointercancel', handlePointerUp);
+
+let audioCtx, masterGain;
+function initAudio(){
+  if(audioCtx){ if(audioCtx.state==='suspended') audioCtx.resume(); return; }
+  audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  masterGain = audioCtx.createGain();
+  masterGain.connect(audioCtx.destination);
+  masterGain.gain.value = state.ambVolume * 0.3;
+}
+function updateAudio(){ if(!masterGain)return; masterGain.gain.setTargetAtTime(state.ambVolume*0.3, audioCtx.currentTime, 0.2); }
+function blip(freq,dur,vol){ if(!audioCtx||!state.gameSound)return; const o=audioCtx.createOscillator(); const g=audioCtx.createGain(); o.connect(g); g.connect(masterGain); o.frequency.value=freq; g.gain.setValueAtTime(vol, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime+dur); o.start(); o.stop(audioCtx.currentTime+dur); }
+function playThunder(v){ initAudio(); if(state.gameSound&&audioCtx){ const o=audioCtx.createOscillator(); const g=audioCtx.createGain(); o.connect(g); g.connect(masterGain); o.frequency.value=40+v*20; g.gain.setValueAtTime(0.6, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime+1.2); o.start(); o.stop(audioCtx.currentTime+1.2); } if(state.vibration&&navigator.vibrate) navigator.vibrate(200); }
+let thunderTimer;
+function startThunderSchedule(){ if(thunderTimer)clearTimeout(thunderTimer); const next = 8000+Math.random()*12000; thunderTimer=setTimeout(()=>{ lightning(); playThunder(Math.random()); startThunderSchedule(); }, next); }
+function lightning(){ const f=document.getElementById('lightningFlash'); f.style.opacity='0.7'; setTimeout(()=>{ f.style.opacity='0'; }, 120); }
+function showToast(text){const el=document.getElementById('toast');el.textContent=text;el.style.opacity='1';setTimeout(()=>el.style.opacity='0',2000);}
+function showAd(callback) {
+  const ad = document.getElementById("adScreen");
+  ad.style.display="flex";
+  let c=5;
+  const btn=document.getElementById("closeAdBtn");
+  btn.textContent=`Fechar (${c})`;
+  const int=setInterval(()=>{
+    c--; btn.textContent=`Fechar (${c})`;
+    if(c<=0){ clearInterval(int); btn.textContent="Fechar"; btn.onclick=()=>{ ad.style.display="none"; callback(); }; }
+  },1000);
+}
+function completePhase() {
+  state.started = false;
+  const elapsed=(performance.now()-state.phaseStart)/1000;
+  document.getElementById('completeStats').textContent=`Tempo: ${elapsed.toFixed(1)}s`;
+  document.getElementById('phaseCompleteScreen').classList.remove('hidden');
+  state.coins+=10+Math.floor(elapsed);
+  if(state.currentPhase===state.highestPhase && state.currentPhase < phases.length-1){ state.highestPhase++; }
+  saveGame();
+  if(state.vibration&&navigator.vibrate) navigator.vibrate([100,50,100]);
+}
+function startPhase(idx, zen = false) {
+  if (idx > state.highestPhase &&!zen) { showToast("Fase bloqueada"); return; }
+  state.currentPhase = idx;
+  state.started = true;
+  state.paused = false;
+  state.phaseStart = performance.now();
+  state.carOffset = 0;
+  initFog();
+  document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
+  document.getElementById('hud').classList.remove('hidden');
+  updatePhaseUI();
+  startThunderSchedule();
+}
+function updatePhaseUI() {
+  const p = phases[state.currentPhase];
+  document.getElementById('phaseNumber').textContent=`FASE ${String(state.currentPhase+1).padStart(2,'0')}`;
+  document.getElementById('coinCount').textContent=state.coins;
+}
+function renderPhases(){
+  const list=document.getElementById('phasesList');
+  list.innerHTML='';
+  phases.forEach((_,i)=>{
+    const div=document.createElement('div');
+    div.className=`phase-item ${i===state.currentPhase?'active':''} ${i>state.highestPhase?'locked':''}`;
+    div.innerHTML=`<div class="phase-number">FASE ${String(i+1).padStart(2,'0')}</div><div class="phase-name">${i>state.highestPhase?'🔒 Bloqueada':'Fase '+(i+1)}</div>`;
+    div.onclick=()=>{ if(i<=state.highestPhase) startPhase(i); };
+    list.appendChild(div);
+  });
+}
+function renderStore(){
+  document.getElementById('coinDisplay').textContent=`${state.coins} moedas`;
+  const grid=document.getElementById('storeGrid');
+  grid.innerHTML='<div class="store-item"><div>Em breve mais itens</div></div>';
+}
+function saveGame(){ localStorage.setItem('rainySave', JSON.stringify({ highestPhase: state.highestPhase, coins: state.coins, rainIntensity: state.rainIntensity, ambVolume: state.ambVolume, gameSound: state.gameSound, musicSound: state.musicSound, vibration: state.vibration, lang: state.lang })); }
+function loadGame(){ try{ const s=JSON.parse(localStorage.getItem('rainySave')); if(s){ Object.assign(state,s); } }catch(e){} }
+function updateTranslations(){
+  document.getElementById('gameSoundToggle').classList.toggle('on',state.gameSound);
+  document.getElementById('musicToggle').classList.toggle('on',state.musicSound);
+  document.getElementById('vibrationToggle').classList.toggle('on',state.vibration);
+}
+
+// Event Listeners
+document.getElementById("continueBtn").onclick = () => { initAudio(); startPhase(state.currentPhase); };
+document.getElementById("zenBtn").onclick = () => { initAudio(); startPhase(Math.floor(Math.random()*phases.length), true); };
+document.getElementById("phasesBtn").onclick = () => { renderPhases(); document.getElementById("phasesScreen").classList.remove("hidden"); };
+document.getElementById("closePhasesBtn").onclick = () => document.getElementById("phasesScreen").classList.add("hidden");
+document.getElementById("storeBtn").onclick = () => { renderStore(); document.getElementById("storeScreen").classList.remove("hidden"); };
+document.getElementById("closeStoreBtn").onclick = () => document.getElementById("storeScreen").classList.add("hidden");
+document.getElementById("pauseBtn").onclick = () => { state.paused = true; document.getElementById("pauseScreen").classList.remove("hidden"); };
+document.getElementById("resumeBtn").onclick = () => { state.paused = false; document.getElementById("pauseScreen").classList.add("hidden"); };
+document.getElementById("settingsBtn").onclick = () => document.getElementById("settingsScreen").classList.remove("hidden");
+document.getElementById("pauseSettingsBtn").onclick = () => document.getElementById("settingsScreen").classList.remove("hidden");
+document.getElementById("closeSettingsBtn").onclick = () => { saveGame(); document.getElementById("settingsScreen").classList.add("hidden"); };
+document.getElementById("exitMenuBtn").onclick = () => showAd(() => { state.started = false; state.paused = false; initFog(); document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden')); document.getElementById("mainMenu").classList.remove("hidden"); });
+document.getElementById("nextPhaseBtn").onclick = () => { if(state.currentPhase < phases.length - 1) startPhase(state.currentPhase + 1); else document.getElementById("exitMenuBtn").click(); };
+document.getElementById("rewardMenuBtn").onclick = () => document.getElementById("exitMenuBtn").click();
+document.getElementById("langToggleBtn").onclick = () => { state.lang = state.lang === 'en'? 'pt' : 'en'; updateTranslations(); saveGame(); };
+document.getElementById('rainSlider').addEventListener('input',e=>{state.rainIntensity=Number(e.target.value)/100;document.getElementById('rainVal').textContent=Math.round(state.rainIntensity*100)+'%';updateAudio();saveGame();});
+document.getElementById('ambSlider').addEventListener('input',e=>{state.ambVolume=Number(e.target.value)/100;document.getElementById('ambVal').textContent=Math.round(state.ambVolume*100)+'%';updateAudio();saveGame();});
+document.getElementById('gameSoundToggle').onclick=()=>{state.gameSound=!state.gameSound;document.getElementById('gameSoundToggle').classList.toggle('on',state.gameSound);saveGame();};
+document.getElementById('musicToggle').onclick=()=>{state.musicSound=!state.musicSound;document.getElementById('musicToggle').classList.toggle('on',state.musicSound);updateAudio();saveGame();};
+document.getElementById('vibrationToggle').onclick=()=>{state.vibration=!state.vibration;document.getElementById('vibrationToggle').classList.toggle('on',state.vibration);saveGame();};
+
+window.onload = () => {
+  loadGame(); updateTranslations();
+  document.getElementById("rainSlider").value=Math.round(state.rainIntensity*100); document.getElementById("rainVal").textContent=Math.round(state.rainIntensity*100)+"%";
+  document.getElementById("ambSlider").value=Math.round(state.ambVolume*100); document.getElementById("ambVal").textContent=Math.round(state.ambVolume*100)+"%";
+  document.getElementById("gameSoundToggle").classList.toggle('on',state.gameSound);
+  document.getElementById("musicToggle").classList.toggle('on',state.musicSound);
+  document.getElementById("vibrationToggle").classList.toggle('on',state.vibration);
+  initFog();
+  function loop(){
+    if(state.started &&!state.paused){
       drawCityBackground();
+      drawRain();
+      fogCtx.globalCompositeOperation="source-over"; fogCtx.fillStyle=`rgba(210,225,232,${0.006+state.rainIntensity*.004})`; fogCtx.fillRect(0,0,W,H);
+      if(Math.random()<.22){ for(let i=0;i<fogGrid.length;i++) if(fogGrid[i]&&Math.random()<.018) fogGrid[i]=false; }
+      updateProgress();
     }
-
-    // --- CARREGAMENTO PADRONIZADO DE IMAGENS (fase01.jpg atÃ© fase20.jpg) ---
-    const phaseImages = [];
-    for (let i = 0; i < 20; i++) {
-      let img = new Image();
-      let num = String(i + 1).padStart(2, '0'); // Garante formato "01", "02"... "20"
-      img.src = `fase${num}.jpg`;
-      img.onload = () => {
-        if (state.currentPhase === i) drawCityBackground();
-      };
-      phaseImages[i] = img;
-    }
-
-    let animT = 0;
-    function drawAnimatedDetails(fase, ctx, W, H) {
-      animT += 0.02;
-      if ([1, 2, 8].includes(fase)) {
-        let pisca = 0.4 + Math.sin(animT * 2) * 0.6;
-        ctx.fillStyle = `rgba(255,200,80,${pisca})`;
-        ctx.beginPath();
-        ctx.arc(W * 0.15, H * 0.25, 6, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      if (fase === 0 || fase === 7) {
-        ctx.save();
-        ctx.translate(W * 0.85, H * 0.15);
-        ctx.rotate(Math.sin(animT) * 0.03);
-        ctx.fillStyle = "rgba(0,0,0,0.6)";
-        ctx.fillRect(-80, 0, 160, 20);
-        ctx.restore();
-      }
-    }
-
-    function drawCityBackground() {
-      const phase = phases[state.currentPhase];
-      bgCtx.clearRect(0, 0, W, H);
-
-      // Desenha a imagem se ela jÃ¡ estiver carregada e sem erros
-      if (phaseImages[state.currentPhase] && phaseImages[state.currentPhase].complete && phaseImages[state.currentPhase].naturalWidth !== 0) {
-        bgCtx.drawImage(phaseImages[state.currentPhase], 0, 0, W, H);
-      } else {
-        // Fundo padrÃ£o caso a imagem ainda nÃ£o tenha carregado
-        const sky = bgCtx.createLinearGradient(0, 0, 0, H);
-        sky.addColorStop(0, phase.sky[0]);
-        sky.addColorStop(0.55, phase.sky[1]);
-        sky.addColorStop(1, "#020308");
-        bgCtx.fillStyle = sky;
-        bgCtx.fillRect(0, 0, W, H);
-
-        // PrÃ©dios/Luzes procedurais de fundo caso nÃ£o haja imagem
-        bgCtx.fillStyle = "rgba(10, 15, 25, 0.85)";
-        for (let x = 0; x < W; x += 40) {
-          let bh = (Math.sin(x * 0.05 + state.currentPhase) * 0.3 + 0.5) * H * 0.5;
-          bgCtx.fillRect(x, H - bh, 35, bh);
-        }
-      }
-
-      drawAnimatedDetails(state.currentPhase, bgCtx, W, H);
-    }
-
-    // --- EFEITO DE VIDRO EMBAÃADO & GOTAS DE CHUVA ---
-    let fogCanvas = document.createElement('canvas');
-    let fogCtx = fogCanvas.getContext('2d');
-
-    function initFog() {
-      fogCanvas.width = W;
-      fogCanvas.height = H;
-      fogCtx.fillStyle = "rgba(180, 200, 220, 0.35)";
-      fogCtx.fillRect(0, 0, W, H);
-    }
-
-    function wipeGlass(x, y, radius = 40) {
-      fogCtx.save();
-      fogCtx.globalCompositeOperation = 'destination-out';
-      let grad = fogCtx.createRadialGradient(x, y, 0, x, y, radius);
-      grad.addColorStop(0, 'rgba(0,0,0,1)');
-      grad.addColorStop(0.7, 'rgba(0,0,0,0.8)');
-      grad.addColorStop(1, 'rgba(0,0,0,0)');
-      fogCtx.fillStyle = grad;
-      fogCtx.beginPath();
-      fogCtx.arc(x, y, radius, 0, Math.PI * 2);
-      fogCtx.fill();
-      fogCtx.restore();
-    }
-
-    // Sistema de Gotas
-    class Drop {
-      constructor() {
-        this.reset();
-      }
-      reset() {
-        this.x = Math.random() * W;
-        this.y = Math.random() * -H;
-        this.r = Math.random() * 2.5 + 1.5;
-        this.vy = Math.random() * 2 + 1;
-        this.vx = (Math.random() - 0.5) * 0.3;
-        this.alpha = Math.random() * 0.6 + 0.3;
-      }
-      update() {
-        this.y += this.vy;
-        this.x += this.vx;
-        if (this.y > H) this.reset();
-      }
-      draw(ctx) {
-        ctx.save();
-        ctx.fillStyle = `rgba(220, 240, 255, ${this.alpha})`;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Brilho/Reflexo
-        ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
-        ctx.beginPath();
-        ctx.arc(this.x - this.r * 0.3, this.y - this.r * 0.3, this.r * 0.3, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-      }
-    }
-
-    let drops = Array.from({ length: 120 }, () => new Drop());
-
-    function updateRain() {
-      const targetCount = state.rainIntensity;
-      while (drops.length < targetCount) drops.push(new Drop());
-      while (drops.length > targetCount) drops.pop();
-
-      drops.forEach(d => d.update());
-    }
-
-    function renderGlass() {
-      glassCtx.clearRect(0, 0, W, H);
-      
-      // Desenha o embaÃ§ado
-      glassCtx.drawImage(fogCanvas, 0, 0);
-
-      // Desenha as gotas de chuva por cima
-      drops.forEach(d => d.draw(glassCtx));
-    }
-
-    // --- MOTOR DE ÃUDIO WEB AUDIO API (SOM DE CHUVA) ---
-    let audioCtx = null;
-    let rainNoiseNode = null;
-    let gainNode = null;
-
-    function initAudio() {
-      if (audioCtx) return;
-      try {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        audioCtx = new AudioContext();
-
-        // Gerador de ruÃ­do rosa/marrom para simular som de chuva
-        const bufferSize = audioCtx.sampleRate * 2;
-        const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-        const output = noiseBuffer.getChannelData(0);
-        let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
-
-        for (let i = 0; i < bufferSize; i++) {
-          let white = Math.random() * 2 - 1;
-          b0 = 0.99886 * b0 + white * 0.0555179;
-          b1 = 0.99332 * b1 + white * 0.0750759;
-          b2 = 0.96900 * b2 + white * 0.1538520;
-          b3 = 0.86650 * b3 + white * 0.3104856;
-          b4 = 0.55000 * b4 + white * 0.5329522;
-          b5 = -0.7616 * b5 - white * 0.0168980;
-          output[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
-          output[i] *= 0.11;
-          b6 = white * 0.115926;
-        }
-
-        const whiteNoise = audioCtx.createBufferSource();
-        whiteNoise.buffer = noiseBuffer;
-        whiteNoise.loop = true;
-
-        // Filtro passa-baixa para suavizar o som
-        const filter = audioCtx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.value = 1000;
-
-        gainNode = audioCtx.createGain();
-        gainNode.gain.value = state.audioEnabled ? 0.15 : 0;
-
-        whiteNoise.connect(filter);
-        filter.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-
-        whiteNoise.start();
-      } catch (e) {
-        console.log("Ãudio nÃ£o suportado ou bloqueado pelo navegador.");
-      }
-    }
-
-    function toggleAudio() {
-      state.audioEnabled = !state.audioEnabled;
-      const btn = document.getElementById('btn-audio');
-      btn.innerText = state.audioEnabled ? "ð Ãudio: ON" : "ð Ãudio: OFF";
-      
-      if (!audioCtx) {
-        initAudio();
-      } else if (gainNode) {
-        gainNode.gain.setTargetAtTime(state.audioEnabled ? 0.15 : 0, audioCtx.currentTime, 0.1);
-      }
-    }
-
-    // --- CONTROLES DE INTERAÃÃO (MOUSE & TOUCH) ---
-    function handlePointerStart(x, y) {
-      state.isMouseDown = true;
-      state.lastMousePos = { x, y };
-      wipeGlass(x, y, 35);
-      if (!audioCtx && state.audioEnabled) initAudio();
-    }
-
-    function handlePointerMove(x, y) {
-      if (!state.isMouseDown) return;
-      
-      // InterpolaÃ§Ã£o para linha contÃ­nua de limpeza
-      let dx = x - state.lastMousePos.x;
-      let dy = y - state.lastMousePos.y;
-      let dist = Math.hypot(dx, dy);
-      let steps = Math.max(1, Math.floor(dist / 10));
-
-      for (let i = 0; i < steps; i++) {
-        let ix = state.lastMousePos.x + (dx * i) / steps;
-        let iy = state.lastMousePos.y + (dy * i) / steps;
-        wipeGlass(ix, iy, 35);
-      }
-      state.lastMousePos = { x, y };
-    }
-
-    function handlePointerEnd() {
-      state.isMouseDown = false;
-    }
-
-    glassCanvas.addEventListener('mousedown', e => handlePointerStart(e.clientX, e.clientY));
-    glassCanvas.addEventListener('mousemove', e => handlePointerMove(e.clientX, e.clientY));
-    window.addEventListener('mouseup', handlePointerEnd);
-
-    glassCanvas.addEventListener('touchstart', e => {
-      if (e.touches.length > 0) handlePointerStart(e.touches[0].clientX, e.touches[0].clientY);
-    }, { passive: true });
-
-    glassCanvas.addEventListener('touchmove', e => {
-      if (e.touches.length > 0) handlePointerMove(e.touches[0].clientX, e.touches[0].clientY);
-    }, { passive: true });
-
-    window.addEventListener('touchend', handlePointerEnd);
-
-    // --- NAVEGAÃÃO DE FASES E UI ---
-    function updateUI() {
-      document.getElementById('phase-title').innerText = `Fase ${String(state.currentPhase + 1).padStart(2, '0')} / 20`;
-      drawCityBackground();
-      initFog();
-    }
-
-    document.getElementById('btn-prev').addEventListener('click', () => {
-      state.currentPhase = (state.currentPhase - 1 + 20) % 20;
-      updateUI();
-    });
-
-    document.getElementById('btn-next').addEventListener('click', () => {
-      state.currentPhase = (state.currentPhase + 1) % 20;
-      updateUI();
-    });
-
-    document.getElementById('btn-wipe').addEventListener('click', () => {
-      initFog();
-    });
-
-    document.getElementById('btn-audio').addEventListener('click', toggleAudio);
-
-    document.getElementById('rain-slider').addEventListener('input', e => {
-      state.rainIntensity = parseInt(e.target.value, 10);
-    });
-
-    // --- LOOP PRINCIPAL DE ANIMAÃÃO ---
-    function loop() {
-      updateRain();
-      renderGlass();
-      requestAnimationFrame(loop);
-    }
-
-    // --- INICIALIZAÃÃO ---
-    window.addEventListener('resize', resize);
-    resize();
-    loop();
-
-  </script>
+  }
+  setInterval(loop, 1000/60);
+};
+</script>
 </body>
 </html>
