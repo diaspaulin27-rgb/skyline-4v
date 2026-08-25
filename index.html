@@ -825,30 +825,21 @@ function drawAnimatedDetails(fase, ctx, W, H){
     ctx.restore();
   }
 }
-  
-  const sky = bgCtx.createLinearGradient(0, 0, 0, H);
-  sky.addColorStop(0, phase.sky[0]); sky.addColorStop(.55, phase.sky[1]); sky.addColorStop(1, "#020308");
-  bgCtx.fillStyle = sky; bgCtx.fillRect(0, 0, W, H);
-  bgCtx.save();
-  bgCtx.globalAlpha = .06;
-  skyTexture.forEach(c => { bgCtx.fillStyle = "#ffffff"; bgCtx.beginPath(); bgCtx.arc(c.x,c.y,c.r,0,Math.PI*2); bgCtx.fill(); });
-  bgCtx.restore();
 
-  // Bokeh Draw (animado se for carro)
-  bokeh.forEach(light => {
-    let lx = light.x;
-    if(phase.type === 'car' || phase.type === 'car_snow') {
-        lx = (light.x - state.carOffset * (light.r/10)) % W;
-        if (lx < 0) lx += W;
-    }
-    const gradient = bgCtx.createRadialGradient(lx, light.y, 0, lx, light.y, light.r);
-    gradient.addColorStop(0, light.color); gradient.addColorStop(1, "transparent");
-    bgCtx.fillStyle = gradient; bgCtx.globalAlpha = light.alpha;
-    bgCtx.beginPath(); bgCtx.arc(lx, light.y, light.r, 0, Math.PI * 2); bgCtx.fill();
-  });
-  bgCtx.restore();
+function drawAnimatedDetails(fase, ctx, W, H){
+  animT += 0.02;
+  if([1,2,8].includes(fase)){
+    let pisca = 0.4 + Math.sin(animT*2)*0.6;
+    ctx.fillStyle = `rgba(255,200,80,${pisca})`;
+    ctx.beginPath(); ctx.arc(W*0.15, H*0.25, 6, 0, Math.PI*2); ctx.fill();
+  }
+}
 
-  drawLandmark(bgCtx, W, H, getLandmarkType(), phase.type === 'car' || phase.type === 'car_snow' ? .22 : .12, 0);
+function drawRain(){ // <- ou drawSnow, a próxima função original
+  rainCtx.clearRect(0,0,W,H);
+  phases[state.currentPhase].rainDrops = phases[state.currentPhase].rainDrops || [];
+}
+
   if (phase.type === 'car' || phase.type === 'car_snow') drawParallax(bgCtx, carSpeed);
 
   if (phase.type !== 'car' && phase.type !== 'car_snow') {
