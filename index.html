@@ -522,28 +522,28 @@ function updateTranslations() {
 
 /* 20 FASES (Incluindo Carro e Neve/Sol) */
 const phases = [
-  { name: {en:"First Rain", pt:"Primeira Chuva"}, feeling: {en:"Serenity", pt:"Serenidade"}, story: {en:"Quiet city rain.", pt:"Chuva quieta."}, hue: 215, sky: ["#030712", "#0f2740"], lights: ["#38bdf8", "#7dd3fc", "#fef3c7"], rain: 0.72, thunder: 0, type: "rain", landmark: "rio" },
-  { name: {en:"Distant Lights", pt:"Luzes Distantes"}, feeling: {en:"Nostalgia", pt:"Nostalgia"}, story: {en:"Windows across the street.", pt:"Janelas do outro lado da rua."}, hue: 235, sky: ["#080817", "#202044"], lights: ["#fbbf24", "#f472b6", "#818cf8"], rain: 0.76, thunder: 1, type: "rain", landmark: "rio" },
-  { name: {en:"After Midnight", pt:"Depois da Meia-Noite"}, feeling: {en:"Loneliness", pt:"Solidão"}, story: {en:"The city sleeps.", pt:"A cidade dormiu."}, hue: 225, sky: ["#020617", "#111827"], lights: ["#22d3ee", "#60a5fa", "#a5b4fc"], rain: 0.84, thunder: 2, type: "rain", landmark: "rio" },
-  { name: {en:"Neon Splash", pt:"Neon"}, feeling: {en:"Contemplation", pt:"Contemplação"}, story: {en:"Liquid reflections.", pt:"Reflexos líquidos."}, hue: 285, sky: ["#10051c", "#321344"], lights: ["#f43f5e", "#a855f7", "#06b6d4"], rain: 0.88, thunder: 3, type: "rain", landmark: "rio" },
-  { name: {en:"The Window", pt:"A Janela"}, feeling: {en:"Intimacy", pt:"Intimidade"}, story: {en:"Protected behind glass.", pt:"Protegido atrás do vidro."}, hue: 195, sky: ["#03151b", "#12323c"], lights: ["#67e8f9", "#fde68a", "#f0f9ff"], rain: 0.68, thunder: 4, type: "rain", landmark: "rio" },
-  { name: {en:"Storm", pt:"Tempestade"}, feeling: {en:"Tension", pt:"Tensão"}, story: {en:"Heavy winds and flashes.", pt:"Ventos fortes e flashes."}, hue: 210, sky: ["#02040a", "#16202d"], lights: ["#e0f2fe", "#93c5fd", "#f8fafc"], rain: 1, thunder: 5, type: "rain", landmark: "ny" },
-  { name: {en:"Horizon", pt:"Horizonte"}, feeling: {en:"Hope", pt:"Esperança"}, story: {en:"A tiny strip of light.", pt:"Uma pequena faixa de luz."}, hue: 205, sky: ["#07111c", "#24485d"], lights: ["#fde68a", "#fbbf24", "#bae6fd"], rain: 0.65, thunder: 6, type: "rain", landmark: "ny" },
-  { name: {en:"Memories", pt:"Memórias"}, feeling: {en:"Longing", pt:"Saudade"}, story: {en:"Drops carrying past moments.", pt:"Gotas carregando o passado."}, hue: 260, sky: ["#090613", "#2b183b"], lights: ["#c4b5fd", "#f9a8d4", "#fef3c7"], rain: 0.78, thunder: 7, type: "rain", landmark: "ny" },
-  { name: {en:"Silence", pt:"Silêncio"}, feeling: {en:"Peace", pt:"Paz"}, story: {en:"No cars, just water.", pt:"Sem carros, só água."}, hue: 175, sky: ["#020d0d", "#123638"], lights: ["#5eead4", "#99f6e4", "#fef9c3"], rain: 0.55, thunder: 8, type: "rain", landmark: "ny" },
-  { name: {en:"Clearing Sky", pt:"O Céu Clareia"}, feeling: {en:"Rebirth", pt:"Renascimento"}, story: {en:"Storm is leaving.", pt:"A tempestade está indo embora."}, hue: 35, sky: ["#17100a", "#513b20"], lights: ["#fde68a", "#fb923c", "#fef3c7"], rain: 0.48, thunder: 9, type: "rain", landmark: "ny" },
+  { name: {en:"First Rain", pt:"Primeira Chuva"}, feeling: {en:"Serenity", pt:"Serenidade"}, story: {en:"Quiet city rain.", pt:"Chuva quieta."}, hue: 215, sky: ["#ff5f2e", "#ff8a4c", "#5a5f9a"], lights: ["#fffbe6", "#ffe8a0", "#ff8a4c"], rain: 0.2, thunder: 0, type: "rain" },
+  { name: {en:"Distant Lights", pt:"Luzes Distantes"}, feeling: {en:"Nostalgia", pt:"Nostalgia"}, story: {en:"Windows across the street.", pt:"Janelas do outro lado da rua."}, hue: 235, sky: ["#080817", "#202044"], lights: ["#fbbf24", "#f472b6", "#818cf8"], rain: 0.76, thunder: 1, type: "rain" },
+  { name: {en:"After Midnight", pt:"Depois da Meia-Noite"}, feeling: {en:"Loneliness", pt:"Solidão"}, story: {en:"The city sleeps.", pt:"A cidade dormiu."}, hue: 225, sky: ["#020617", "#111827"], lights: ["#22d3ee", "#60a5fa", "#a5b4fc"], rain: 0.84, thunder: 2, type: "rain" },
+  { name: {en:"Neon Splash", pt:"Neon"}, feeling: {en:"Contemplation", pt:"Contemplação"}, story: {en:"Liquid reflections.", pt:"Reflexos líquidos."}, hue: 285, sky: ["#10051c", "#321344"], lights: ["#f43f5e", "#a855f7", "#06b6d4"], rain: 0.88, thunder: 3, type: "rain" },
+  { name: {en:"The Window", pt:"A Janela"}, feeling: {en:"Intimacy", pt:"Intimidade"}, story: {en:"Protected behind glass.", pt:"Protegido atrás do vidro."}, hue: 195, sky: ["#03151b", "#12323c"], lights: ["#67e8f9", "#fde68a", "#f0f9ff"], rain: 0.68, thunder: 4, type: "rain" },
+  { name: {en:"Storm", pt:"Tempestade"}, feeling: {en:"Tension", pt:"Tensão"}, story: {en:"Heavy winds and flashes.", pt:"Ventos fortes e flashes."}, hue: 210, sky: ["#02040a", "#16202d"], lights: ["#e0f2fe", "#93c5fd", "#f8fafc"], rain: 1, thunder: 5, type: "rain" },
+  { name: {en:"Horizon", pt:"Horizonte"}, feeling: {en:"Hope", pt:"Esperança"}, story: {en:"A tiny strip of light.", pt:"Uma pequena faixa de luz."}, hue: 205, sky: ["#07111c", "#24485d"], lights: ["#fde68a", "#fbbf24", "#bae6fd"], rain: 0.65, thunder: 6, type: "rain" },
+  { name: {en:"Memories", pt:"Memórias"}, feeling: {en:"Longing", pt:"Saudade"}, story: {en:"Drops carrying past moments.", pt:"Gotas carregando o passado."}, hue: 260, sky: ["#090613", "#2b183b"], lights: ["#c4b5fd", "#f9a8d4", "#fef3c7"], rain: 0.78, thunder: 7, type: "rain" },
+  { name: {en:"Silence", pt:"Silêncio"}, feeling: {en:"Peace", pt:"Paz"}, story: {en:"No cars, just water.", pt:"Sem carros, só água."}, hue: 175, sky: ["#020d0d", "#123638"], lights: ["#5eead4", "#99f6e4", "#fef9c3"], rain: 0.55, thunder: 8, type: "rain" },
+  { name: {en:"Clearing Sky", pt:"O Céu Clareia"}, feeling: {en:"Rebirth", pt:"Renascimento"}, story: {en:"Storm is leaving.", pt:"A tempestade está indo embora."}, hue: 35, sky: ["#17100a", "#513b20"], lights: ["#fde68a", "#fb923c", "#fef3c7"], rain: 0.48, thunder: 9, type: "rain" },
   
   // NOVAS 10 FASES (Carro, Neve, Sol)
-  { name: {en:"Moving Car", pt:"Carro em Movimento"}, feeling: {en:"Journey", pt:"Jornada"}, story: {en:"Watching lines blur past.", pt:"Vendo as luzes borradas passando."}, hue: 200, sky: ["#0a0a0a", "#1a1a1a"], lights: ["#ff0000", "#ffaa00"], rain: 0.8, thunder: 1, type: "car", landmark: "paris" },
-  { name: {en:"Snowfall", pt:"Nevasca"}, feeling: {en:"Cold", pt:"Frio"}, story: {en:"Soft white silence.", pt:"Silêncio branco e suave."}, hue: 200, sky: ["#2d3748", "#4a5568"], lights: ["#e2e8f0", "#cbd5e0"], rain: 0.4, thunder: 0, type: "snow", landmark: "paris" },
-  { name: {en:"Highway Rain", pt:"Chuva na Rodovia"}, feeling: {en:"Speed", pt:"Velocidade"}, story: {en:"Fast drops hitting the windshield.", pt:"Gotas rápidas batendo no para-brisa."}, hue: 220, sky: ["#050510", "#151530"], lights: ["#fff", "#ff0000", "#00ffff"], rain: 0.9, thunder: 2, type: "car", landmark: "paris" },
-  { name: {en:"Morning Frost", pt:"Geada Matinal"}, feeling: {en:"Crisp", pt:"Cristalino"}, story: {en:"Ice melting on the glass.", pt:"Gelo derretendo no vidro."}, hue: 190, sky: ["#4a5568", "#a0aec0"], lights: ["#fff", "#e2e8f0"], rain: 0.3, thunder: 0, type: "snow", landmark: "paris" },
-  { name: {en:"Summer Sun Shower", pt:"Chuva de Verão"}, feeling: {en:"Warmth", pt:"Calor"}, story: {en:"Rain while the sun shines.", pt:"Chuva enquanto o sol brilha."}, hue: 50, sky: ["#ecc94b", "#f6e05e"], lights: ["#fff"], rain: 0.5, thunder: 0, type: "rain", landmark: "paris" },
-  { name: {en:"Midnight Blizzard", pt:"Nevasca à Meia-Noite"}, feeling: {en:"Isolation", pt:"Isolamento"}, story: {en:"Fierce wind and blinding snow.", pt:"Vento feroz e neve cegante."}, hue: 230, sky: ["#000", "#111"], lights: ["#718096", "#a0aec0"], rain: 0.8, thunder: 3, type: "snow", landmark: "mix" },
-  { name: {en:"City Tunnel", pt:"Túnel da Cidade"}, feeling: {en:"Echo", pt:"Eco"}, story: {en:"Orange lights rushing by.", pt:"Luzes laranjas passando rápido."}, hue: 30, sky: ["#1a1005", "#3a2010"], lights: ["#f6ad55", "#ed8936"], rain: 0.5, thunder: 0, type: "car", landmark: "mix" },
-  { name: {en:"Golden Hour Drops", pt:"Gotas Douradas"}, feeling: {en:"Beautiful", pt:"Beleza"}, story: {en:"Sunsets reflecting in the water.", pt:"Pôr do sol refletindo na água."}, hue: 20, sky: ["#c53030", "#ed8936"], lights: ["#fefcbf", "#fbd38d"], rain: 0.6, thunder: 1, type: "rain", landmark: "mix" },
-  { name: {en:"Snowy Drive", pt:"Passeio na Neve"}, feeling: {en:"Cozy", pt:"Aconchego"}, story: {en:"Warm inside, frozen outside.", pt:"Quente por dentro, congelado por fora."}, hue: 210, sky: ["#1a202c", "#2d3748"], lights: ["#e2e8f0", "#ff0000"], rain: 0.6, thunder: 0, type: "car_snow", landmark: "mix" },
-  { name: {en:"The Last Wipe", pt:"A Última Limpeza"}, feeling: {en:"Closure", pt:"Despedida"}, story: {en:"The glass is finally clear.", pt:"O vidro finalmente está limpo."}, hue: 200, sky: ["#2b6cb0", "#4299e1"], lights: ["#fff", "#bee3f8"], rain: 0.2, thunder: 0, type: "rain", landmark: "mix" }
+  { name: {en:"Moving Car", pt:"Carro em Movimento"}, feeling: {en:"Journey", pt:"Jornada"}, story: {en:"Watching lines blur past.", pt:"Vendo as luzes borradas passando."}, hue: 200, sky: ["#0a0a0a", "#1a1a1a"], lights: ["#ff0000", "#ffaa00"], rain: 0.8, thunder: 1, type: "car" },
+  { name: {en:"Snowfall", pt:"Nevasca"}, feeling: {en:"Cold", pt:"Frio"}, story: {en:"Soft white silence.", pt:"Silêncio branco e suave."}, hue: 200, sky: ["#2d3748", "#4a5568"], lights: ["#e2e8f0", "#cbd5e0"], rain: 0.4, thunder: 0, type: "snow" },
+  { name: {en:"Highway Rain", pt:"Chuva na Rodovia"}, feeling: {en:"Speed", pt:"Velocidade"}, story: {en:"Fast drops hitting the windshield.", pt:"Gotas rápidas batendo no para-brisa."}, hue: 220, sky: ["#050510", "#151530"], lights: ["#fff", "#ff0000", "#00ffff"], rain: 0.9, thunder: 2, type: "car" },
+  { name: {en:"Morning Frost", pt:"Geada Matinal"}, feeling: {en:"Crisp", pt:"Cristalino"}, story: {en:"Ice melting on the glass.", pt:"Gelo derretendo no vidro."}, hue: 190, sky: ["#4a5568", "#a0aec0"], lights: ["#fff", "#e2e8f0"], rain: 0.3, thunder: 0, type: "snow" },
+  { name: {en:"Summer Sun Shower", pt:"Chuva de Verão"}, feeling: {en:"Warmth", pt:"Calor"}, story: {en:"Rain while the sun shines.", pt:"Chuva enquanto o sol brilha."}, hue: 50, sky: ["#ecc94b", "#f6e05e"], lights: ["#fff"], rain: 0.5, thunder: 0, type: "rain" },
+  { name: {en:"Midnight Blizzard", pt:"Nevasca à Meia-Noite"}, feeling: {en:"Isolation", pt:"Isolamento"}, story: {en:"Fierce wind and blinding snow.", pt:"Vento feroz e neve cegante."}, hue: 230, sky: ["#000", "#111"], lights: ["#718096", "#a0aec0"], rain: 0.8, thunder: 3, type: "snow" },
+  { name: {en:"City Tunnel", pt:"Túnel da Cidade"}, feeling: {en:"Echo", pt:"Eco"}, story: {en:"Orange lights rushing by.", pt:"Luzes laranjas passando rápido."}, hue: 30, sky: ["#1a1005", "#3a2010"], lights: ["#f6ad55", "#ed8936"], rain: 0.5, thunder: 0, type: "car" },
+  { name: {en:"Golden Hour Drops", pt:"Gotas Douradas"}, feeling: {en:"Beautiful", pt:"Beleza"}, story: {en:"Sunsets reflecting in the water.", pt:"Pôr do sol refletindo na água."}, hue: 20, sky: ["#c53030", "#ed8936"], lights: ["#fefcbf", "#fbd38d"], rain: 0.6, thunder: 1, type: "rain" },
+  { name: {en:"Snowy Drive", pt:"Passeio na Neve"}, feeling: {en:"Cozy", pt:"Aconchego"}, story: {en:"Warm inside, frozen outside.", pt:"Quente por dentro, congelado por fora."}, hue: 210, sky: ["#1a202c", "#2d3748"], lights: ["#e2e8f0", "#ff0000"], rain: 0.6, thunder: 0, type: "car_snow" },
+  { name: {en:"The Last Wipe", pt:"A Última Limpeza"}, feeling: {en:"Closure", pt:"Despedida"}, story: {en:"The glass is finally clear.", pt:"O vidro finalmente está limpo."}, hue: 200, sky: ["#2b6cb0", "#4299e1"], lights: ["#fff", "#bee3f8"], rain: 0.2, thunder: 0, type: "rain" }
 ];
 
 const brushes = {
@@ -614,10 +614,13 @@ window.addEventListener("resize", resize);
 
 let buildings = []; let bokeh = []; let skyTexture = []; let snowTexture = [];
 let streetLights = []; let traffic = [];
+let carSpeed = 2.5;
+let rainAngle = 0;
 
 function generateCity() {
   buildings = []; bokeh = []; streetLights = []; traffic = [];
   const phase = phases[state.currentPhase];
+  rainAngle = (phase.type === 'car' || phase.type === 'car_snow') ? 25 * Math.PI / 180 : 0;
   skyTexture = Array.from({length:40}, () => ({x:Math.random()*W,y:Math.random()*H*.65,r:35+Math.random()*90}));
   snowTexture = Array.from({length:150}, () => ({x:Math.random()*W,y:Math.random()*H,r:2+Math.random()*18}));
   let x = -40;
@@ -632,252 +635,222 @@ function generateCity() {
   for(let i=0;i<7;i++) traffic.push({x:Math.random()*W,y:H*(.72+Math.random()*.14),speed:35+Math.random()*100,scale:.5+Math.random()*.8,tail:phase.lights[(i+1)%phase.lights.length]});
 }
 
-// ================= FASE 1 - FIRST RAIN - RIO - FIM DE TARDE =================
-function drawFirstRain(ctx, W, H, time) {
-  // 1. CÉU - gradiente fim de tarde que você pediu
-  let skyGrad = ctx.createLinearGradient(0, 0, 0, H * 0.6);
-  skyGrad.addColorStop(0, "#ff7e5f");
-  skyGrad.addColorStop(0.45, "#feb47b");
-  skyGrad.addColorStop(1, "#6a82fb");
-  ctx.fillStyle = skyGrad;
-  ctx.fillRect(0, 0, W, H * 0.62);
+function drawPhase1_FirstRain(ctx, W, H) {
+  ctx.clearRect(0,0,W,H);
 
-  // textura de nuvem - 40 bolinhas
-  for(let i=0;i<40;i++){
-    ctx.fillStyle = `rgba(255,255,255,${Math.random()*0.06})`;
+  // Céu laranja -> roxo
+  let g = ctx.createLinearGradient(0,0,0,H*0.65);
+  g.addColorStop(0, "#ff5f2e");
+  g.addColorStop(0.35, "#ff8a4c");
+  g.addColorStop(0.65, "#ff9a6e");
+  g.addColorStop(0.85, "#8a6fa8");
+  g.addColorStop(1, "#5a5f9a");
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,W,H);
+
+  // Sol gigante
+  let sun = ctx.createRadialGradient(W*0.62, H*0.38, 10, W*0.62, H*0.38, 110);
+  sun.addColorStop(0, "#fffbe6");
+  sun.addColorStop(0.3, "#ffe8a0");
+  sun.addColorStop(1, "#ff8a4c");
+  ctx.fillStyle = sun;
+  ctx.beginPath();
+  ctx.arc(W*0.62, H*0.38, 95, 0, Math.PI*2);
+  ctx.fill();
+
+  // Mar
+  ctx.fillStyle = "#1a2744";
+  ctx.fillRect(0, H*0.68, W, H*0.32);
+
+  // Reflexo dourado - trilha de luz
+  ctx.fillStyle = "rgba(255,180,90,0.6)";
+  ctx.beginPath();
+  ctx.moveTo(W*0.55, H*0.68);
+  ctx.lineTo(W*0.69, H*0.68);
+  ctx.lineTo(W*0.72, H*1);
+  ctx.lineTo(W*0.48, H*1);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = "rgba(255,230,160,0.85)";
+  ctx.beginPath();
+  ctx.moveTo(W*0.60, H*0.68);
+  ctx.lineTo(W*0.64, H*0.68);
+  ctx.lineTo(W*0.66, H*1);
+  ctx.lineTo(W*0.56, H*1);
+  ctx.closePath();
+  ctx.fill();
+
+  // Silhueta Morros - Cristo + Pão de Açúcar
+  ctx.fillStyle = "#0a1325";
+  ctx.beginPath();
+  ctx.moveTo(0, H*0.68);
+  ctx.lineTo(W*0.15, H*0.62);
+  ctx.lineTo(W*0.28, H*0.56);
+  ctx.lineTo(W*0.35, H*0.46); // Corcovado topo
+  ctx.lineTo(W*0.38, H*0.48);
+  ctx.lineTo(W*0.46, H*0.55);
+  ctx.lineTo(W*0.52, H*0.52); // Pão de açúcar
+  ctx.lineTo(W*0.58, H*0.55);
+  ctx.lineTo(W, H*0.60);
+  ctx.lineTo(W, H*0.69);
+  ctx.lineTo(0, H*0.69);
+  ctx.closePath();
+  ctx.fill();
+
+  // Cristo
+  ctx.fillRect(W*0.355 - 1.5, H*0.40, 3, 22);
+  ctx.fillRect(W*0.355 - 13, H*0.45, 26, 3);
+
+  // Coqueiro esquerdo - silhueta
+  ctx.beginPath();
+  ctx.moveTo(W*0.12, H*0.88);
+  ctx.lineTo(W*0.115, H*0.60);
+  ctx.lineTo(W*0.135, H*0.60);
+  ctx.lineTo(W*0.145, H*0.88);
+  ctx.fill();
+  // folhas
+  for(let a=-1.2; a<=1.2; a+=0.4){
     ctx.beginPath();
-    ctx.arc(Math.random()*W, Math.random()*H*0.5, Math.random()*50+10, 0, Math.PI*2);
+    ctx.ellipse(W*0.125, H*0.60, 45, 12, a, 0, Math.PI*2);
     ctx.fill();
   }
 
-  // 2. SOL/LUA BAIXA DO FIM DE TARDE
-  ctx.shadowColor = "rgba(255,126,95,0.6)";
-  ctx.shadowBlur = 60;
-  ctx.fillStyle = "#fff5e1";
-  ctx.beginPath();
-  ctx.arc(W*0.35, H*0.30, 68, 0, Math.PI*2);
-  ctx.fill();
-  ctx.shadowBlur = 0;
-
-  // 3. MAR - base escura
-  ctx.fillStyle = "#0a1930";
-  ctx.fillRect(0, H*0.55, W, H*0.45);
-
-  // 4. REFLEXO DO SOL NA ÁGUA - igual sua foto
-  ctx.fillStyle = "rgba(255, 180, 120, 0.55)";
-  ctx.beginPath();
-  ctx.ellipse(W*0.35, H*0.70, W*0.32, H*0.16, 0, 0, Math.PI*2);
-  ctx.fill();
-  ctx.fillStyle = "rgba(255, 230, 200, 0.85)";
-  ctx.beginPath();
-  ctx.ellipse(W*0.35, H*0.74, W*0.14, H*0.07, 0, 0, Math.PI*2);
-  ctx.fill();
-
-  // 5. MORRO DO CRISTO + CRISTO - silhueta detalhada
-  ctx.fillStyle = "#071120";
-  ctx.beginPath();
-  ctx.moveTo(0, H*0.58);
-  ctx.lineTo(W*0.08, H*0.56);
-  ctx.lineTo(W*0.14, H*0.50);
-  ctx.lineTo(W*0.18, H*0.46);
-  ctx.lineTo(W*0.205, H*0.40);
-  ctx.lineTo(W*0.225, H*0.32);
-  ctx.lineTo(W*0.245, H*0.40);
-  ctx.lineTo(W*0.27, H*0.43);
-  ctx.lineTo(W*0.32, H*0.48);
-  ctx.lineTo(W*0.50, H*0.54);
-  ctx.lineTo(W, H*0.57);
-  ctx.lineTo(W, H*0.62);
-  ctx.lineTo(0, H*0.62);
-  ctx.closePath();
-  ctx.fill();
-
-  // Cristo detalhado - cruz
-  let cx = W*0.225, cy = H*0.28;
-  ctx.fillStyle = "#071120";
-  ctx.fillRect(cx - 2.5, cy, 5, 28);
-  ctx.fillRect(cx - 16, cy + 7, 32, 4);
-  ctx.fillRect(cx - 2, cy - 4, 4, 8);
-
-  // Pão de Açúcar menor ao lado
-  ctx.beginPath();
-  ctx.moveTo(W*0.28, H*0.48);
-  ctx.quadraticCurveTo(W*0.295, H*0.42, W*0.32, H*0.48);
-  ctx.closePath();
-  ctx.fill();
-
-  // 6. PRÉDIOS DA ORLA - alturas diferentes
-  let preds = [[0.46,32],[0.495,18,52],[0.53,38,22],[0.575,22,28],[0.61,16,18],[0.66,32,42],[0.71,24,26],[0.80,30,35],[0.845,20,20]];
-  preds.forEach(([x,w,h]) => {
-    ctx.fillRect(W*x, H*0.58 - h, w, h);
-    if(Math.random() > 0.5){
-      ctx.fillStyle = "rgba(255,220,150,0.5)";
-      ctx.fillRect(W*x+4, H*0.58 - h + 6, 4, 4);
-      ctx.fillStyle = "#071120";
-    }
-  });
-
-  // 7. COQUEIROS - primeiro plano
-  function palm(x, y, scale){
-    ctx.fillStyle = "#071120";
-    ctx.fillRect(x, y, 5*scale, -58*scale);
-    ctx.beginPath(); ctx.ellipse(x+2*scale, y-58*scale, 24*scale, 11*scale, -0.4, 0, Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(x+2*scale, y-58*scale, 24*scale, 11*scale, 0.4, 0, Math.PI*2); ctx.fill();
-  }
-  palm(W*0.05, H*0.95, 1.3);
-  palm(W*0.84, H*0.95, 1.4);
-
-  // 8. GRAMADO PRETO DA FOTO
+  // Grama primeiro plano
   ctx.fillRect(0, H*0.88, W, H*0.12);
-  ctx.strokeStyle = "#1a3d1a";
+  ctx.strokeStyle = "#0f2a0f";
   ctx.lineWidth = 1;
-  for(let i=0;i<120;i++){
-    let gx = Math.random()*W;
+  for(let i=0;i<150;i++){
+    let x = Math.random()*W;
     ctx.beginPath();
-    ctx.moveTo(gx, H*0.88);
-    ctx.lineTo(gx + (Math.random()-0.5)*4, H*0.88 - Math.random()*12 - 2);
+    ctx.moveTo(x, H*0.88);
+    ctx.lineTo(x+(Math.random()-0.5)*6, H*0.88 - Math.random()*18);
     ctx.stroke();
   }
-
-  // 9. CHUVA DA FASE 1 - leve
-  ctx.fillStyle = "rgba(180, 200, 255, 0.6)";
 }
 
-function loadPhase1(){
-  resetPhaseState();
-  state.currentPhase = 0;
-  state.carSpeed = 0;
-  state.rainAngle = 0;
-  state.phaseRainCount = 120;
-  state.phaseRainSpeed = 2;
-  drawFirstRain(bgCtx, W, H, performance.now());
-}
-
-function drawLandmark(ctx, W, H, type, alpha=1, offset=0, drawSky=true) {
-  const phase=phases[state.currentPhase], sx=offset, base=H*.70;
-  ctx.save(); ctx.globalAlpha=alpha;
-  if(drawSky){
-    const sky=ctx.createLinearGradient(0,0,0,H);
-    sky.addColorStop(0,phase.sky[0]);sky.addColorStop(.55,phase.sky[1]);sky.addColorStop(1,phase.sky[2]||"#020308");
-    ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+function drawLandmark(ctx, W, H, type, alpha=1, offset=0) {
+  ctx.save(); ctx.globalAlpha = alpha; ctx.fillStyle = "#0a1930";
+  const base = H * .70; const sx = offset;
+  if(type === "rio" || type === "mix") {
+    // Cristo Redentor
+    const cx=W*.25+sx, cy=H*.45; ctx.fillRect(cx-3,cy-55,6,55); ctx.fillRect(cx-18,cy-47,36,4); ctx.fillRect(cx-2,cy-62,4,15); ctx.fillRect(cx-24,cy-40,48,4);
+    // Pão de Açúcar
+    ctx.beginPath(); ctx.arc(W*.48+sx,H*.58,58,Math.PI,Math.PI*2); ctx.fill();
+    // Baixos prédios
+    for(let i=0;i<8;i++) ctx.fillRect(W*.06+i*W*.055+sx,base-(18+(i%3)*12),W*.045,18+(i%3)*12);
+    // Coqueiros
+    for(let i=0;i<3;i++){const x=W*(.72+i*.07)+sx;ctx.fillRect(x,base-55,3,55);ctx.beginPath();ctx.arc(x+2,base-58,17,0,Math.PI*2);ctx.fill();}
   }
-  if(drawSky){
-    ctx.fillStyle="#f5f5f0";ctx.beginPath();ctx.arc(W*.40+sx,H*.25,80,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle="rgba(190,220,245,.5)";ctx.globalAlpha=alpha*.5;
-    ctx.beginPath();ctx.ellipse(W*.40+sx,H*.76,58,12,0,0,Math.PI*2);ctx.fill();
-    ctx.beginPath();ctx.ellipse(W*.40+sx,H*.82,30,7,0,0,Math.PI*2);ctx.fill();ctx.globalAlpha=alpha;
+  if(type === "ny" || type === "mix") {
+    // Estátua da Liberdade
+    const cx=W*.23+sx, cy=H*.48; ctx.fillRect(cx-3,cy-48,6,48); ctx.fillRect(cx-10,cy-4,20,4); ctx.fillRect(cx-3,cy-66,6,18); ctx.beginPath();ctx.arc(cx,cy-72,7,0,Math.PI*2);ctx.fill(); ctx.fillRect(cx-20,cy-76,16,3);
+    // Skyline alto
+    for(let i=0;i<9;i++){const h=70+(i%4)*35;ctx.fillRect(W*.42+i*W*.065+sx,base-h,W*.05,h);}
   }
-
-  if(type==="rio"){
-    ctx.fillStyle="#0a1930";
-    ctx.beginPath();ctx.moveTo(0+sx,base+35);ctx.lineTo(W*.10+sx,H*.60);ctx.lineTo(W*.18+sx,H*.52);ctx.lineTo(W*.27+sx,H*.62);ctx.lineTo(W*.34+sx,H*.58);ctx.lineTo(W*.43+sx,H*.64);ctx.lineTo(W*.53+sx,H*.56);ctx.lineTo(W*.64+sx,H*.63);ctx.lineTo(W*.74+sx,H*.57);ctx.lineTo(W*.86+sx,H*.64);ctx.lineTo(W+sx,H*.59);ctx.lineTo(W+sx,base);ctx.lineTo(0+sx,base);ctx.fill();
-    const cx=W*.22+sx;
-    ctx.beginPath();ctx.moveTo(cx-W*.12,base);ctx.lineTo(cx-W*.08,H*.61);ctx.lineTo(cx-W*.045,H*.53);ctx.lineTo(cx,H*.47);ctx.lineTo(cx+W*.045,H*.53);ctx.lineTo(cx+W*.09,H*.62);ctx.lineTo(cx+W*.13,base);ctx.fill();
-    ctx.fillRect(cx-3,H*.42,6,H*.12);ctx.fillRect(cx-19,H*.44,38,4);ctx.fillRect(cx-2,H*.385,4,14);ctx.fillRect(cx-24,H*.46,48,4);
-    const px=W*.48+sx;
-    ctx.beginPath();ctx.moveTo(px-W*.07,base);ctx.lineTo(px-W*.055,H*.63);ctx.lineTo(px-W*.02,H*.54);ctx.lineTo(px,H*.50);ctx.lineTo(px+W*.03,H*.57);ctx.lineTo(px+W*.07,base);ctx.fill();
-    const heights=[32,54,42,70,36,62,48,78];
-    for(let i=0;i<8;i++){const bw=W*.045,bx=W*.52+i*W*.055+sx,bh=heights[i];ctx.fillRect(bx,base-bh,bw,bh);ctx.fillRect(bx+bw*.28,base-bh-8,bw*.45,8);}
-    for(let i=0;i<8;i++){const bx=W*.52+i*W*.055+sx,bh=heights[i];ctx.fillRect(bx+5,base-bh+12,3,4);ctx.fillRect(bx+12,base-bh+28,3,4);ctx.fillRect(bx+19,base-bh+44,3,4);}
-    const palmX=[W*.76+sx,W*.88+sx];
-    for(let i=0;i<2;i++){const x=palmX[i],top=H*.50+i*.025;ctx.fillRect(x-2,top,4,base-top);ctx.beginPath();ctx.ellipse(x,top-8,24,8,-.35,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(x-15,top-2,22,7,-.95,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(x+16,top-2,22,7,.95,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(x-4,top-18,22,7,-.1,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(x+5,top-18,22,7,.25,0,Math.PI*2);ctx.fill();}
-    ctx.globalAlpha=alpha*.72;ctx.fillStyle="#081326";ctx.fillRect(0,H*.70,W,H*.30);ctx.globalAlpha=alpha;
-    ctx.fillStyle="rgba(190,220,245,.5)";
-    ctx.beginPath();ctx.ellipse(W*.40+sx,H*.76,64,10,0,0,Math.PI*2);ctx.fill();
-    ctx.beginPath();ctx.ellipse(W*.40+sx,H*.82,34,6,0,0,Math.PI*2);ctx.fill();
-    ctx.globalAlpha=alpha*.22;
-    for(let r=0;r<5;r++){
-      ctx.beginPath();ctx.ellipse(W*.30+r*W*.06+sx,H*.73+r*5,18-r*2,2+r*.4,0,0,Math.PI*2);ctx.fill();
-    }
-    ctx.globalAlpha=alpha;
+  if(type === "paris" || type === "mix") {
+    // Torre Eiffel estilizada
+    const cx=W*.70+sx, top=H*.38; ctx.fillRect(cx-2,top,4,base-top); ctx.fillRect(cx-25,base-3,50,4); ctx.beginPath();ctx.arc(cx,top+3,5,0,Math.PI*2);ctx.fill(); ctx.fillRect(cx-14,top+45,28,4); ctx.fillRect(cx-20,top+75,40,4);
+    for(let i=0;i<6;i++) ctx.fillRect(W*.52+i*W*.055+sx,base-(35+(i%2)*18),W*.045,35+(i%2)*18);
   }
-
-  if(type==="ny"){
-    ctx.fillStyle="#0a1930";
-    ctx.beginPath();ctx.moveTo(0+sx,base);ctx.lineTo(W*.12+sx,H*.62);ctx.lineTo(W*.20+sx,H*.66);ctx.lineTo(W*.30+sx,H*.61);ctx.lineTo(W*.42+sx,H*.66);ctx.lineTo(W*.55+sx,H*.59);ctx.lineTo(W*.68+sx,H*.64);ctx.lineTo(W*.82+sx,H*.58);ctx.lineTo(W+sx,H*.63);ctx.lineTo(W+sx,base);ctx.fill();
-    const cx=W*.20+sx, sb=base;
-    ctx.fillRect(cx-13,sb-14,26,14);ctx.beginPath();ctx.moveTo(cx-16,sb-14);ctx.lineTo(cx-10,sb-58);ctx.lineTo(cx+10,sb-58);ctx.lineTo(cx+16,sb-14);ctx.fill();ctx.fillRect(cx-7,sb-60,14,6);
-    ctx.beginPath();ctx.arc(cx,sb-72,10,0,Math.PI*2);ctx.fill();ctx.fillRect(cx-5,sb-67,10,30);ctx.fillRect(cx-23,sb-61,46,5);ctx.fillRect(cx-4,sb-91,8,24);ctx.fillRect(cx+4,sb-91,16,4);
-    ctx.beginPath();ctx.moveTo(cx+20,sb-95);ctx.lineTo(cx+25,sb-87);ctx.lineTo(cx+18,sb-87);ctx.fill();
-    for(let i=-3;i<=3;i++){ctx.beginPath();ctx.moveTo(cx+i*5,sb-82);ctx.lineTo(cx+i*5-3,sb-91);ctx.lineTo(cx+i*5+3,sb-91);ctx.fill();}
-    const hs=[90,135,108,165,118,145,185,125,155,100];
-    for(let i=0;i<10;i++){const bx=W*.34+i*W*.065+sx,bw=W*.052,bh=hs[i];ctx.fillRect(bx,base-bh,bw,bh);if(i%2===0)ctx.fillRect(bx+bw*.38,base-bh-28,5,28);if(i%3===0)ctx.fillRect(bx+bw*.2,base-bh-12,6,6);}
-    ctx.fillStyle="#081326";ctx.fillRect(0,H*.70,W,H*.30);ctx.fillStyle="rgba(190,220,245,.5)";ctx.globalAlpha=alpha*.5;
-    ctx.beginPath();ctx.ellipse(W*.40+sx,H*.77,55,10,0,0,Math.PI*2);ctx.fill();
-    ctx.beginPath();ctx.ellipse(W*.40+sx,H*.83,28,6,0,0,Math.PI*2);ctx.fill();
-    ctx.globalAlpha=alpha*.18;
-    for(let r=0;r<4;r++){ctx.beginPath();ctx.ellipse(W*.34+r*W*.08+sx,H*.75+r*7,14-r*2,2+r*.4,0,0,Math.PI*2);ctx.fill();}
-    ctx.globalAlpha=alpha;
-  }
-
-  if(type==="paris"){
-    ctx.globalAlpha=alpha;ctx.fillStyle="#0a1930";
-    ctx.beginPath();ctx.moveTo(0+sx,base);ctx.lineTo(W*.18+sx,H*.62);ctx.lineTo(W*.32+sx,H*.65);ctx.lineTo(W*.48+sx,H*.61);ctx.lineTo(W*.62+sx,H*.64);ctx.lineTo(W*.78+sx,H*.60);ctx.lineTo(W+sx,H*.65);ctx.lineTo(W+sx,base);ctx.fill();
-    const cx=W*.68+sx,top=H*.30;
-    ctx.beginPath();ctx.moveTo(cx,top);ctx.lineTo(cx-8,H*.40);ctx.lineTo(cx-34,base);ctx.lineTo(cx-22,base);ctx.lineTo(cx,H*.47);ctx.lineTo(cx+22,base);ctx.lineTo(cx+34,base);ctx.lineTo(cx+8,H*.40);ctx.fill();
-    ctx.fillRect(cx-3,top-12,6,12);ctx.fillRect(cx-28,H*.46,56,5);ctx.fillRect(cx-20,H*.56,40,5);ctx.fillRect(cx-14,H*.63,28,5);
-    for(let i=0;i<6;i++){const y=H*(.42+i*.045);ctx.beginPath();ctx.moveTo(cx-10-i*3,y);ctx.lineTo(cx+10+i*3,y);ctx.lineTo(cx+6+i*3,y+3);ctx.lineTo(cx-6-i*3,y+3);ctx.fill();}
-    for(let i=0;i<5;i++){const y=H*(.48+i*.035);ctx.beginPath();ctx.moveTo(cx-20-i*3,y);ctx.lineTo(cx+20+i*3,y+3);ctx.lineTo(cx+16+i*3,y+6);ctx.lineTo(cx-16-i*3,y+3);ctx.fill();}
-    const hs=[46,66,52,78,58,70,42];
-    for(let i=0;i<7;i++){const bx=W*.38+i*W*.055+sx,bw=W*.043,bh=hs[i];ctx.fillRect(bx,base-bh,bw,bh);ctx.fillRect(bx+bw*.18,base-bh-8,bw*.64,8);}
-    ctx.fillStyle="#081326";ctx.fillRect(0,H*.70,W,H*.30);ctx.fillStyle="rgba(190,220,245,.5)";ctx.globalAlpha=alpha*.5;
-    ctx.beginPath();ctx.ellipse(W*.40+sx,H*.77,55,10,0,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(W*.40+sx,H*.83,28,6,0,0,Math.PI*2);ctx.fill();
-  }
-
-  if(type==="mix"){
-    ctx.globalAlpha=alpha*.3;ctx.fillStyle="#0a1930";const smallY=H*.62;
-    ctx.fillRect(W*.08+sx,smallY-35,W*.07,35);ctx.fillRect(W*.15+sx,smallY-52,W*.06,52);ctx.fillRect(W*.23+sx,smallY-28,W*.08,28);
-    ctx.beginPath();ctx.arc(W*.45+sx,smallY-35,30,Math.PI,Math.PI*2);ctx.fill();
-    const ecx=W*.66+sx,etop=H*.39;
-    ctx.beginPath();ctx.moveTo(ecx,etop);ctx.lineTo(ecx-6,H*.48);ctx.lineTo(ecx-18,smallY);ctx.lineTo(ecx+18,smallY);ctx.lineTo(ecx+6,H*.48);ctx.fill();ctx.fillRect(ecx-15,H*.54,30,4);
-    const statueX=W*.82+sx;ctx.fillRect(statueX-2,smallY-44,4,44);ctx.beginPath();ctx.arc(statueX,smallY-50,6,0,Math.PI*2);ctx.fill();ctx.fillRect(statueX-12,smallY-46,24,3);
-    ctx.globalAlpha=alpha*.16;ctx.fillStyle="#dbe7f5";ctx.beginPath();ctx.ellipse(W*.55+sx,H*.78,45,8,0,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(W*.55+sx,H*.83,22,5,0,0,Math.PI*2);ctx.fill();
-  }
+  // Lua e reflexo
+  ctx.fillStyle="#dbe7f5"; ctx.beginPath();ctx.arc(W*.82+sx,H*.22,26,0,Math.PI*2);ctx.fill();
+  ctx.globalAlpha=alpha*.16; ctx.fillStyle="#dbe7f5"; for(let i=0;i<7;i++) ctx.beginPath(),ctx.arc(W*.82+sx+i*9,base+20+i*11,3+(i%3),0,Math.PI*2),ctx.fill();
   ctx.restore();
 }
 
-function getLandmarkType(){ return phases[state.currentPhase].landmark || "mix"; }
-function drawLandmarkForPhase(type){ if(!type)return; drawLandmark(bgCtx,W,H,type,1,0,true); }
-function drawParallax(ctx,speed){
-  const phase=phases[state.currentPhase],landmark=phase.landmark||"mix",t=state.parallaxOffset;
-  for(let layer=0;layer<3;layer++){const factor=.10+layer*.12,ox=-((t*speed*factor)%(W+260)),a=.18+layer*.10;drawLandmark(ctx,W,H,landmark,a,ox,false);drawLandmark(ctx,W,H,landmark,a,ox+W+260,false);}
+function getLandmarkType() {
+  if (state.currentPhase < 5) return "rio";
+  if (state.currentPhase < 10) return "ny";
+  if (state.currentPhase < 15) return "paris";
+  return "mix";
 }
 
-
-function drawCityBackground(){
-  const phase=phases[state.currentPhase];
-  bgCtx.clearRect(0,0,W,H);
-  if(state.currentPhase===0){
-    drawFirstRain(bgCtx,W,H,performance.now());
-  } else {
-    drawLandmark(bgCtx,W,H,phase.landmark||"mix",1,0,true);
+function drawParallax(ctx, speed) {
+  const p=phases[state.currentPhase]; const t=state.carOffset; const landmark=getLandmarkType();
+  for(let layer=0;layer<3;layer++){
+    const factor=.12+layer*.13; const ox=-((t*speed*factor)%(W+260));
+    drawLandmark(ctx,W,H,landmark, .32+layer*.18, ox);
+    drawLandmark(ctx,W,H,landmark, .32+layer*.18, ox+W+260);
   }
-  bgCtx.save();bgCtx.globalAlpha=.06;
-  skyTexture.forEach(c=>{bgCtx.fillStyle="#fff";bgCtx.beginPath();bgCtx.arc(c.x,c.y,c.r,0,Math.PI*2);bgCtx.fill();});
+}
+
+function drawCityBackground() {
+  const phase = phases[state.currentPhase];
+  bgCtx.clearRect(0, 0, W, H);
+  if (state.currentPhase === 0) {
+    drawPhase1_FirstRain(bgCtx, W, H);
+    return;
+  }
+  
+  const sky = bgCtx.createLinearGradient(0, 0, 0, H);
+  sky.addColorStop(0, phase.sky[0]); sky.addColorStop(.55, phase.sky[1]); sky.addColorStop(1, "#020308");
+  bgCtx.fillStyle = sky; bgCtx.fillRect(0, 0, W, H);
+  bgCtx.save();
+  bgCtx.globalAlpha = .06;
+  skyTexture.forEach(c => { bgCtx.fillStyle = "#ffffff"; bgCtx.beginPath(); bgCtx.arc(c.x,c.y,c.r,0,Math.PI*2); bgCtx.fill(); });
   bgCtx.restore();
-  bokeh.forEach(light=>{
-    let lx=light.x;
-    if(phase.type==='car'||phase.type==='car_snow'){lx=(light.x-state.carOffset*(light.r/10))%W;if(lx<0)lx+=W;}
-    const g=bgCtx.createRadialGradient(lx,light.y,0,lx,light.y,light.r);g.addColorStop(0,light.color);g.addColorStop(1,"transparent");
-    bgCtx.fillStyle=g;bgCtx.globalAlpha=light.alpha;bgCtx.beginPath();bgCtx.arc(lx,light.y,light.r,0,Math.PI*2);bgCtx.fill();
-  });bgCtx.globalAlpha=1;
-  if(phase.type==='car'||phase.type==='car_snow')drawParallax(bgCtx,state.carSpeed);
-  if(phase.type!=='car'&&phase.type!=='car_snow'){
-    buildings.forEach((building,index)=>{
-      const y=H-building.height;bgCtx.fillStyle=`hsl(${phase.hue},25%,${Math.max(2,9*building.depth)}%)`;bgCtx.fillRect(building.x,y,building.width,building.height);
-      const rows=Math.floor(building.height/17),columns=Math.max(1,Math.floor(building.width/18));
-      for(let row=0;row<rows;row++)for(let col=0;col<columns;col++){if((index*97+row*31+col*17)%11>5)continue;bgCtx.fillStyle=phase.lights[(index+row+col)%phase.lights.length];bgCtx.globalAlpha=.08+(((index*97+row*31+col*17)%11)/11)*.35;bgCtx.fillRect(building.x+7+col*18,y+9+row*17,6,5);}
-      bgCtx.globalAlpha=1;
+
+  // Bokeh Draw (animado se for carro)
+  bokeh.forEach(light => {
+    let lx = light.x;
+    if(phase.type === 'car' || phase.type === 'car_snow') {
+        lx = (light.x - state.carOffset * (light.r/10)) % W;
+        if (lx < 0) lx += W;
+    }
+    const gradient = bgCtx.createRadialGradient(lx, light.y, 0, lx, light.y, light.r);
+    gradient.addColorStop(0, light.color); gradient.addColorStop(1, "transparent");
+    bgCtx.fillStyle = gradient; bgCtx.globalAlpha = light.alpha;
+    bgCtx.beginPath(); bgCtx.arc(lx, light.y, light.r, 0, Math.PI * 2); bgCtx.fill();
+  });
+  bgCtx.restore();
+
+  drawLandmark(bgCtx, W, H, getLandmarkType(), phase.type === 'car' || phase.type === 'car_snow' ? .22 : .12, 0);
+  if (phase.type === 'car' || phase.type === 'car_snow') drawParallax(bgCtx, carSpeed);
+
+  if (phase.type !== 'car' && phase.type !== 'car_snow') {
+    buildings.forEach((building, index) => {
+      const y = H - building.height;
+      bgCtx.fillStyle = `hsl(${phase.hue}, 25%, ${Math.max(2, 9 * building.depth)}%)`;
+      bgCtx.fillRect(building.x, y, building.width, building.height);
+      const rows = Math.floor(building.height / 17); const columns = Math.max(1, Math.floor(building.width / 18));
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < columns; col++) {
+          if ((index * 97 + row * 31 + col * 17) % 11 > 5) continue;
+          bgCtx.fillStyle = phase.lights[(index + row + col) % phase.lights.length];
+          bgCtx.globalAlpha = .08 + (((index*97+row*31+col*17)%11) / 11) * .35;
+          bgCtx.fillRect(building.x + 7 + col * 18, y + 9 + row * 17, 6, 5);
+        }
+      }
+      bgCtx.globalAlpha = 1;
     });
   }
-  const roadY=H*.72;bgCtx.fillStyle="rgba(2,5,10,.68)";bgCtx.fillRect(0,roadY,W,H-roadY);bgCtx.strokeStyle="rgba(255,255,255,.035)";bgCtx.lineWidth=1;
-  for(let y=roadY+18;y<H;y+=22){bgCtx.beginPath();bgCtx.moveTo(0,y);bgCtx.lineTo(W,y+Math.sin(y*.03)*8);bgCtx.stroke();}
-  streetLights.forEach(l=>{bgCtx.strokeStyle="rgba(170,200,220,.18)";bgCtx.lineWidth=2;bgCtx.beginPath();bgCtx.moveTo(l.x,l.y);bgCtx.lineTo(l.x,l.y-l.h);bgCtx.stroke();const g=bgCtx.createRadialGradient(l.x,l.y-l.h,0,l.x,l.y-l.h,24);g.addColorStop(0,l.glow);g.addColorStop(1,"transparent");bgCtx.fillStyle=g;bgCtx.globalAlpha=.22;bgCtx.beginPath();bgCtx.arc(l.x,l.y-l.h,24,0,Math.PI*2);bgCtx.fill();bgCtx.globalAlpha=1;});
-  traffic.forEach(c=>{let x=(c.x-state.carOffset*c.speed/100)%(W+180);if(x<-120)x+=W+180;const y=c.y,sc=c.scale;bgCtx.fillStyle="rgba(8,12,18,.9)";bgCtx.fillRect(x,y,42*sc,10*sc);const rg=bgCtx.createRadialGradient(x+5*sc,y+5*sc,0,x+5*sc,y+5*sc,18*sc);rg.addColorStop(0,c.tail);rg.addColorStop(1,"transparent");bgCtx.fillStyle=rg;bgCtx.globalAlpha=.35;bgCtx.beginPath();bgCtx.arc(x+5*sc,y+5*sc,18*sc,0,Math.PI*2);bgCtx.fill();bgCtx.globalAlpha=1;});
-  if([0,6,9,14,19].includes(state.currentPhase)){const grassY=H*.85;bgCtx.fillStyle="#1a3d1a";bgCtx.fillRect(0,grassY,W,H-grassY);for(let i=0;i<120;i++){const x=i*W/120+Math.sin(i*12.7)*2,h=2+(i%3);bgCtx.fillStyle=i%2?"#2d5a2d":"#3a7a3a";bgCtx.fillRect(x,grassY-h,1,h);}}
-  const ground=bgCtx.createLinearGradient(0,H*.76,0,H);ground.addColorStop(0,"rgba(0,0,0,0)");ground.addColorStop(1,"rgba(0,0,0,.55)");bgCtx.fillStyle=ground;bgCtx.fillRect(0,H*.7,W,H*.3);
-}
 
+  // Wet road + reflections
+  const roadY = H * .72;
+  bgCtx.fillStyle = "rgba(2,5,10,.68)"; bgCtx.fillRect(0,roadY,W,H-roadY);
+  bgCtx.strokeStyle = "rgba(255,255,255,.035)"; bgCtx.lineWidth=1;
+  for(let y=roadY+18;y<H;y+=22){ bgCtx.beginPath(); bgCtx.moveTo(0,y); bgCtx.lineTo(W,y+Math.sin(y*.03)*8); bgCtx.stroke(); }
+  streetLights.forEach(l=>{
+    bgCtx.strokeStyle="rgba(170,200,220,.18)"; bgCtx.lineWidth=2; bgCtx.beginPath(); bgCtx.moveTo(l.x,l.y); bgCtx.lineTo(l.x,l.y-l.h); bgCtx.stroke();
+    const g=bgCtx.createRadialGradient(l.x,l.y-l.h,0,l.x,l.y-l.h,24); g.addColorStop(0,l.glow); g.addColorStop(1,"transparent"); bgCtx.fillStyle=g; bgCtx.globalAlpha=.22; bgCtx.beginPath(); bgCtx.arc(l.x,l.y-l.h,24,0,Math.PI*2); bgCtx.fill(); bgCtx.globalAlpha=1;
+  });
+  traffic.forEach(c=>{
+    let x=(c.x-state.carOffset*c.speed/100)% (W+180); if(x< -120)x+=W+180;
+    const y=c.y, sc=c.scale;
+    bgCtx.fillStyle="rgba(8,12,18,.9)"; bgCtx.fillRect(x,y,42*sc,10*sc);
+    const rg=bgCtx.createRadialGradient(x+5*sc,y+5*sc,0,x+5*sc,y+5*sc,18*sc); rg.addColorStop(0,c.tail); rg.addColorStop(1,"transparent"); bgCtx.fillStyle=rg; bgCtx.globalAlpha=.35; bgCtx.beginPath(); bgCtx.arc(x+5*sc,y+5*sc,18*sc,0,Math.PI*2); bgCtx.fill(); bgCtx.globalAlpha=1;
+  });
+
+  if ([0,6,9,14,19].includes(state.currentPhase)) {
+    const grassY=H*.85; bgCtx.fillStyle="#1a3d1a"; bgCtx.fillRect(0,grassY,W,H-grassY);
+    for(let i=0;i<120;i++){ const x=Math.random()*W; const h=2+Math.random()*4; bgCtx.fillStyle=(i%2?"#2d5a2d":"#3a7a3a"); bgCtx.fillRect(x,grassY-h,1,h); }
+  }
+
+  const ground = bgCtx.createLinearGradient(0, H * .76, 0, H);
+  ground.addColorStop(0, "rgba(0,0,0,0)"); ground.addColorStop(1, "rgba(0,0,0,.55)");
+  bgCtx.fillStyle = ground; bgCtx.fillRect(0, H * .7, W, H * .3);
+}
 
 class Particle {
   constructor() { this.reset(true); }
@@ -897,7 +870,7 @@ class Particle {
   update(dt) {
     const phase = phases[state.currentPhase];
     let spd = this.vy * dt * (.35 + state.rainIntensity * .9);
-    if(phase.type === 'car' || phase.type === 'car_snow') this.x += state.carSpeed * 2 * dt;
+    if(phase.type === 'car' || phase.type === 'car_snow') this.x += carSpeed * 2 * dt;
     this.y += spd;
     this.x += this.wind * dt * (this.isSnow ? 50 : (20 + phase.rain * 30));
     if (!this.isSnow && this.y > H*.74 && Math.random()<.035) this.splash=.12;
@@ -910,7 +883,7 @@ class Particle {
       rainCtx.beginPath(); rainCtx.arc(this.x, this.y, this.len/2, 0, Math.PI*2); rainCtx.fill();
     } else {
       rainCtx.strokeStyle = `rgba(185,220,255,${this.alpha * (0.65 + state.rainIntensity*.5)})`; rainCtx.lineWidth = this.width;
-      rainCtx.beginPath(); rainCtx.moveTo(this.x, this.y); rainCtx.lineTo(this.x + Math.sin(state.rainAngle) * this.len, this.y + Math.cos(state.rainAngle) * this.len); rainCtx.stroke();
+      rainCtx.beginPath(); rainCtx.moveTo(this.x, this.y); rainCtx.lineTo(this.x + Math.sin(rainAngle) * this.len, this.y + Math.cos(rainAngle) * this.len); rainCtx.stroke();
       if(this.splash>0){ rainCtx.globalAlpha=Math.max(0,this.splash*6); rainCtx.beginPath(); rainCtx.ellipse(this.x,this.y,4,1.5,0,0,Math.PI*2); rainCtx.stroke(); rainCtx.globalAlpha=1; }
     }
   }
@@ -1086,30 +1059,10 @@ function completePhase() {
   });
 }
 
-function resetPhaseState(){
-  state.carSpeed=0;state.rainAngle=0;state.parallaxOffset=0;state.carOffset=0;
-  state.hasInteracted=false;state.activePointers.clear();
-  bgCtx.clearRect(0,0,W,H);rainCtx.clearRect(0,0,W,H);glassCtx.clearRect(0,0,W,H);fogCtx.clearRect(0,0,W,H);
-  if(typeof glassDrops!=="undefined")glassDrops.length=0;
-}
-function loadPhase(id){
-  resetPhaseState();
-  if(id===0){
-    loadPhase1();
-    return;
-  }
-  const current=phases[id];state.currentPhase=id;
-  if(current.type.includes('car')){state.carSpeed=2.5;state.rainAngle=25*Math.PI/180;}
-  else{state.carSpeed=0;state.rainAngle=0;}
-  if(typeof rainParticles!=="undefined")rainParticles.forEach(p=>p.reset(true));
-  drawLandmarkForPhase(current.landmark);
-}
-
 function startPhase(idx, zen = false) {
   if (idx > state.highestPhase && !zen) return;
-  loadPhase(idx);
-  state.started = true; state.paused = false; state.isZen = zen;
-  state.elapsed=0; state.cleanStreak=0; state.zenScore=0; state.phaseStartedAt=performance.now();
+  state.currentPhase = idx; state.started = true; state.paused = false; state.isZen = zen;
+  state.hasInteracted = false; state.activePointers.clear(); state.elapsed=0; state.cleanStreak=0; state.zenScore=0; state.phaseStartedAt=performance.now();
   generateCity(); drawCityBackground(); initFog(); updatePhaseUI();
   document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
   document.getElementById("hud").classList.remove("hidden");
@@ -1166,7 +1119,7 @@ function loop(time) {
   if (state.started && !state.paused) {
     state.elapsed += dt; updateAudio();
     if(phases[state.currentPhase].type === 'car' || phases[state.currentPhase].type === 'car_snow') {
-      state.carOffset += dt * state.carSpeed; state.parallaxOffset=state.carOffset; drawCityBackground(); // Animated BG
+      state.carOffset += dt * carSpeed; drawCityBackground(); // Animated BG
     }
     rainCtx.clearRect(0, 0, W, H); glassCtx.clearRect(0, 0, W, H);
     rainParticles.forEach(p => { p.update(dt); p.draw(); });
