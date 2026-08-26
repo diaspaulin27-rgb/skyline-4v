@@ -581,7 +581,10 @@ function loadGame() {
     state.points = Number(data.points) || 0; state.stars = Number(data.stars) || 0;
     state.highestPhase = Math.max(0, Math.min(19, Number(data.highestPhase) || 0));
     state.currentPhase = Math.max(0, Math.min(19, Number(data.currentPhase) || 0));
-    state.brush1 = data.brush1 || "soft"; state.brush2 = data.brush2 || "soft";
+    // Valida os dedos salvos para evitar quebrar o jogo se uma versão anterior
+    // tiver deixado um identificador de brush que não existe mais.
+    state.brush1 = (data.brush1 && brushes[data.brush1]) ? data.brush1 : "soft";
+    state.brush2 = (data.brush2 && brushes[data.brush2]) ? data.brush2 : "soft";
     unlockedBrushes = data.unlockedBrushes || { soft: true };
     unlockedBrushes.soft = true;
     if(typeof data.rainIntensity === "number") state.rainIntensity = data.rainIntensity;
@@ -995,6 +998,8 @@ function renderStore() {
 }
 
 function updateFingerSlots() {
+  if (!brushes[state.brush1]) state.brush1 = "soft";
+  if (!brushes[state.brush2]) state.brush2 = "soft";
   document.getElementById("slot1Name").textContent = brushes[state.brush1].name[state.lang];
   document.getElementById("slot2Name").textContent = brushes[state.brush2].name[state.lang];
 }
