@@ -630,51 +630,44 @@ function drawPhase1ExternalMap(time = 0) {
   return true;
 }
 
-const waterRipples = [];
-
 function drawPhase1WaterOnly(time = 0) {
   if (!phase1MapImage.complete || !phase1MapImage.naturalWidth) return false;
 
   const { dx, dy, dw, dh } = getPhase1Layout();
-  const waterTop = Math.max(0, dy + dh * 0.56);
-  const waterBottom = Math.min(H, dy + dh * 0.92);
-  const sliceH = 4;
+
+  // Área exclusiva da água. A cidade, Cristo e montanhas ficam imóveis.
+  const waterTop = Math.max(0, dy + dh * 0.62);
+  const waterBottom = Math.min(H, dy + dh * 0.93);
+
+  // Movimento vertical extremamente sutil.
+  const amplitude = 0.9;
+  const sliceH = 2;
+  const waveLength = 55;
+  const waveTime = time * 0.4;
 
   bgCtx.save();
   bgCtx.beginPath();
   bgCtx.rect(0, waterTop, W, waterBottom - waterTop);
   bgCtx.clip();
 
+  // Fatias horizontais sobem/desce menos de 1px.
+  // Não existe deslocamento horizontal, blur, scale ou rotação.
   for (let y = waterTop; y < waterBottom; y += sliceH) {
-    const wave = Math.sin((y - waterTop) / 40 + time * 0.6) * 1.1;
+    const wave = Math.sin((y - waterTop) / waveLength + waveTime) * amplitude;
+
     const sourceY = ((y - dy) / dh) * phase1MapImage.naturalHeight;
     const sourceH = (sliceH / dh) * phase1MapImage.naturalHeight;
 
     bgCtx.drawImage(
       phase1MapImage,
       0, sourceY, phase1MapImage.naturalWidth, sourceH,
-      dx + wave, y, dw, sliceH + 0.5
+      dx, y + wave, dw, sliceH + 1.2
     );
-  }
-
-  for (let i = waterRipples.length - 1; i >= 0; i--) {
-    const ripple = waterRipples[i];
-    ripple.r += 0.7;
-    ripple.alpha -= 0.004;
-
-    bgCtx.strokeStyle = `rgba(200,220,255,${Math.max(0, ripple.alpha)})`;
-    bgCtx.lineWidth = 1;
-    bgCtx.beginPath();
-    bgCtx.arc(ripple.x, ripple.y, ripple.r, 0, Math.PI * 2);
-    bgCtx.stroke();
-
-    if (ripple.alpha <= 0) waterRipples.splice(i, 1);
   }
 
   bgCtx.restore();
   return true;
 }
-
 
 let W = window.innerWidth; let H = window.innerHeight;
 // Otimização de Performance: DPR travado em 1 para poupar GPU em celulares fracos
@@ -1115,18 +1108,9 @@ function loop(time) {
     state.elapsed += dt; updateAudio();
     if (state.currentPhase === 0) {
       phase1AnimTime += dt;
-      if (waterRipples.length < 8 && Math.random() < 0.03) {
-        const { dy, dh } = getPhase1Layout();
-        const waterTop = Math.max(0, dy + dh * 0.56);
-        const waterBottom = Math.min(H, dy + dh * 0.92);
-        waterRipples.push({
-          x: Math.random() * W,
-          y: waterTop + Math.random() * (waterBottom - waterTop),
-          r: 0,
-          alpha: 0.35
-        });
-      }
-      drawPhase1WaterOnly(phase1AnimTime);
+      // Redesenha a imagem base a cada frame antes da ondulação.
+      // Isso impede qualquer rastro ou acúmulo da água do frame anterior.
+      drawPhase1ExternalMap(phase1AnimTime);
     }
     if(phases[state.currentPhase].type === 'car' || phases[state.currentPhase].type === 'car_snow') {
       state.carOffset += dt * carSpeed; drawCityBackground(); // Animated BG
