@@ -399,6 +399,7 @@ const state = {
   brush1: "soft",
   brush2: "soft",
   activePointers: new Map(),
+  pointerBrushes: new Map(),
   carOffset: 0,
   elapsed: 0,
   cleanStreak: 0,
@@ -528,8 +529,8 @@ const phases = [
   { name: {en:"Neon Splash", pt:"Neon"}, feeling: {en:"Contemplation", pt:"Contemplação"}, story: {en:"Liquid reflections.", pt:"Reflexos líquidos."}, hue: 285, sky: ["#10051c", "#321344"], lights: ["#f43f5e", "#a855f7", "#06b6d4"], rain: 0.88, thunder: 3, type: "rain", rainStyle: "neon" },
   { name: {en:"The Window", pt:"A Janela"}, feeling: {en:"Intimacy", pt:"Intimidade"}, story: {en:"Protected behind glass.", pt:"Protegido atrás do vidro."}, hue: 195, sky: ["#03151b", "#12323c"], lights: ["#67e8f9", "#fde68a", "#f0f9ff"], rain: 0.68, thunder: 4, type: "rain", rainStyle: "soft" },
   { name: {en:"Storm", pt:"Tempestade"}, feeling: {en:"Tension", pt:"Tensão"}, story: {en:"Heavy winds and flashes.", pt:"Ventos fortes e flashes."}, hue: 210, sky: ["#02040a", "#16202d"], lights: ["#e0f2fe", "#93c5fd", "#f8fafc"], rain: 1, thunder: 5, type: "rain", rainStyle: "storm" },
-  { name: {en:"Horizon", pt:"Horizonte"}, feeling: {en:"Hope", pt:"Esperança"}, story: {en:"A tiny strip of light.", pt:"Uma pequena faixa de luz."}, hue: 205, sky: ["#07111c", "#24485d"], lights: ["#fde68a", "#fbbf24", "#bae6fd"], rain: 0.65, thunder: 6, type: "rain", rainStyle: "steady" },
-  { name: {en:"Memories", pt:"Memórias"}, feeling: {en:"Longing", pt:"Saudade"}, story: {en:"Drops carrying past moments.", pt:"Gotas carregando o passado."}, hue: 260, sky: ["#090613", "#2b183b"], lights: ["#c4b5fd", "#f9a8d4", "#fef3c7"], rain: 0.78, thunder: 7, type: "rain", rainStyle: "soft" },
+  { name: {en:"Horizon", pt:"Horizonte"}, feeling: {en:"Hope", pt:"Esperança"}, story: {en:"A tiny strip of light.", pt:"Uma pequena faixa de luz."}, hue: 205, sky: ["#07111c", "#24485d"], lights: ["#fde68a", "#fbbf24", "#bae6fd"], rain: 0.65, thunder: 6, type: "rain", rainStyle: "breeze" },
+  { name: {en:"Memories", pt:"Memórias"}, feeling: {en:"Longing", pt:"Saudade"}, story: {en:"Drops carrying past moments.", pt:"Gotas carregando o passado."}, hue: 260, sky: ["#090613", "#2b183b"], lights: ["#c4b5fd", "#f9a8d4", "#fef3c7"], rain: 0.78, thunder: 7, type: "rain", rainStyle: "memory" },
   { name: {en:"Silence", pt:"Silêncio"}, feeling: {en:"Peace", pt:"Paz"}, story: {en:"No cars, just water.", pt:"Sem carros, só água."}, hue: 175, sky: ["#020d0d", "#123638"], lights: ["#5eead4", "#99f6e4", "#fef9c3"], rain: 0.55, thunder: 8, type: "rain", rainStyle: "drizzle" },
   { name: {en:"Clearing Sky", pt:"O Céu Clareia"}, feeling: {en:"Rebirth", pt:"Renascimento"}, story: {en:"Storm is leaving.", pt:"A tempestade está indo embora."}, hue: 35, sky: ["#17100a", "#513b20"], lights: ["#fde68a", "#fb923c", "#fef3c7"], rain: 0.48, thunder: 9, type: "rain", rainStyle: "clearing" },
   
@@ -547,25 +548,25 @@ const phases = [
 ];
 
 const brushes = {
-  soft: { name: {en:"Soft", pt:"Suave"}, cost: 0, radius: 38, blur: 0.9, vignette: 1.0, desc: {en:"Large area, smooth.", pt:"Grande área, suave."} },
-  precise: { name: {en:"Precise", pt:"Preciso"}, cost: 100, radius: 22, blur: 0.35, vignette: 1.0, desc: {en:"Fine details.", pt:"Detalhes finos."} },
-  broad: { name: {en:"Broad", pt:"Largo"}, cost: 200, radius: 65, blur: 0.8, vignette: 1.0, desc: {en:"Quick large wipes.", pt:"Limpeza rápida."} },
-  sharp: { name: {en:"Sharp", pt:"Nítido"}, cost: 300, radius: 17, blur: 0.12, vignette: 1.0, desc: {en:"Sharp edges.", pt:"Bordas definidas."} },
-  dream: { name: {en:"Dream", pt:"Sonho"}, cost: 500, radius: 80, blur: 1.4, vignette: 1.0, desc: {en:"Diffuse and huge.", pt:"Gigante e difuso."} },
-  fine: { name: {en:"Fine", pt:"Fino"}, cost: 650, radius: 12, blur: 0.08, vignette: 0.82, desc: {en:"Very thin and precise.", pt:"Muito fino e preciso."} },
-  feather: { name: {en:"Feather", pt:"Pluma"}, cost: 800, radius: 30, blur: 1.25, vignette: 1.28, desc: {en:"Soft edge with light vignette.", pt:"Borda suave com vinheta leve."} },
-  heavy: { name: {en:"Heavy", pt:"Pesado"}, cost: 950, radius: 92, blur: 0.65, vignette: 0.72, desc: {en:"Very thick, clears a lot.", pt:"Muito grosso, limpa bastante."} },
-  velvet: { name: {en:"Velvet", pt:"Veludo"}, cost: 1100, radius: 48, blur: 1.65, vignette: 1.45, desc: {en:"Wide and very soft.", pt:"Largo e muito suave."} },
-  razor: { name: {en:"Razor", pt:"Lâmina"}, cost: 1300, radius: 9, blur: 0.03, vignette: 0.65, desc: {en:"Ultra-thin, high clarity.", pt:"Ultrafino, alta nitidez."} },
-  mist: { name: {en:"Mist", pt:"Névoa"}, cost: 1500, radius: 58, blur: 2.0, vignette: 1.7, desc: {en:"Huge diffuse clearing.", pt:"Limpeza enorme e difusa."} },
-  focus: { name: {en:"Focus", pt:"Foco"}, cost: 1750, radius: 27, blur: 0.18, vignette: 0.58, desc: {en:"Small and crisp.", pt:"Pequeno e muito nítido."} }
+  soft: { name: {en:"Soft", pt:"Suave"}, cost: 0, radius: 38, blur: 0.9, vignette: 0.45, desc: {en:"Large area, smooth.", pt:"Grande área, suave."} },
+  precise: { name: {en:"Precise", pt:"Preciso"}, cost: 100, radius: 22, blur: 0.35, vignette: 0.18, desc: {en:"Fine details.", pt:"Detalhes finos."} },
+  broad: { name: {en:"Broad", pt:"Largo"}, cost: 200, radius: 65, blur: 0.8, vignette: 0.55, desc: {en:"Quick large wipes.", pt:"Limpeza rápida."} },
+  sharp: { name: {en:"Sharp", pt:"Nítido"}, cost: 300, radius: 17, blur: 0.12, vignette: 0.08, desc: {en:"Sharp edges.", pt:"Bordas definidas."} },
+  dream: { name: {en:"Dream", pt:"Sonho"}, cost: 500, radius: 80, blur: 1.4, vignette: 0.72, desc: {en:"Diffuse and huge.", pt:"Gigante e difuso."} },
+  feather: { name: {en:"Feather", pt:"Pluma"}, cost: 650, radius: 48, blur: 1.15, vignette: 0.30, desc: {en:"Very soft and light.", pt:"Muito suave e leve."} },
+  needle: { name: {en:"Needle", pt:"Agulha"}, cost: 800, radius: 11, blur: 0.05, vignette: 0.04, desc: {en:"Tiny and precise.", pt:"Muito fino e preciso."} },
+  velvet: { name: {en:"Velvet", pt:"Veludo"}, cost: 950, radius: 55, blur: 0.62, vignette: 0.42, desc: {en:"Balanced and smooth.", pt:"Equilibrado e suave."} },
+  mist: { name: {en:"Mist", pt:"Névoa"}, cost: 1100, radius: 72, blur: 1.25, vignette: 0.85, desc: {en:"Wide and atmospheric.", pt:"Amplo e atmosférico."} },
+  crystal: { name: {en:"Crystal", pt:"Cristal"}, cost: 1300, radius: 28, blur: 0.18, vignette: 0.12, desc: {en:"Clean and crisp.", pt:"Limpo e definido."} },
+  giant: { name: {en:"Giant", pt:"Gigante"}, cost: 1600, radius: 92, blur: 0.75, vignette: 0.68, desc: {en:"Huge wiping area.", pt:"Área enorme de limpeza."} },
+  focus: { name: {en:"Focus", pt:"Foco"}, cost: 1900, radius: 34, blur: 0.28, vignette: 0.22, desc: {en:"Controlled clarity.", pt:"Nitidez controlada."} }
 };
 
 let unlockedBrushes = { soft: true };
 
 function saveGame() {
   localStorage.setItem("rainySkylineSave", JSON.stringify({
-    points: state.points, stars: state.stars, highestPhase: state.highestPhase,
+    points: state.points, stars: state.stars, highestPhase: state.highestPhase, currentPhase: state.currentPhase,
     brush1: state.brush1, brush2: state.brush2, unlockedBrushes,
     rainIntensity: state.rainIntensity, ambVolume: state.ambVolume,
     gameSound: state.gameSound, musicSound: state.musicSound, vibration: state.vibration,
@@ -579,6 +580,7 @@ function loadGame() {
     if (!data) return;
     state.points = Number(data.points) || 0; state.stars = Number(data.stars) || 0;
     state.highestPhase = Math.max(0, Math.min(19, Number(data.highestPhase) || 0));
+    state.currentPhase = Math.max(0, Math.min(19, Number(data.currentPhase) || 0));
     state.brush1 = data.brush1 || "soft"; state.brush2 = data.brush2 || "soft";
     unlockedBrushes = data.unlockedBrushes || { soft: true };
     unlockedBrushes.soft = true;
@@ -701,78 +703,57 @@ class Particle {
   constructor() { this.reset(true); }
   reset(initial = false) {
     const phase = phases[state.currentPhase];
-    this.rainStyle = phase.rainStyle || "steady";
     this.isSnow = phase.type === 'snow' || phase.type === 'car_snow';
+    this.rainStyle = phase.rainStyle || "steady";
+    const speedByStyle = {
+      light:.62, steady:.85, heavy:1.12, neon:.95, soft:.72,
+      storm:1.32, breeze:.70, memory:.88, drizzle:.48, clearing:.40,
+      carRain:1.00, snowSoft:.58, highwayRain:1.20, snowLight:.66,
+      sunShower:.72, blizzard:1.10, tunnelRain:1.16, goldenRain:.74,
+      snowDrive:.88, finalRain:.66
+    };
+    this.styleSpeed = speedByStyle[this.rainStyle] || .85;
     this.x = Math.random() * (W + 200) - 100;
     this.y = initial ? Math.random() * H : -Math.random() * H;
-    this.z = .15 + Math.random() * .85;
-
-    // Profundidade: longe = fina/discreta, perto = maior/mais presente.
-    if (this.isSnow) {
-      this.vy = 80 + Math.random() * 180;
-      this.len = 3 + Math.random() * 4;
-      this.alpha = .08 + Math.random() * .27;
-      this.width = .5 + Math.random() * 1.2;
-    } else if (this.z < .33) {
-      this.vy = 300 + Math.random() * 260;
-      this.len = 6 + Math.random() * 11;
-      this.alpha = .035 + Math.random() * .07;
-      this.width = .3 + Math.random() * .35;
-    } else if (this.z < .72) {
-      this.vy = 520 + Math.random() * 380;
-      this.len = 12 + Math.random() * 22;
-      this.alpha = .08 + Math.random() * .14;
-      this.width = .55 + Math.random() * .65;
-    } else {
-      this.vy = 820 + Math.random() * 620;
-      this.len = 22 + Math.random() * 34;
-      this.alpha = .16 + Math.random() * .24;
-      this.width = .9 + Math.random() * 1.15;
-    }
-
-    const styleSpeed = {
-      light:.62, steady:.85, heavy:1.12, neon:.92, soft:.70,
-      storm:1.32, drizzle:.48, clearing:.42,
-      carRain:1.00, highwayRain:1.20, sunShower:.72,
-      blizzard:1.08, tunnelRain:1.16, goldenRain:.74,
-      snowSoft:.58, snowLight:.66, snowDrive:.88, finalRain:.68
-    }[this.rainStyle] || .85;
-
-    this.styleSpeed = styleSpeed;
-
-    this.wind = (this.isSnow ? (Math.random() * 2 - 1) : (-1.5 - Math.random() * 3));
+    this.z = .25 + Math.random() * .75;
+    const depth = .55 + this.z * .95;
+    this.vy = this.isSnow ? (80 + Math.random() * 180) * depth : (500 + Math.random() * 1050) * depth;
+    this.len = this.isSnow ? (3 + Math.random() * 4) * (.7 + this.z*.6) : (14 + Math.random() * 35) * (.65 + this.z*.8);
+    this.alpha = (.07 + Math.random() * .22) * (.65 + this.z*.65);
+    this.width = (.45 + Math.random() * 1.0) * (.65 + this.z*.8);
+    this.wind = (this.isSnow ? (Math.random() * 2 - 1) : (-1.5 - Math.random() * 3)) * (.65 + this.z*.5);
     this.splash = 0;
   }
   update(dt) {
     const phase = phases[state.currentPhase];
     let spd = this.vy * dt * (.35 + state.rainIntensity * .9) * this.styleSpeed;
-    if(phase.type === 'car' || phase.type === 'car_snow') this.x -= 200 * dt; // Car speed illusion
+    if(phase.type === 'car' || phase.type === 'car_snow') this.x -= 200 * dt * (.7 + this.z*.5);
     this.y += spd;
     this.x += this.wind * dt * (this.isSnow ? 50 : (20 + phase.rain * 30));
-    if (!this.isSnow && this.y > H*.74 && Math.random()<.035) this.splash=.12;
+    if (!this.isSnow && this.y > H*.74 && Math.random()<(.02 + state.rainIntensity*.025)) this.splash=.12 + this.z*.08;
     if(this.splash>0) this.splash-=dt;
     if (this.y > H + 80 || this.x < -100) this.reset();
   }
   draw() {
+    const depthAlpha = Math.min(1, .55 + this.z*.6);
     if(this.isSnow) {
-      rainCtx.fillStyle = `rgba(255,255,255,${this.alpha*2})`;
+      rainCtx.fillStyle = `rgba(255,255,255,${this.alpha*2*depthAlpha})`;
       rainCtx.beginPath(); rainCtx.arc(this.x, this.y, this.len/2, 0, Math.PI*2); rainCtx.fill();
     } else {
-      rainCtx.strokeStyle = `rgba(185,220,255,${this.alpha * (0.65 + state.rainIntensity*.5)})`; rainCtx.lineWidth = this.width;
-      rainCtx.beginPath(); rainCtx.moveTo(this.x, this.y); rainCtx.lineTo(this.x + this.wind * .7, this.y + this.len); rainCtx.stroke();
-      // Gotas próximas recebem só um brilho mínimo, reforçando a sensação de profundidade.
-      if(this.z > .78) {
-        rainCtx.globalAlpha = this.alpha * .16;
-        rainCtx.beginPath(); rainCtx.arc(this.x, this.y, Math.max(.7, this.width*.7), 0, Math.PI*2); rainCtx.fillStyle = '#eef7ff'; rainCtx.fill();
-        rainCtx.globalAlpha = 1;
+      rainCtx.strokeStyle = `rgba(185,220,255,${this.alpha * (0.65 + state.rainIntensity*.5) * depthAlpha})`;
+      rainCtx.lineWidth = this.width;
+      rainCtx.beginPath(); rainCtx.moveTo(this.x, this.y);
+      rainCtx.lineTo(this.x + this.wind * (.45 + this.z*.55), this.y + this.len); rainCtx.stroke();
+      if(this.splash>0){
+        rainCtx.globalAlpha=Math.max(0,this.splash*(4 + this.z*4));
+        rainCtx.beginPath(); rainCtx.ellipse(this.x,this.y,3+this.z*3,1.2+this.z*.8,0,0,Math.PI*2); rainCtx.stroke(); rainCtx.globalAlpha=1;
       }
-      if(this.splash>0){ rainCtx.globalAlpha=Math.max(0,this.splash*6); rainCtx.beginPath(); rainCtx.ellipse(this.x,this.y,4,1.5,0,0,Math.PI*2); rainCtx.stroke(); rainCtx.globalAlpha=1; }
     }
   }
 }
 
 // Otimização: menos partículas para preservar bateria em celulares baixos
-const rainParticles = Array.from({ length: 220 }, () => new Particle());
+const rainParticles = Array.from({ length: 120 }, () => new Particle());
 const glassDrops = [];
 
 class GlassDrop {
@@ -805,7 +786,7 @@ class GlassDrop {
 const GRID_X = 28;
 const GRID_Y = 17;
 let fogGrid = [];
-function createFogGrid() { fogGrid = Array.from({ length: GRID_X * GRID_Y }, () => false); }
+function createFogGrid() { fogGrid = Array.from({ length: GRID_X * GRID_Y }, () => 0); }
 
 function initFog() {
   createFogGrid();
@@ -821,22 +802,44 @@ function initFog() {
 }
 
 function clearFog(x, y, brush) {
+  const isSnow = phases[state.currentPhase].type === "snow" || phases[state.currentPhase].type === "car_snow";
+  if (isSnow) {
+    if (!state.hasInteracted) { state.hasInteracted = true; document.getElementById("instruction").classList.add("hidden-text"); }
+    const gx = Math.floor((x / W) * GRID_X); const gy = Math.floor((y / H) * GRID_Y);
+    const rx = Math.ceil((brush.radius / W) * GRID_X) + 1; const ry = Math.ceil((brush.radius / H) * GRID_Y) + 1;
+    let firstCoat = false, secondCoat = false;
+    for (let yy = gy - ry; yy <= gy + ry; yy++) for (let xx = gx - rx; xx <= gx + rx; xx++) {
+      if (xx < 0 || yy < 0 || xx >= GRID_X || yy >= GRID_Y) continue;
+      const px=(xx+.5)/GRID_X*W, py=(yy+.5)/GRID_Y*H;
+      if (Math.hypot(px-x,py-y) > brush.radius) continue;
+      const i=yy*GRID_X+xx;
+      if (fogGrid[i] === 0) { fogGrid[i]=1; firstCoat=true; }
+      else if (fogGrid[i] === 1) { fogGrid[i]=2; secondCoat=true; }
+    }
+    fogCtx.save();
+    fogCtx.globalCompositeOperation="destination-out";
+    fogCtx.globalAlpha=secondCoat ? 1 : .5;
+    fogCtx.beginPath(); fogCtx.arc(x,y,brush.radius,0,Math.PI*2); fogCtx.fill();
+    fogCtx.restore();
+    updateProgress();
+    return;
+  }
   if (!state.hasInteracted) { state.hasInteracted = true; document.getElementById("instruction").classList.add("hidden-text"); }
   const radius = brush.radius; const softness = Math.max(.02, Math.min(1.4, brush.blur));
-  const vignette = Math.max(.5, Math.min(1.8, brush.vignette ?? 1));
+  const vignette = Math.max(0, Math.min(1, brush.vignette == null ? .45 : brush.vignette));
   const now=performance.now(); state.cleanStreak = (now-state.lastWipe<350)?state.cleanStreak+1:1; state.lastWipe=now;
   fogCtx.save(); fogCtx.globalCompositeOperation = "destination-out";
-  const inner = radius * Math.max(.05, .45 - softness * .15) * vignette;
+  const inner = radius * Math.max(.05, .45 - softness * .15);
   const gradient = fogCtx.createRadialGradient(x, y, inner, x, y, radius);
-  gradient.addColorStop(0, "rgba(0,0,0,1)"); gradient.addColorStop(Math.max(.55, Math.min(.92, .78 / vignette)), "rgba(0,0,0,.72)"); gradient.addColorStop(1, "rgba(0,0,0,0)");
+  gradient.addColorStop(0, "rgba(0,0,0,1)");
+  gradient.addColorStop(Math.max(.5, 1 - vignette * .45), "rgba(0,0,0," + (0.72 - vignette * .32) + ")");
+  gradient.addColorStop(1, "rgba(0,0,0,0)");
   fogCtx.fillStyle = gradient; fogCtx.beginPath(); fogCtx.arc(x, y, radius, 0, Math.PI * 2); fogCtx.fill(); fogCtx.restore();
-  // moisture ring around a fresh wipe
   glassCtx.save(); glassCtx.globalAlpha=.18; glassCtx.strokeStyle="rgba(210,240,255,.8)"; glassCtx.lineWidth=1; glassCtx.beginPath(); glassCtx.arc(x,y,radius*.9,0,Math.PI*2); glassCtx.stroke(); glassCtx.restore();
   markFogGrid(x, y, radius);
-  if(state.cleanStreak>18 && Math.random()<.05) showToast(t('perfect'));
+  if(state.cleanStreak>45 && Math.random()<.001) showToast(t('perfect'));
   updateProgress();
 }
-
 function markFogGrid(x, y, radius) {
   const gx = Math.floor((x / W) * GRID_X); const gy = Math.floor((y / H) * GRID_Y);
   const rx = Math.ceil((radius / W) * GRID_X) + 1; const ry = Math.ceil((radius / H) * GRID_Y) + 1;
@@ -850,20 +853,49 @@ function markFogGrid(x, y, radius) {
 }
 
 function updateProgress() {
-  let cleared = fogGrid.filter(v => v).length;
+  const isSnow = phases[state.currentPhase].type === "snow" || phases[state.currentPhase].type === "car_snow";
+  let cleared = isSnow ? fogGrid.filter(v => v === 2 || v === true).length : fogGrid.filter(v => v).length;
   state.fogProgress = cleared / fogGrid.length;
   document.getElementById("progressFill").style.width = Math.min(100, state.fogProgress * 100) + "%";
-  
+
   if(state.isZen){
     state.zenScore = Math.max(state.zenScore, Math.floor(state.fogProgress*100));
     const z=document.getElementById("zenScoreBadge"); z.textContent=t("zen_score")+state.zenScore; z.classList.add("show");
   }
-  if (state.fogProgress >= .72 && state.started && !state.paused && !state.isZen) completePhase();
+  if (state.fogProgress >= .99 && state.started && !state.paused && !state.isZen) completePhase();
 }
 
-function handlePointerDown(e) { if(!state.started || state.paused) return; initAudio(); fogCanvas.setPointerCapture?.(e.pointerId); state.activePointers.set(e.pointerId, {x: e.clientX, y: e.clientY}); clearFog(e.clientX, e.clientY, brushes[state.activePointers.size <= 1 ? state.brush1 : state.brush2]); }
-function handlePointerMove(e) { if(!state.started || state.paused || !state.activePointers.has(e.pointerId)) return; state.activePointers.set(e.pointerId, {x: e.clientX, y: e.clientY}); clearFog(e.clientX, e.clientY, brushes[state.activePointers.size <= 1 ? state.brush1 : state.brush2]); }
-function handlePointerUp(e) { state.activePointers.delete(e.pointerId); }
+function getPointerBrushKey(pointerId) {
+  if (state.pointerBrushes.has(pointerId)) return state.pointerBrushes.get(pointerId);
+  const index = state.activePointers.size;
+  let key;
+  if (index === 0) key = state.brush1;
+  else if (index === 1) key = state.brush2;
+  else {
+    const extras = Object.keys(brushes).filter(k => k !== state.brush1 && k !== state.brush2);
+    key = extras[(index - 2) % extras.length] || "soft";
+  }
+  state.pointerBrushes.set(pointerId, key);
+  return key;
+}
+function handlePointerDown(e) {
+  if(!state.started || state.paused) return;
+  initAudio();
+  fogCanvas.setPointerCapture?.(e.pointerId);
+  const key = getPointerBrushKey(e.pointerId);
+  state.activePointers.set(e.pointerId, {x: e.clientX, y: e.clientY});
+  clearFog(e.clientX, e.clientY, brushes[key]);
+}
+function handlePointerMove(e) {
+  if(!state.started || state.paused || !state.activePointers.has(e.pointerId)) return;
+  state.activePointers.set(e.pointerId, {x: e.clientX, y: e.clientY});
+  const key = state.pointerBrushes.get(e.pointerId) || state.brush1;
+  clearFog(e.clientX, e.clientY, brushes[key]);
+}
+function handlePointerUp(e) {
+  state.activePointers.delete(e.pointerId);
+  state.pointerBrushes.delete(e.pointerId);
+}
 fogCanvas.addEventListener("pointerdown", handlePointerDown); fogCanvas.addEventListener("pointermove", handlePointerMove); fogCanvas.addEventListener("pointerup", handlePointerUp); fogCanvas.addEventListener("pointercancel", handlePointerUp);
 
 let audioCtx = null, masterGain = null, rainGain = null, droneGain = null, windNode = null, thunderTimer = null;
@@ -914,8 +946,8 @@ function completePhase() {
 
 function startPhase(idx, zen = false) {
   if (idx > state.highestPhase && !zen) return;
-  state.currentPhase = idx; state.started = true; state.paused = false; state.isZen = zen;
-  state.hasInteracted = false; state.activePointers.clear(); state.elapsed=0; state.cleanStreak=0; state.zenScore=0; state.phaseStartedAt=performance.now();
+  state.currentPhase = idx; state.started = true; state.paused = false; state.isZen = zen; saveGame();
+  state.hasInteracted = false; state.activePointers.clear(); state.pointerBrushes.clear(); state.elapsed=0; state.cleanStreak=0; state.zenScore=0; state.phaseStartedAt=performance.now();
   generateCity(); drawCityBackground(); initFog(); updatePhaseUI();
   document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
   document.getElementById("hud").classList.remove("hidden");
@@ -976,25 +1008,18 @@ function loop(time) {
     }
     rainCtx.clearRect(0, 0, W, H); glassCtx.clearRect(0, 0, W, H);
     const phase = phases[state.currentPhase];
-    const styleDensity = {
-      light:.68, steady:1.0, heavy:1.22, neon:1.05, soft:.78,
-      storm:1.42, drizzle:.56, clearing:.45,
-      carRain:1.0, highwayRain:1.18, sunShower:.72,
-      blizzard:1.28, tunnelRain:1.12, goldenRain:.76,
-      snowSoft:.68, snowLight:.76, snowDrive:.92, finalRain:.82
-    }[phase.rainStyle || "steady"] || 1.0;
-
-    const rainCount = Math.max(
-      45,
-      Math.min(
-        rainParticles.length,
-        Math.round(
-          (45 + state.rainIntensity * 175 * Math.max(.55, phase.rain))
-          * styleDensity
-        )
-      )
-    );
-    for(let i=0;i<rainCount;i++){ rainParticles[i].update(dt); rainParticles[i].draw(); }
+    const styleDensity = ({
+      light:.68, steady:1.00, heavy:1.22, neon:1.06, soft:.78,
+      storm:1.42, breeze:.72, memory:.92, drizzle:.56, clearing:.45,
+      carRain:1.00, snowSoft:.68, highwayRain:1.18, snowLight:.76,
+      sunShower:.72, blizzard:1.28, tunnelRain:1.12, goldenRain:.76,
+      snowDrive:.92, finalRain:.82
+    })[phase.rainStyle || "steady"] || 1;
+    const activeRainCount = Math.max(18, Math.min(rainParticles.length,
+      Math.round((18 + state.rainIntensity * (rainParticles.length - 18)) * styleDensity)
+    ));
+    for(let i=0;i<activeRainCount;i++){ rainParticles[i].update(dt); rainParticles[i].draw(); }
+    for(let i=activeRainCount;i<rainParticles.length;i++){ if(rainParticles[i].y > H + 80) rainParticles[i].reset(); }
     glassDrops.forEach(d => { d.update(dt); d.draw(); });
     
     // Zen Mode Refog logic
