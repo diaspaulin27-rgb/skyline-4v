@@ -522,28 +522,28 @@ function updateTranslations() {
 
 /* 20 FASES (Incluindo Carro e Neve/Sol) */
 const phases = [
-  { name: {en:"First Rain", pt:"Primeira Chuva"}, feeling: {en:"Serenity", pt:"Serenidade"}, story: {en:"Quiet city rain.", pt:"Chuva quieta."}, hue: 215, sky: ["#030712", "#0f2740"], lights: ["#38bdf8", "#7dd3fc", "#fef3c7"], rain: 0.72, thunder: 0, type: "rain" },
-  { name: {en:"Distant Lights", pt:"Luzes Distantes"}, feeling: {en:"Nostalgia", pt:"Nostalgia"}, story: {en:"Windows across the street.", pt:"Janelas do outro lado da rua."}, hue: 235, sky: ["#080817", "#202044"], lights: ["#fbbf24", "#f472b6", "#818cf8"], rain: 0.76, thunder: 1, type: "rain" },
-  { name: {en:"After Midnight", pt:"Depois da Meia-Noite"}, feeling: {en:"Loneliness", pt:"Solidão"}, story: {en:"The city sleeps.", pt:"A cidade dormiu."}, hue: 225, sky: ["#020617", "#111827"], lights: ["#22d3ee", "#60a5fa", "#a5b4fc"], rain: 0.84, thunder: 2, type: "rain" },
-  { name: {en:"Neon Splash", pt:"Neon"}, feeling: {en:"Contemplation", pt:"Contemplação"}, story: {en:"Liquid reflections.", pt:"Reflexos líquidos."}, hue: 285, sky: ["#10051c", "#321344"], lights: ["#f43f5e", "#a855f7", "#06b6d4"], rain: 0.88, thunder: 3, type: "rain" },
-  { name: {en:"The Window", pt:"A Janela"}, feeling: {en:"Intimacy", pt:"Intimidade"}, story: {en:"Protected behind glass.", pt:"Protegido atrás do vidro."}, hue: 195, sky: ["#03151b", "#12323c"], lights: ["#67e8f9", "#fde68a", "#f0f9ff"], rain: 0.68, thunder: 4, type: "rain" },
-  { name: {en:"Storm", pt:"Tempestade"}, feeling: {en:"Tension", pt:"Tensão"}, story: {en:"Heavy winds and flashes.", pt:"Ventos fortes e flashes."}, hue: 210, sky: ["#02040a", "#16202d"], lights: ["#e0f2fe", "#93c5fd", "#f8fafc"], rain: 1, thunder: 5, type: "rain" },
-  { name: {en:"Horizon", pt:"Horizonte"}, feeling: {en:"Hope", pt:"Esperança"}, story: {en:"A tiny strip of light.", pt:"Uma pequena faixa de luz."}, hue: 205, sky: ["#07111c", "#24485d"], lights: ["#fde68a", "#fbbf24", "#bae6fd"], rain: 0.65, thunder: 6, type: "rain" },
-  { name: {en:"Memories", pt:"Memórias"}, feeling: {en:"Longing", pt:"Saudade"}, story: {en:"Drops carrying past moments.", pt:"Gotas carregando o passado."}, hue: 260, sky: ["#090613", "#2b183b"], lights: ["#c4b5fd", "#f9a8d4", "#fef3c7"], rain: 0.78, thunder: 7, type: "rain" },
-  { name: {en:"Silence", pt:"Silêncio"}, feeling: {en:"Peace", pt:"Paz"}, story: {en:"No cars, just water.", pt:"Sem carros, só água."}, hue: 175, sky: ["#020d0d", "#123638"], lights: ["#5eead4", "#99f6e4", "#fef9c3"], rain: 0.55, thunder: 8, type: "rain" },
-  { name: {en:"Clearing Sky", pt:"O Céu Clareia"}, feeling: {en:"Rebirth", pt:"Renascimento"}, story: {en:"Storm is leaving.", pt:"A tempestade está indo embora."}, hue: 35, sky: ["#17100a", "#513b20"], lights: ["#fde68a", "#fb923c", "#fef3c7"], rain: 0.48, thunder: 9, type: "rain" },
+  { name: {en:"First Rain", pt:"Primeira Chuva"}, feeling: {en:"Serenity", pt:"Serenidade"}, story: {en:"Quiet city rain.", pt:"Chuva quieta."}, hue: 215, sky: ["#030712", "#0f2740"], lights: ["#38bdf8", "#7dd3fc", "#fef3c7"], rain: 0.72, thunder: 0, type: "rain", rainStyle: "light" },
+  { name: {en:"Distant Lights", pt:"Luzes Distantes"}, feeling: {en:"Nostalgia", pt:"Nostalgia"}, story: {en:"Windows across the street.", pt:"Janelas do outro lado da rua."}, hue: 235, sky: ["#080817", "#202044"], lights: ["#fbbf24", "#f472b6", "#818cf8"], rain: 0.76, thunder: 1, type: "rain", rainStyle: "steady" },
+  { name: {en:"After Midnight", pt:"Depois da Meia-Noite"}, feeling: {en:"Loneliness", pt:"Solidão"}, story: {en:"The city sleeps.", pt:"A cidade dormiu."}, hue: 225, sky: ["#020617", "#111827"], lights: ["#22d3ee", "#60a5fa", "#a5b4fc"], rain: 0.84, thunder: 2, type: "rain", rainStyle: "heavy" },
+  { name: {en:"Neon Splash", pt:"Neon"}, feeling: {en:"Contemplation", pt:"Contemplação"}, story: {en:"Liquid reflections.", pt:"Reflexos líquidos."}, hue: 285, sky: ["#10051c", "#321344"], lights: ["#f43f5e", "#a855f7", "#06b6d4"], rain: 0.88, thunder: 3, type: "rain", rainStyle: "neon" },
+  { name: {en:"The Window", pt:"A Janela"}, feeling: {en:"Intimacy", pt:"Intimidade"}, story: {en:"Protected behind glass.", pt:"Protegido atrás do vidro."}, hue: 195, sky: ["#03151b", "#12323c"], lights: ["#67e8f9", "#fde68a", "#f0f9ff"], rain: 0.68, thunder: 4, type: "rain", rainStyle: "soft" },
+  { name: {en:"Storm", pt:"Tempestade"}, feeling: {en:"Tension", pt:"Tensão"}, story: {en:"Heavy winds and flashes.", pt:"Ventos fortes e flashes."}, hue: 210, sky: ["#02040a", "#16202d"], lights: ["#e0f2fe", "#93c5fd", "#f8fafc"], rain: 1, thunder: 5, type: "rain", rainStyle: "storm" },
+  { name: {en:"Horizon", pt:"Horizonte"}, feeling: {en:"Hope", pt:"Esperança"}, story: {en:"A tiny strip of light.", pt:"Uma pequena faixa de luz."}, hue: 205, sky: ["#07111c", "#24485d"], lights: ["#fde68a", "#fbbf24", "#bae6fd"], rain: 0.65, thunder: 6, type: "rain", rainStyle: "steady" },
+  { name: {en:"Memories", pt:"Memórias"}, feeling: {en:"Longing", pt:"Saudade"}, story: {en:"Drops carrying past moments.", pt:"Gotas carregando o passado."}, hue: 260, sky: ["#090613", "#2b183b"], lights: ["#c4b5fd", "#f9a8d4", "#fef3c7"], rain: 0.78, thunder: 7, type: "rain", rainStyle: "soft" },
+  { name: {en:"Silence", pt:"Silêncio"}, feeling: {en:"Peace", pt:"Paz"}, story: {en:"No cars, just water.", pt:"Sem carros, só água."}, hue: 175, sky: ["#020d0d", "#123638"], lights: ["#5eead4", "#99f6e4", "#fef9c3"], rain: 0.55, thunder: 8, type: "rain", rainStyle: "drizzle" },
+  { name: {en:"Clearing Sky", pt:"O Céu Clareia"}, feeling: {en:"Rebirth", pt:"Renascimento"}, story: {en:"Storm is leaving.", pt:"A tempestade está indo embora."}, hue: 35, sky: ["#17100a", "#513b20"], lights: ["#fde68a", "#fb923c", "#fef3c7"], rain: 0.48, thunder: 9, type: "rain", rainStyle: "clearing" },
   
   // NOVAS 10 FASES (Carro, Neve, Sol)
-  { name: {en:"Moving Car", pt:"Carro em Movimento"}, feeling: {en:"Journey", pt:"Jornada"}, story: {en:"Watching lines blur past.", pt:"Vendo as luzes borradas passando."}, hue: 200, sky: ["#0a0a0a", "#1a1a1a"], lights: ["#ff0000", "#ffaa00"], rain: 0.8, thunder: 1, type: "car" },
-  { name: {en:"Snowfall", pt:"Nevasca"}, feeling: {en:"Cold", pt:"Frio"}, story: {en:"Soft white silence.", pt:"Silêncio branco e suave."}, hue: 200, sky: ["#2d3748", "#4a5568"], lights: ["#e2e8f0", "#cbd5e0"], rain: 0.4, thunder: 0, type: "snow" },
-  { name: {en:"Highway Rain", pt:"Chuva na Rodovia"}, feeling: {en:"Speed", pt:"Velocidade"}, story: {en:"Fast drops hitting the windshield.", pt:"Gotas rápidas batendo no para-brisa."}, hue: 220, sky: ["#050510", "#151530"], lights: ["#fff", "#ff0000", "#00ffff"], rain: 0.9, thunder: 2, type: "car" },
-  { name: {en:"Morning Frost", pt:"Geada Matinal"}, feeling: {en:"Crisp", pt:"Cristalino"}, story: {en:"Ice melting on the glass.", pt:"Gelo derretendo no vidro."}, hue: 190, sky: ["#4a5568", "#a0aec0"], lights: ["#fff", "#e2e8f0"], rain: 0.3, thunder: 0, type: "snow" },
-  { name: {en:"Summer Sun Shower", pt:"Chuva de Verão"}, feeling: {en:"Warmth", pt:"Calor"}, story: {en:"Rain while the sun shines.", pt:"Chuva enquanto o sol brilha."}, hue: 50, sky: ["#ecc94b", "#f6e05e"], lights: ["#fff"], rain: 0.5, thunder: 0, type: "rain" },
-  { name: {en:"Midnight Blizzard", pt:"Nevasca à Meia-Noite"}, feeling: {en:"Isolation", pt:"Isolamento"}, story: {en:"Fierce wind and blinding snow.", pt:"Vento feroz e neve cegante."}, hue: 230, sky: ["#000", "#111"], lights: ["#718096", "#a0aec0"], rain: 0.8, thunder: 3, type: "snow" },
-  { name: {en:"City Tunnel", pt:"Túnel da Cidade"}, feeling: {en:"Echo", pt:"Eco"}, story: {en:"Orange lights rushing by.", pt:"Luzes laranjas passando rápido."}, hue: 30, sky: ["#1a1005", "#3a2010"], lights: ["#f6ad55", "#ed8936"], rain: 0.5, thunder: 0, type: "car" },
-  { name: {en:"Golden Hour Drops", pt:"Gotas Douradas"}, feeling: {en:"Beautiful", pt:"Beleza"}, story: {en:"Sunsets reflecting in the water.", pt:"Pôr do sol refletindo na água."}, hue: 20, sky: ["#c53030", "#ed8936"], lights: ["#fefcbf", "#fbd38d"], rain: 0.6, thunder: 1, type: "rain" },
-  { name: {en:"Snowy Drive", pt:"Passeio na Neve"}, feeling: {en:"Cozy", pt:"Aconchego"}, story: {en:"Warm inside, frozen outside.", pt:"Quente por dentro, congelado por fora."}, hue: 210, sky: ["#1a202c", "#2d3748"], lights: ["#e2e8f0", "#ff0000"], rain: 0.6, thunder: 0, type: "car_snow" },
-  { name: {en:"The Last Wipe", pt:"A Última Limpeza"}, feeling: {en:"Closure", pt:"Despedida"}, story: {en:"The glass is finally clear.", pt:"O vidro finalmente está limpo."}, hue: 200, sky: ["#2b6cb0", "#4299e1"], lights: ["#fff", "#bee3f8"], rain: 0.2, thunder: 0, type: "rain" }
+  { name: {en:"Moving Car", pt:"Carro em Movimento"}, feeling: {en:"Journey", pt:"Jornada"}, story: {en:"Watching lines blur past.", pt:"Vendo as luzes borradas passando."}, hue: 200, sky: ["#0a0a0a", "#1a1a1a"], lights: ["#ff0000", "#ffaa00"], rain: 0.8, thunder: 1, type: "car", rainStyle: "carRain" },
+  { name: {en:"Snowfall", pt:"Nevasca"}, feeling: {en:"Cold", pt:"Frio"}, story: {en:"Soft white silence.", pt:"Silêncio branco e suave."}, hue: 200, sky: ["#2d3748", "#4a5568"], lights: ["#e2e8f0", "#cbd5e0"], rain: 0.4, thunder: 0, type: "snow", rainStyle: "snowSoft" },
+  { name: {en:"Highway Rain", pt:"Chuva na Rodovia"}, feeling: {en:"Speed", pt:"Velocidade"}, story: {en:"Fast drops hitting the windshield.", pt:"Gotas rápidas batendo no para-brisa."}, hue: 220, sky: ["#050510", "#151530"], lights: ["#fff", "#ff0000", "#00ffff"], rain: 0.9, thunder: 2, type: "car", rainStyle: "highwayRain" },
+  { name: {en:"Morning Frost", pt:"Geada Matinal"}, feeling: {en:"Crisp", pt:"Cristalino"}, story: {en:"Ice melting on the glass.", pt:"Gelo derretendo no vidro."}, hue: 190, sky: ["#4a5568", "#a0aec0"], lights: ["#fff", "#e2e8f0"], rain: 0.3, thunder: 0, type: "snow", rainStyle: "snowLight" },
+  { name: {en:"Summer Sun Shower", pt:"Chuva de Verão"}, feeling: {en:"Warmth", pt:"Calor"}, story: {en:"Rain while the sun shines.", pt:"Chuva enquanto o sol brilha."}, hue: 50, sky: ["#ecc94b", "#f6e05e"], lights: ["#fff"], rain: 0.5, thunder: 0, type: "rain", rainStyle: "sunShower" },
+  { name: {en:"Midnight Blizzard", pt:"Nevasca à Meia-Noite"}, feeling: {en:"Isolation", pt:"Isolamento"}, story: {en:"Fierce wind and blinding snow.", pt:"Vento feroz e neve cegante."}, hue: 230, sky: ["#000", "#111"], lights: ["#718096", "#a0aec0"], rain: 0.8, thunder: 3, type: "snow", rainStyle: "blizzard" },
+  { name: {en:"City Tunnel", pt:"Túnel da Cidade"}, feeling: {en:"Echo", pt:"Eco"}, story: {en:"Orange lights rushing by.", pt:"Luzes laranjas passando rápido."}, hue: 30, sky: ["#1a1005", "#3a2010"], lights: ["#f6ad55", "#ed8936"], rain: 0.5, thunder: 0, type: "car", rainStyle: "tunnelRain" },
+  { name: {en:"Golden Hour Drops", pt:"Gotas Douradas"}, feeling: {en:"Beautiful", pt:"Beleza"}, story: {en:"Sunsets reflecting in the water.", pt:"Pôr do sol refletindo na água."}, hue: 20, sky: ["#c53030", "#ed8936"], lights: ["#fefcbf", "#fbd38d"], rain: 0.6, thunder: 1, type: "rain", rainStyle: "goldenRain" },
+  { name: {en:"Snowy Drive", pt:"Passeio na Neve"}, feeling: {en:"Cozy", pt:"Aconchego"}, story: {en:"Warm inside, frozen outside.", pt:"Quente por dentro, congelado por fora."}, hue: 210, sky: ["#1a202c", "#2d3748"], lights: ["#e2e8f0", "#ff0000"], rain: 0.6, thunder: 0, type: "car_snow", rainStyle: "snowDrive" },
+  { name: {en:"The Last Wipe", pt:"A Última Limpeza"}, feeling: {en:"Closure", pt:"Despedida"}, story: {en:"The glass is finally clear.", pt:"O vidro finalmente está limpo."}, hue: 200, sky: ["#2b6cb0", "#4299e1"], lights: ["#fff", "#bee3f8"], rain: 0.2, thunder: 0, type: "rain", rainStyle: "finalRain" }
 ];
 
 const brushes = {
@@ -701,6 +701,7 @@ class Particle {
   constructor() { this.reset(true); }
   reset(initial = false) {
     const phase = phases[state.currentPhase];
+    this.rainStyle = phase.rainStyle || "steady";
     this.isSnow = phase.type === 'snow' || phase.type === 'car_snow';
     this.x = Math.random() * (W + 200) - 100;
     this.y = initial ? Math.random() * H : -Math.random() * H;
@@ -729,12 +730,22 @@ class Particle {
       this.width = .9 + Math.random() * 1.15;
     }
 
+    const styleSpeed = {
+      light:.62, steady:.85, heavy:1.12, neon:.92, soft:.70,
+      storm:1.32, drizzle:.48, clearing:.42,
+      carRain:1.00, highwayRain:1.20, sunShower:.72,
+      blizzard:1.08, tunnelRain:1.16, goldenRain:.74,
+      snowSoft:.58, snowLight:.66, snowDrive:.88, finalRain:.68
+    }[this.rainStyle] || .85;
+
+    this.styleSpeed = styleSpeed;
+
     this.wind = (this.isSnow ? (Math.random() * 2 - 1) : (-1.5 - Math.random() * 3));
     this.splash = 0;
   }
   update(dt) {
     const phase = phases[state.currentPhase];
-    let spd = this.vy * dt * (.35 + state.rainIntensity * .9);
+    let spd = this.vy * dt * (.35 + state.rainIntensity * .9) * this.styleSpeed;
     if(phase.type === 'car' || phase.type === 'car_snow') this.x -= 200 * dt; // Car speed illusion
     this.y += spd;
     this.x += this.wind * dt * (this.isSnow ? 50 : (20 + phase.rain * 30));
@@ -964,7 +975,25 @@ function loop(time) {
       state.carOffset += dt * 300; drawCityBackground(); // Animated BG
     }
     rainCtx.clearRect(0, 0, W, H); glassCtx.clearRect(0, 0, W, H);
-    const rainCount = Math.max(45, Math.min(rainParticles.length, Math.round(45 + state.rainIntensity * 175 * Math.max(.55, phases[state.currentPhase].rain))));
+    const phase = phases[state.currentPhase];
+    const styleDensity = {
+      light:.68, steady:1.0, heavy:1.22, neon:1.05, soft:.78,
+      storm:1.42, drizzle:.56, clearing:.45,
+      carRain:1.0, highwayRain:1.18, sunShower:.72,
+      blizzard:1.28, tunnelRain:1.12, goldenRain:.76,
+      snowSoft:.68, snowLight:.76, snowDrive:.92, finalRain:.82
+    }[phase.rainStyle || "steady"] || 1.0;
+
+    const rainCount = Math.max(
+      45,
+      Math.min(
+        rainParticles.length,
+        Math.round(
+          (45 + state.rainIntensity * 175 * Math.max(.55, phase.rain))
+          * styleDensity
+        )
+      )
+    );
     for(let i=0;i<rainCount;i++){ rainParticles[i].update(dt); rainParticles[i].draw(); }
     glassDrops.forEach(d => { d.update(dt); d.draw(); });
     
