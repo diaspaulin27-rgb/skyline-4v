@@ -1047,7 +1047,7 @@ function completePhase() {
 function startPhase(idx, zen = false) {
   if (idx > state.highestPhase && !zen) return;
   state.currentPhase = idx; state.started = true; state.paused = false; state.isZen = zen;
-  waterRipples.length = 0;
+  const waterRipples = [];
   state.hasInteracted = false; state.activePointers.clear(); state.elapsed=0; state.cleanStreak=0; state.zenScore=0; state.phaseStartedAt=performance.now();
   generateCity(); drawCityBackground(); initFog(); updatePhaseUI();
   document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
