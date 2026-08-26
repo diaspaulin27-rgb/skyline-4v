@@ -594,179 +594,132 @@ const rainCtx = rainCanvas.getContext("2d");
 const glassCtx = glassCanvas.getContext("2d");
 const fogCtx = fogCanvas.getContext("2d");
 
-// =========================================================
-// FASE 1 — RIO DE JANEIRO — MAPA PROCEDURAL
-// Nenhuma imagem externa é usada nesta fase.
-// =========================================================
-function drawPhase1RioProcedural(ctx, W, H, time = 0) {
-  // 1. CÉU — degradê quente laranja → violeta → azul-roxo
-  const sky = ctx.createLinearGradient(0, 0, 0, H * 0.68);
-  sky.addColorStop(0, "#f36b4b");
-  sky.addColorStop(0.30, "#ff9862");
-  sky.addColorStop(0.58, "#d7788e");
-  sky.addColorStop(0.80, "#766aa8");
-  sky.addColorStop(1, "#3e4c82");
-  ctx.fillStyle = sky;
-  ctx.fillRect(0, 0, W, H);
+/* FASE 1 — RIO DE JANEIRO — MAPA PROCEDURAL */
+function drawPhase1RioBackground(time = 0) {
+  const sky = bgCtx.createLinearGradient(0, 0, 0, H * 0.70);
+  sky.addColorStop(0.00, "#ff5f2e");
+  sky.addColorStop(0.28, "#ff7a45");
+  sky.addColorStop(0.52, "#e96a73");
+  sky.addColorStop(0.76, "#8b6fa8");
+  sky.addColorStop(1.00, "#4f5c96");
+  bgCtx.fillStyle = sky;
+  bgCtx.fillRect(0, 0, W, H);
 
-  // Nuvens muito suaves — estáticas para não criar movimento artificial.
-  ctx.save();
-  ctx.globalAlpha = 0.075;
-  ctx.fillStyle = "#fff4df";
-  const clouds = [
-    [W * 0.12, H * 0.20, 80],
-    [W * 0.30, H * 0.28, 105],
-    [W * 0.72, H * 0.20, 120],
-    [W * 0.88, H * 0.34, 85]
-  ];
-  clouds.forEach(([x, y, r]) => {
-    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(x + r * .55, y + 5, r * .72, 0, Math.PI * 2); ctx.fill();
+  // Nuvens suaves e estáticas
+  bgCtx.save();
+  bgCtx.globalAlpha = 0.12;
+  bgCtx.fillStyle = "#ffd0a8";
+  [[0.18,0.19,0.22,0.055],[0.48,0.27,0.28,0.065],[0.78,0.18,0.24,0.05]].forEach(([cx,cy,rx,ry]) => {
+    bgCtx.beginPath();
+    bgCtx.ellipse(W*cx,H*cy,W*rx,H*ry,0,0,Math.PI*2);
+    bgCtx.fill();
   });
-  ctx.restore();
+  bgCtx.restore();
 
-  // 2. LUA CHEIA — grande, suave e quente, sem exagero.
-  const moonX = W * 0.62;
-  const moonY = H * 0.28;
-  const moonR = Math.min(W, H) * 0.105;
-  const moonGlow = ctx.createRadialGradient(moonX, moonY, moonR * .55, moonX, moonY, moonR * 2.8);
-  moonGlow.addColorStop(0, "rgba(255,244,194,.30)");
-  moonGlow.addColorStop(.45, "rgba(255,220,150,.12)");
-  moonGlow.addColorStop(1, "rgba(255,180,120,0)");
-  ctx.fillStyle = moonGlow;
-  ctx.beginPath(); ctx.arc(moonX, moonY, moonR * 2.8, 0, Math.PI * 2); ctx.fill();
+  // Sol grande com brilho
+  const sx=W*0.68, sy=H*0.30;
+  const glow=bgCtx.createRadialGradient(sx,sy,8,sx,sy,H*0.16);
+  glow.addColorStop(0,"rgba(255,248,200,0.70)");
+  glow.addColorStop(0.35,"rgba(255,196,105,0.28)");
+  glow.addColorStop(1,"rgba(255,120,45,0)");
+  bgCtx.fillStyle=glow;
+  bgCtx.beginPath(); bgCtx.arc(sx,sy,H*0.16,0,Math.PI*2); bgCtx.fill();
+  bgCtx.shadowColor="rgba(255,170,70,0.55)"; bgCtx.shadowBlur=35;
+  bgCtx.fillStyle="#fff0b0";
+  bgCtx.beginPath(); bgCtx.arc(sx,sy,H*0.075,0,Math.PI*2); bgCtx.fill();
+  bgCtx.shadowBlur=0;
 
-  const moon = ctx.createRadialGradient(moonX - moonR*.28, moonY - moonR*.30, moonR*.08, moonX, moonY, moonR);
-  moon.addColorStop(0, "#fffce9");
-  moon.addColorStop(.72, "#fff0bd");
-  moon.addColorStop(1, "#ffdca0");
-  ctx.fillStyle = moon;
-  ctx.beginPath(); ctx.arc(moonX, moonY, moonR, 0, Math.PI * 2); ctx.fill();
+  // Mar
+  const horizon=H*0.67;
+  const water=bgCtx.createLinearGradient(0,horizon,0,H);
+  water.addColorStop(0,"#24345a"); water.addColorStop(0.45,"#172947"); water.addColorStop(1,"#0a1428");
+  bgCtx.fillStyle=water; bgCtx.fillRect(0,horizon,W,H-horizon);
 
-  // Pequenos detalhes da lua.
-  ctx.save();
-  ctx.globalAlpha = .10;
-  ctx.fillStyle = "#c7a66a";
-  [[-.25,-.18,.10],[.28,-.05,.08],[-.08,.30,.07],[.30,.25,.045]].forEach(([ox,oy,rr]) => {
-    ctx.beginPath(); ctx.arc(moonX + ox*moonR*2, moonY + oy*moonR*2, moonR*rr*2.2, 0, Math.PI*2); ctx.fill();
-  });
-  ctx.restore();
+  // Montanhas do Rio
+  bgCtx.fillStyle="#11162c";
+  bgCtx.beginPath();
+  bgCtx.moveTo(0,H*0.62); bgCtx.lineTo(W*0.10,H*0.59); bgCtx.lineTo(W*0.20,H*0.52);
+  bgCtx.lineTo(W*0.29,H*0.42); bgCtx.lineTo(W*0.36,H*0.49); bgCtx.lineTo(W*0.43,H*0.55);
+  bgCtx.lineTo(W*0.49,H*0.49); bgCtx.quadraticCurveTo(W*0.53,H*0.42,W*0.57,H*0.50);
+  bgCtx.lineTo(W*0.64,H*0.56); bgCtx.lineTo(W*0.78,H*0.59); bgCtx.lineTo(W,H*0.56);
+  bgCtx.lineTo(W,horizon); bgCtx.lineTo(0,horizon); bgCtx.closePath(); bgCtx.fill();
 
-  // 3. MORROS DO RIO — silhueta simples e reconhecível.
-  ctx.fillStyle = "#11182b";
-  ctx.beginPath();
-  ctx.moveTo(0, H*.64);
-  ctx.quadraticCurveTo(W*.08, H*.57, W*.18, H*.55);
-  ctx.quadraticCurveTo(W*.27, H*.47, W*.34, H*.43);
-  ctx.quadraticCurveTo(W*.39, H*.38, W*.44, H*.47);
-  ctx.quadraticCurveTo(W*.50, H*.53, W*.57, H*.55);
-  ctx.quadraticCurveTo(W*.64, H*.45, W*.70, H*.55);
-  ctx.quadraticCurveTo(W*.82, H*.58, W, H*.57);
-  ctx.lineTo(W, H*.72);
-  ctx.lineTo(0, H*.72);
-  ctx.closePath();
-  ctx.fill();
+  bgCtx.fillStyle="#20284a"; bgCtx.globalAlpha=0.55;
+  bgCtx.beginPath();
+  bgCtx.moveTo(0,H*0.64); bgCtx.lineTo(W*0.16,H*0.59); bgCtx.lineTo(W*0.30,H*0.54);
+  bgCtx.lineTo(W*0.46,H*0.58); bgCtx.lineTo(W*0.62,H*0.55); bgCtx.lineTo(W*0.80,H*0.60);
+  bgCtx.lineTo(W,H*0.58); bgCtx.lineTo(W,horizon); bgCtx.lineTo(0,horizon); bgCtx.closePath(); bgCtx.fill();
+  bgCtx.globalAlpha=1;
 
-  // 4. CRISTO REDENTOR — silhueta central sobre o morro.
-  const cx = W * .34;
-  const baseY = H * .50;
-  ctx.fillStyle = "#080f1e";
-  ctx.fillRect(cx - 3, baseY - 58, 6, 58);       // corpo
-  ctx.fillRect(cx - 22, baseY - 47, 44, 5);      // braços
-  ctx.fillRect(cx - 3, baseY - 67, 6, 15);       // cabeça/pescoço
-  ctx.beginPath(); ctx.arc(cx, baseY - 71, 4, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(cx - 9, baseY);
-  ctx.lineTo(cx + 9, baseY);
-  ctx.lineTo(cx + 6, baseY - 8);
-  ctx.lineTo(cx - 6, baseY - 8);
-  ctx.closePath(); ctx.fill();
+  // Cristo Redentor em silhueta
+  const cx=W*0.29, baseY=H*0.51;
+  bgCtx.fillStyle="#080d1b";
+  bgCtx.fillRect(cx-10,baseY-6,20,7);
+  bgCtx.fillRect(cx-3,baseY-54,6,49);
+  bgCtx.beginPath(); bgCtx.arc(cx,baseY-61,4.5,0,Math.PI*2); bgCtx.fill();
+  bgCtx.fillRect(cx-27,baseY-47,54,4);
+  bgCtx.fillRect(cx-1.5,baseY-69,3,8);
 
-  // 5. PÃO DE AÇÚCAR — forma pequena ao lado.
-  ctx.beginPath();
-  ctx.moveTo(W*.57, H*.56);
-  ctx.quadraticCurveTo(W*.61, H*.43, W*.67, H*.56);
-  ctx.closePath();
-  ctx.fillStyle = "#0d1527";
-  ctx.fill();
+  // Pão de Açúcar
+  bgCtx.beginPath();
+  bgCtx.moveTo(W*0.43,horizon); bgCtx.quadraticCurveTo(W*0.45,H*0.47,W*0.51,H*0.52);
+  bgCtx.quadraticCurveTo(W*0.55,H*0.57,W*0.58,horizon); bgCtx.closePath(); bgCtx.fill();
 
-  // 6. SKYLINE — prédios baixos/médios com janelas amarelas.
-  const buildings = [
-    [.43,.055,.13], [.49,.045,.18], [.545,.06,.11], [.615,.045,.21],
-    [.675,.052,.15], [.735,.045,.24], [.795,.065,.17], [.875,.05,.12], [.935,.06,.20]
-  ];
-  buildings.forEach(([x,w,h], bi) => {
-    const bw = W*w, bh = H*h, bx = W*x, by = H*.66 - bh;
-    ctx.fillStyle = bi % 2 ? "#11192a" : "#0e1728";
-    ctx.fillRect(bx, by, bw, bh);
-    const cols = Math.max(1, Math.floor(bw / 15));
-    const rows = Math.max(2, Math.floor(bh / 22));
-    for(let r=0;r<rows;r++){
-      for(let c=0;c<cols;c++){
-        if((bi*13 + r*7 + c*5) % 9 > 4) continue;
-        ctx.fillStyle = "rgba(255,214,112,.72)";
-        ctx.fillRect(bx + 5 + c*15, by + 8 + r*21, 4, 5);
-      }
+  // Skyline minimalista + janelas amarelas
+  const skyline=[[0.57,0.095],[0.63,0.135],[0.69,0.085],[0.75,0.16],[0.83,0.105],[0.89,0.145],[0.96,0.075]];
+  skyline.forEach(([x,h],bi)=>{
+    const bw=W*0.042,bh=H*h,bx=W*x-bw*0.5,by=horizon-bh;
+    bgCtx.fillStyle=bi%2?"#0b1426":"#0d172b"; bgCtx.fillRect(bx,by,bw,bh);
+    if(bi%3===1) bgCtx.fillRect(bx+bw*0.30,by-5,bw*0.40,5);
+    const rows=Math.max(2,Math.floor(bh/24));
+    for(let r=0;r<rows;r++) for(let c=0;c<2;c++) if((bi*7+r*5+c*3)%4===0){
+      bgCtx.fillStyle="rgba(255,211,105,0.82)";
+      bgCtx.fillRect(bx+5+c*(bw*0.42),by+9+r*18,Math.max(2.5,bw*0.16),4);
     }
   });
 
-  // 7. ORLA / ÁGUA — base escura com reflexo quente do céu/lua.
-  const waterTop = H * .66;
-  const waterBottom = H;
-  const water = ctx.createLinearGradient(0, waterTop, 0, waterBottom);
-  water.addColorStop(0, "#24365a");
-  water.addColorStop(.32, "#253b63");
-  water.addColorStop(1, "#101b34");
-  ctx.fillStyle = water;
-  ctx.fillRect(0, waterTop, W, waterBottom - waterTop);
+  // Luzes da orla
+  bgCtx.fillStyle="rgba(255,201,92,0.75)";
+  for(let i=0;i<34;i++){ const x=(i/33)*W; bgCtx.beginPath(); bgCtx.arc(x,horizon-3+Math.sin(i*1.7)*1.2,1.5,0,Math.PI*2); bgCtx.fill(); }
 
-  // Reflexo laranja: linhas horizontais finas que se movem APENAS na vertical.
-  // Amplitude = 0.9px; comprimento = 55px; velocidade = time * 0.4.
-  ctx.save();
-  ctx.beginPath();
-  ctx.rect(0, waterTop, W, waterBottom - waterTop);
-  ctx.clip();
-
-  for(let y = waterTop + 5; y < waterBottom; y += 5){
-    const depth = (y - waterTop) / (waterBottom - waterTop);
-    const reflectionWidth = W * (0.10 + (1 - depth) * 0.20);
-    const center = moonX;
-    const xStart = center - reflectionWidth;
-    const xEnd = center + reflectionWidth;
-    const strength = (1 - depth) * .20 + .025;
-    const waveY = Math.sin((y - waterTop) / 55 + time * .4) * .9;
-
-    ctx.strokeStyle = `rgba(255,190,105,${strength})`;
-    ctx.lineWidth = depth < .35 ? 1.2 : .8;
-    ctx.beginPath();
-    ctx.moveTo(xStart, y + waveY);
-    ctx.lineTo(xEnd, y + waveY);
-    ctx.stroke();
+  // Reflexo do sol: somente a água recebe movimento vertical de 0.9px.
+  const reflectionTop=horizon+8, reflectionBottom=H*0.90;
+  const amplitude=0.9, sliceH=2, waveLength=55, waveTime=time*0.4;
+  bgCtx.save(); bgCtx.beginPath(); bgCtx.rect(0,reflectionTop,W,reflectionBottom-reflectionTop); bgCtx.clip();
+  for(let y=reflectionTop;y<reflectionBottom;y+=sliceH){
+    const depth=(y-reflectionTop)/(reflectionBottom-reflectionTop);
+    const width=W*(0.045+depth*0.20);
+    const center=sx+Math.sin(y*0.015)*5;
+    const wave=Math.sin((y-reflectionTop)/waveLength+waveTime)*amplitude;
+    bgCtx.fillStyle=`rgba(255,164,76,${0.12*(1-depth)+0.025})`;
+    bgCtx.fillRect(center-width,y+wave,width*2,sliceH);
+    bgCtx.fillStyle=`rgba(255,220,145,${0.24*(1-depth)+0.035})`;
+    bgCtx.fillRect(center-width*0.34,y+wave,width*0.68,sliceH);
   }
-
-  // Pequenas faixas frias para dar textura de mar sem mover a paisagem.
-  ctx.strokeStyle = "rgba(180,205,235,.10)";
-  ctx.lineWidth = 1;
-  for(let y = waterTop + 9; y < waterBottom; y += 13){
-    const waveY = Math.sin((y - waterTop) / 55 + time * .4 + 1.7) * .9;
-    ctx.beginPath();
-    ctx.moveTo(0, y + waveY);
-    ctx.lineTo(W, y + waveY);
-    ctx.stroke();
+  bgCtx.lineWidth=1;
+  for(let i=0;i<38;i++){
+    const y0=reflectionTop+8+i*((reflectionBottom-reflectionTop-16)/38);
+    const wave=Math.sin((y0-reflectionTop)/waveLength+waveTime+i*0.17)*0.9;
+    const len=W*(0.06+((i*13)%23)/100), x=((i*97)%100)/100*W;
+    bgCtx.strokeStyle=`rgba(125,165,205,${0.05+(i%5)*0.008})`;
+    bgCtx.beginPath(); bgCtx.moveTo(x,y0+wave); bgCtx.lineTo(Math.min(W,x+len),y0+wave); bgCtx.stroke();
   }
-  ctx.restore();
+  bgCtx.restore();
 
-  // 8. GRAMA/ORLA em primeiro plano, mínima.
-  ctx.fillStyle = "#07101b";
-  ctx.fillRect(0, H*.94, W, H*.06);
-  ctx.strokeStyle = "rgba(42,75,48,.75)";
-  ctx.lineWidth = 1;
-  for(let i=0;i<90;i++){
-    const x = (i / 90) * W + Math.sin(i*3.1)*8;
-    ctx.beginPath();
-    ctx.moveTo(x, H*.94);
-    ctx.lineTo(x + Math.sin(i)*3, H*.94 - 3 - (i%5));
-    ctx.stroke();
+  // Coqueiros
+  function palm(px,py,scale){
+    bgCtx.fillStyle="#070c18"; bgCtx.fillRect(px,py-64*scale,5*scale,64*scale);
+    bgCtx.beginPath(); bgCtx.ellipse(px+2*scale,py-64*scale,28*scale,10*scale,-0.35,0,Math.PI*2); bgCtx.fill();
+    bgCtx.beginPath(); bgCtx.ellipse(px+2*scale,py-64*scale,28*scale,10*scale,0.35,0,Math.PI*2); bgCtx.fill();
+  }
+  palm(W*0.055,H*0.96,1.15); palm(W*0.91,H*0.96,1.05);
+
+  // Grama determinística
+  bgCtx.fillStyle="#070d18"; bgCtx.fillRect(0,H*0.91,W,H*0.09);
+  bgCtx.strokeStyle="rgba(25,58,38,0.65)"; bgCtx.lineWidth=1;
+  for(let i=0;i<120;i++){
+    const gx=(i/119)*W, gh=3+((i*17)%13);
+    bgCtx.beginPath(); bgCtx.moveTo(gx,H*0.91); bgCtx.lineTo(gx+(((i*7)%5)-2),H*0.91-gh); bgCtx.stroke();
   }
 }
 
@@ -863,7 +816,7 @@ function drawCityBackground() {
   
   
   if (state.currentPhase === 0) {
-    drawPhase1RioProcedural(bgCtx, W, H, phase1AnimTime);
+    drawPhase1RioBackground(phase1AnimTime);
     return;
   }
 
