@@ -4,1241 +4,526 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#030712">
-
-<title>Rainy Skyline — Atmospheric Experience</title>
+<title>Rainy Skyline — Ultimate Atmospheric Experience</title>
 
 <style>
 :root {
   --primary: #38bdf8;
-  --primary-glow: rgba(56, 189, 248, 0.4);
-  --bg-dark: #030712;
-  --panel-bg: rgba(15, 23, 42, 0.78);
-  --panel-border: rgba(255, 255, 255, 0.12);
+  --primary-glow: rgba(56, 189, 248, 0.5);
+  --bg-dark: #020617;
+  --panel-bg: rgba(15, 23, 42, 0.85);
+  --panel-border: rgba(255, 255, 255, 0.1);
 }
 
-* {
-  box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-  -webkit-user-select: none;
-}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: var(--bg-dark); color: #f8fafc; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; touch-action: none; }
 
-html, body {
-  margin: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background: var(--bg-dark);
-  color: #f8fafc;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  touch-action: none;
-}
-
-#adScreen {
-  position: fixed;
-  inset: 0;
-  z-index: 8000;
-  background: rgba(0,0,0,0.95);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  transition: opacity 0.3s ease;
-}
-
-#game {
-  position: fixed;
-  inset: 0;
-  overflow: hidden;
-}
-
-canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
+canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 #bgCanvas { z-index: 1; }
+#cloudCanvas { z-index: 2; opacity: 0.4; }
 #rainCanvas { z-index: 3; }
-#glassCanvas { z-index: 5; }
-#fogCanvas { z-index: 7; touch-action: none; }
+#glassCanvas { z-index: 4; }
+#fogCanvas { z-index: 5; }
 
-#lightningFlash {
-  position: absolute;
-  inset: 0;
-  z-index: 8;
-  background: white;
-  opacity: 0;
-  pointer-events: none;
-  mix-blend-mode: overlay;
-}
+/* Overlay Effects */
+#vignette { position: absolute; inset: 0; z-index: 10; pointer-events: none; background: radial-gradient(circle at center, transparent 20%, rgba(2, 6, 23, 0.8) 100%); }
+#lightningFlash { position: absolute; inset: 0; z-index: 11; background: white; opacity: 0; pointer-events: none; mix-blend-mode: overlay; transition: opacity 0.05s; }
 
-#vignette {
-  position: absolute;
-  inset: 0;
-  z-index: 9;
-  pointer-events: none;
-  background: radial-gradient(circle at center, transparent 35%, rgba(3, 7, 18, 0.78) 100%);
-}
+/* UI Elements */
+#hud { position: absolute; inset: 0; z-index: 20; pointer-events: none; padding: env(safe-area-inset-top) 20px 20px 20px; display: flex; flex-direction: column; justify-content: space-between; transition: opacity 0.5s; }
+.hud-top { display: flex; justify-content: space-between; align-items: flex-start; padding-top: 20px; }
+.hud-btn { width: 50px; height: 50px; border-radius: 15px; border: 1px solid var(--panel-border); background: var(--panel-bg); backdrop-filter: blur(10px); color: white; display: grid; place-items: center; cursor: pointer; pointer-events: auto; transition: 0.2s; box-shadow: 0 8px 16px rgba(0,0,0,0.4); }
+.hud-btn:active { transform: scale(0.9); }
 
-#hud {
-  position: absolute;
-  inset: 0;
-  z-index: 20;
-  pointer-events: none;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: calc(20px + env(safe-area-inset-top)) calc(20px + env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) calc(20px + env(safe-area-inset-left));
-  transition: opacity 0.5s ease;
-}
+.status-badge { background: var(--panel-bg); border: 1px solid var(--panel-border); backdrop-filter: blur(10px); padding: 8px 16px; border-radius: 20px; color: var(--primary); font-weight: 700; font-size: 14px; pointer-events: auto; display: flex; align-items: center; gap: 8px; }
 
-#hud.hidden { opacity: 0; pointer-events: none; }
+#instruction { text-align: center; color: white; opacity: 0.6; font-size: 10px; letter-spacing: 5px; text-transform: uppercase; animation: pulse 3s infinite; margin-bottom: 10px; }
+@keyframes pulse { 0%, 100% { opacity: 0.2; transform: translateY(0); } 50% { opacity: 0.7; transform: translateY(-5px); } }
 
-.hud-header { display: flex; justify-content: space-between; align-items: center; }
-.hud-left, .hud-right { display: flex; align-items: center; gap: 10px; }
+.progress-container { width: 100%; max-width: 400px; margin: 0 auto; pointer-events: auto; }
+.progress-bar { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden; position: relative; }
+#progressFill { height: 100%; width: 0%; background: linear-gradient(90deg, #0ea5e9, #38bdf8, #f0f9ff); box-shadow: 0 0 15px var(--primary); transition: width 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
 
-.hud-btn {
-  width: 48px; height: 48px;
-  border-radius: 50%; border: 1px solid var(--panel-border);
-  background: rgba(15, 23, 42, 0.62);
-  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-  color: white; font-size: 18px; display: grid; place-items: center;
-  cursor: pointer; pointer-events: auto; transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px rgba(255,255,255,0.06);
-}
-.hud-btn:active { transform: scale(0.92); }
+/* Screens */
+.screen { position: absolute; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; background: rgba(2, 6, 23, 0.85); backdrop-filter: blur(15px); transition: 0.4s; }
+.screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; transform: scale(1.05); }
 
-.currency-badge {
-  pointer-events: auto; background: rgba(15, 23, 42, 0.62);
-  border: 1px solid var(--panel-border); backdrop-filter: blur(12px);
-  padding: 8px 16px; border-radius: 20px; display: flex;
-  align-items: center; gap: 8px; font-size: 14px; font-weight: 600;
-  color: var(--primary); box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-}
+.card { width: 90%; max-width: 440px; background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 32px; padding: 40px 30px; text-align: center; box-shadow: 0 30px 60px rgba(0,0,0,0.8); }
+h1 { font-size: 32px; margin: 0; background: linear-gradient(to bottom, #fff, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -1px; }
+.subtitle { font-size: 10px; text-transform: uppercase; letter-spacing: 4px; color: var(--primary); margin-bottom: 30px; opacity: 0.8; }
 
-.phase-badge {
-  background: rgba(15,23,42,0.55); border: 1px solid var(--panel-border);
-  backdrop-filter: blur(12px); padding: 8px 13px; border-radius: 18px;
-  font-size: 11px; letter-spacing: 1px; color: rgba(255,255,255,.8);
-}
+.btn-group { display: flex; flex-direction: column; gap: 12px; }
+.btn { padding: 16px; border-radius: 18px; border: 1px solid var(--panel-border); background: rgba(255,255,255,0.05); color: white; font-weight: 600; font-size: 14px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.btn:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
+.btn-primary { background: var(--primary); color: #020617; border: none; box-shadow: 0 10px 20px var(--primary-glow); }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 15px 25px var(--primary-glow); }
 
-#instruction {
-  text-align: center; color: rgba(255, 255, 255, 0.72);
-  font-size: 11px; letter-spacing: 4px; text-transform: uppercase;
-  animation: pulse 2s infinite ease-in-out; text-shadow: 0 2px 8px rgba(0,0,0,0.8);
-  transition: opacity 0.5s ease, visibility 0.5s ease;
-}
-#instruction.hidden-text { opacity: 0; visibility: hidden; }
+/* Phase List */
+.phase-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; max-height: 200px; overflow-y: auto; padding-right: 5px; }
+.phase-item { padding: 15px; border-radius: 15px; background: rgba(255,255,255,0.03); border: 1px solid var(--panel-border); text-align: left; cursor: pointer; }
+.phase-item.active { border-color: var(--primary); background: rgba(56, 189, 248, 0.1); }
+.phase-item.locked { opacity: 0.3; cursor: not-allowed; }
 
-.progress-wrap { width: min(380px, 70vw); margin: 0 auto 18px; text-align: center; opacity: .8; }
-.progress-label { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 7px; color: rgba(255,255,255,.6); }
-.progress-bar { width: 100%; height: 4px; border-radius: 10px; background: rgba(255,255,255,.1); overflow: hidden; }
-#progressFill { height: 100%; width: 0%; border-radius: inherit; background: linear-gradient(90deg, #38bdf8, #7dd3fc, #ffffff); box-shadow: 0 0 12px rgba(56,189,248,.7); transition: width .2s ease; }
+#toast { position: absolute; bottom: 120px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); padding: 10px 20px; border-radius: 20px; font-size: 12px; opacity: 0; transition: 0.3s; z-index: 1000; pointer-events: none; border: 1px solid var(--primary); }
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(-10px); }
 
-@keyframes pulse { 0%, 100% { opacity: .4; } 50% { opacity: .9; } }
-
-.screen {
-  position: absolute; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center;
-  padding: 20px; background: rgba(3,7,18,.7); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-  transition: opacity .4s ease, visibility .4s ease;
-}
-.screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-
-.menu-card {
-  width: min(450px, 100%); max-height: calc(100vh - 40px); overflow-y: auto;
-  background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 28px;
-  padding: 32px 24px; box-shadow: 0 20px 50px rgba(0,0,0,.6), inset 0 1px rgba(255,255,255,.04);
-  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); text-align: center;
-}
-.menu-card::-webkit-scrollbar { width: 0; }
-
-.menu-title { font-family: Georgia, serif; font-size: 38px; font-weight: 400; margin: 0; background: linear-gradient(180deg, #ffffff 0%, rgba(255,255,255,.7) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.menu-subtitle { color: rgba(255,255,255,.5); font-size: 11px; letter-spacing: 3px; margin: 8px 0 32px; text-transform: uppercase; }
-
-.phase-title { margin: 0; font-family: Georgia, serif; font-weight: 400; font-size: 27px; }
-.phase-feeling { margin: 7px 0 4px; color: var(--primary); font-size: 11px; letter-spacing: 2px; text-transform: uppercase; }
-.phase-story { color: rgba(255,255,255,.55); line-height: 1.55; font-size: 12px; margin: 0 0 22px; }
-
-.btn-stack { display: flex; flex-direction: column; gap: 12px; }
-.btn {
-  min-height: 52px; border-radius: 16px; border: 1px solid var(--panel-border);
-  background: rgba(255,255,255,.05); color: white; font-size: 13px; font-weight: 600;
-  letter-spacing: 1px; cursor: pointer; transition: all .2s ease; display: flex;
-  align-items: center; justify-content: center; gap: 10px; padding: 10px 16px;
-}
-.btn:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.25); transform: translateY(-2px); }
-.btn:active { transform: scale(.98); }
-.btn-primary { background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border-color: rgba(56,189,248,.4); box-shadow: 0 8px 20px var(--primary-glow); }
-.btn-zen { background: linear-gradient(135deg, #10b981 0%, #047857 100%); border-color: rgba(16, 185, 129, 0.4); box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3); }
-
-.phase-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; max-height: 330px; overflow-y: auto; }
-.phase-item { border: 1px solid var(--panel-border); border-radius: 16px; padding: 14px; background: rgba(255,255,255,.035); text-align: left; cursor: pointer; transition: .2s ease; }
-.phase-item:hover { background: rgba(255,255,255,.08); }
-.phase-item.active { border-color: var(--primary); background: rgba(56,189,248,.1); box-shadow: 0 0 20px rgba(56,189,248,.08); }
-.phase-item.locked { opacity: .35; cursor: not-allowed; }
-.phase-number { font-size: 9px; letter-spacing: 2px; color: rgba(255,255,255,.4); }
-.phase-name { font-size: 13px; margin-top: 4px; font-weight: 600; }
-.phase-mini-feeling { font-size: 10px; color: var(--primary); margin-top: 5px; }
-
-.coin-big { font-size: 13px; color: var(--primary); margin: 10px 0 20px; }
-.store-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; max-height: 350px; overflow-y: auto; }
-.store-item { border: 1px solid var(--panel-border); border-radius: 16px; padding: 13px; background: rgba(255,255,255,.03); cursor: pointer; text-align: left; transition: all .2s ease; }
-.store-preview { height: 48px; border-radius: 12px; margin-bottom: 10px; background: radial-gradient(circle at 25% 25%, rgba(255,255,255,.9) 0 3px, transparent 4px), linear-gradient(120deg, rgba(255,255,255,.12), rgba(56,189,248,.08)); position: relative; overflow: hidden; }
-.store-item-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
-.store-item-desc { font-size: 10px; line-height: 1.4; color: rgba(255,255,255,.45); }
-.store-item-cost { font-size: 11px; color: var(--primary); margin-top: 8px; }
-
-.finger-slots { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
-.finger-slot { border: 1px solid var(--panel-border); background: rgba(255,255,255,.035); border-radius: 16px; padding: 14px; }
-.slot-label { color: rgba(255,255,255,.4); font-size: 9px; letter-spacing: 2px; text-transform: uppercase; }
-.slot-name { font-size: 12px; margin-top: 5px; }
-.combine-info { padding: 12px; border-radius: 14px; background: rgba(56,189,248,.06); border: 1px solid rgba(56,189,248,.12); color: rgba(255,255,255,.65); font-size: 11px; margin-bottom: 15px; }
-
-.setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 9px; font-size: 13px; }
-.toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,.06); text-align: left; }
-.toggle-text strong { display: block; font-size: 13px; }
-.toggle-text span { display: block; margin-top: 3px; font-size: 10px; color: rgba(255,255,255,.4); }
-.toggle { width: 48px; height: 27px; border-radius: 30px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.1); position: relative; cursor: pointer; flex-shrink: 0; }
-.toggle::after { content: ""; position: absolute; top: 3px; left: 3px; width: 19px; height: 19px; border-radius: 50%; background: white; transition: .2s ease; }
-.toggle.on { background: rgba(56,189,248,.45); border-color: rgba(56,189,248,.7); }
-.toggle.on::after { transform: translateX(21px); box-shadow: 0 0 10px rgba(56,189,248,.8); }
-input[type="range"] { width: 100%; height: 6px; appearance: none; border-radius: 10px; background: rgba(255,255,255,.1); outline: none; margin-top: 8px; }
-input[type="range"]::-webkit-slider-thumb { appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--primary); cursor: pointer; }
-
-.reward-icon { font-size: 48px; margin-bottom: 10px; filter: drop-shadow(0 0 15px rgba(56,189,248,.5)); }
-.reward-title { font-family: Georgia, serif; font-size: 30px; font-weight: 400; margin: 0; }
-.reward-coins { font-size: 28px; color: var(--primary); margin: 15px 0; font-weight: 700; text-shadow: 0 0 20px rgba(56,189,248,.45); }
-.reward-description { color: rgba(255,255,255,.55); font-size: 12px; line-height: 1.5; margin-bottom: 24px; }
-
-
-/* V2 atmospheric polish */
-#weatherGlow{position:absolute;inset:0;z-index:6;pointer-events:none;opacity:.7;mix-blend-mode:screen;background:radial-gradient(circle at 50% 72%,rgba(120,190,255,.08),transparent 48%);}
-#cleanSpark{position:absolute;inset:0;z-index:10;pointer-events:none;}
-#zenScoreBadge{position:absolute;left:50%;top:calc(20px + env(safe-area-inset-top));transform:translateX(-50%);z-index:21;padding:7px 14px;border-radius:20px;background:rgba(15,23,42,.48);border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(12px);font-size:10px;letter-spacing:2px;opacity:0;transition:.4s ease;}
-#zenScoreBadge.show{opacity:1;}
-#toast{position:absolute;left:50%;bottom:18%;transform:translate(-50%,10px);z-index:40;padding:10px 15px;border-radius:18px;background:rgba(4,10,20,.72);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(14px);font-size:11px;letter-spacing:1px;opacity:0;pointer-events:none;transition:.25s ease;white-space:nowrap;}
-#toast.show{opacity:1;transform:translate(-50%,0);}
+input[type=range] { width: 100%; margin: 15px 0; accent-color: var(--primary); }
+.setting-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 14px; color: #cbd5e1; }
 </style>
 </head>
 <body>
 
-<div id="adScreen" class="screen hidden">
-  <div style="text-align: center;">
-    <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px;" data-i18n="ad_loading">Ad Loading...</div>
-    <div style="font-size: 12px; color: #888;">(AdMob Placeholder)</div>
-  </div>
-</div>
-
 <div id="game">
   <canvas id="bgCanvas"></canvas>
+  <canvas id="cloudCanvas"></canvas>
   <canvas id="rainCanvas"></canvas>
   <canvas id="glassCanvas"></canvas>
   <canvas id="fogCanvas"></canvas>
-  <div id="lightningFlash"></div>
+  
   <div id="vignette"></div>
-  <div id="weatherGlow"></div>
-  <div id="cleanSpark"></div>
-  <div id="zenScoreBadge">ZEN · 0</div>
-  <div id="toast"></div>
+  <div id="lightningFlash"></div>
+  <div id="toast">Message</div>
 
-  <!-- HUD -->
   <div id="hud" class="hidden">
-    <div class="hud-header">
-      <div class="hud-left">
-        <button id="pauseBtn" class="hud-btn">Ⅱ</button>
-        <div class="phase-badge"><span data-i18n="phase_hud">PHASE</span> <span id="phaseDisplay">1</span>/20</div>
-      </div>
-      <div class="hud-right">
-        <div class="currency-badge"><span>🌧️</span><span id="pointsDisplay">0</span></div>
-      </div>
+    <div class="hud-top">
+      <button id="pauseBtn" class="hud-btn">Ⅱ</button>
+      <div class="status-badge">🌧️ <span id="pointsDisplay">0</span></div>
     </div>
-    <div>
-      <div id="instruction" data-i18n="wipe_instruction">SWIPE TO WIPE THE FOG</div>
-      <div class="progress-wrap">
-        <div class="progress-label" id="progressLabelText" data-i18n="defog_window">Defog the window</div>
+    <div class="hud-bottom">
+      <div id="instruction">Swipe to reveal the city</div>
+      <div class="progress-container">
         <div class="progress-bar"><div id="progressFill"></div></div>
       </div>
     </div>
   </div>
 
-  <!-- MENU PRINCIPAL -->
-  <section id="mainMenu" class="screen hidden">
-    <div class="menu-card">
-      <h1 class="menu-title">Rainy Skyline</h1>
-      <p class="menu-subtitle">Atmospheric Relaxation</p>
-      <div id="mainPhaseInfo">
-        <h2 class="phase-title" id="menuPhaseName">The First Rain</h2>
-        <div class="phase-feeling" id="menuPhaseFeeling">Serenity</div>
-        <p class="phase-story" id="menuPhaseStory">A silent city watches the first rain of the night.</p>
-      </div>
-      <div class="btn-stack">
-        <button id="continueBtn" class="btn btn-primary" data-i18n="btn_continue">CONTINUE PHASE</button>
-        <button id="zenBtn" class="btn btn-zen" data-i18n="btn_zen">ZEN MODE (INFINITE)</button>
-        <button id="phasesBtn" class="btn" data-i18n="btn_phases">PHASES & MEMORIES</button>
-        <button id="storeBtn" class="btn" data-i18n="btn_store">FINGER STORE</button>
-        <button id="settingsBtn" class="btn" data-i18n="btn_settings">SETTINGS</button>
+  <!-- Menu Principal -->
+  <section id="mainMenu" class="screen">
+    <div class="card">
+      <h1>Rainy Skyline</h1>
+      <p class="subtitle">Ultimate Experience</p>
+      <div class="btn-group">
+        <button id="startBtn" class="btn btn-primary">CONTINUE JOURNEY</button>
+        <button id="zenBtn" class="btn">INFINITE ZEN MODE</button>
+        <button id="phasesBtn" class="btn">SELECT MEMORY</button>
+        <button id="settingsBtn" class="btn">ATMOSPHERE SETTINGS</button>
       </div>
     </div>
   </section>
 
-  <!-- FASES -->
+  <!-- Seleção de Fases -->
   <section id="phasesScreen" class="screen hidden">
-    <div class="menu-card">
-      <h2 style="margin:0;font-size:24px;" data-i18n="phases_title">Phases & Memories</h2>
-      <p style="color:rgba(255,255,255,.5);font-size:12px;margin-top:6px;" data-i18n="phases_desc">Every weather holds a feeling.</p>
-      <div id="phaseList" class="phase-list"></div>
-      <button id="closePhasesBtn" class="btn" style="width:100%;" data-i18n="btn_back">BACK</button>
+    <div class="card">
+      <h2 style="margin-top:0">Memories</h2>
+      <div id="phaseList" class="phase-grid"></div>
+      <button id="backFromPhases" class="btn" style="width:100%">BACK</button>
     </div>
   </section>
 
-  <!-- LOJA -->
-  <section id="storeScreen" class="screen hidden">
-    <div class="menu-card">
-      <h2 style="margin:0;font-size:24px;" data-i18n="store_title">Finger Store</h2>
-      <p style="color:rgba(255,255,255,.5);font-size:12px;margin-top:4px;" data-i18n="store_desc">Build your own way to wipe.</p>
-      <div class="coin-big">🌧️ <span id="storeCoins">0</span> <span data-i18n="store_coins">coins</span></div>
-      <div class="finger-slots">
-        <div class="finger-slot"><div class="slot-label" data-i18n="store_finger1">Finger 1</div><div class="slot-name" id="slot1Name">Soft</div></div>
-        <div class="finger-slot"><div class="slot-label" data-i18n="store_finger2">Finger 2</div><div class="slot-name" id="slot2Name">Soft</div></div>
-      </div>
-      <div class="combine-info" data-i18n="store_info">You can use two fingers at once. Combine them to create your perfect wiping style!</div>
-      <div id="storeGrid" class="store-grid"></div>
-      <button id="closeStoreBtn" class="btn" style="width:100%;" data-i18n="btn_back">BACK</button>
-    </div>
-  </section>
-
-  <!-- CONFIGURAÇÕES -->
+  <!-- Configurações -->
   <section id="settingsScreen" class="screen hidden">
-    <div class="menu-card">
-      <h2 style="margin:0 0 20px;" data-i18n="settings_title">Settings</h2>
-      <div style="text-align:left;">
-        
-        <div class="setting-row">
-          <span data-i18n="set_lang">Language</span>
-          <button id="langToggleBtn" class="btn btn-small" style="padding: 5px 10px; min-height:30px;">English</button>
-        </div>
-
-        <div class="setting-row"><span data-i18n="set_rain">Rain Intensity</span><span id="rainVal">70%</span></div>
-        <input id="rainSlider" type="range" min="10" max="100" value="70">
-        
-        <div class="setting-row" style="margin-top:22px;"><span data-i18n="set_vol">Ambience Volume</span><span id="ambVal">50%</span></div>
-        <input id="ambSlider" type="range" min="0" max="100" value="50">
-
-        <div style="margin-top:25px;">
-          <div class="toggle-row">
-            <div class="toggle-text"><strong data-i18n="set_snd1">SFX</strong><span data-i18n="set_snd1_desc">Noise and drops</span></div>
-            <div id="gameSoundToggle" class="toggle on"></div>
-          </div>
-          <div class="toggle-row">
-            <div class="toggle-text"><strong data-i18n="set_snd2">Music / Atmosphere</strong><span data-i18n="set_snd2_desc">Background layers</span></div>
-            <div id="musicToggle" class="toggle on"></div>
-          </div>
-          <div class="toggle-row">
-            <div class="toggle-text"><strong data-i18n="set_snd3">Vibration</strong><span data-i18n="set_snd3_desc">Haptic feedback on thunder</span></div>
-            <div id="vibrationToggle" class="toggle on"></div>
-          </div>
-        </div>
+    <div class="card">
+      <h2 style="margin-top:0">Atmosphere</h2>
+      <div class="setting-item"><span>Rain Intensity</span><span id="rainVal">70%</span></div>
+      <input type="range" id="rainSlider" min="0" max="100" value="70">
+      
+      <div class="setting-item"><span>Music Volume</span><span id="musicVal">50%</span></div>
+      <input type="range" id="musicSlider" min="0" max="100" value="50">
+      
+      <div class="btn-group" style="margin-top:20px">
+        <button id="toggleVibration" class="btn">VIBRATION: ON</button>
+        <button id="saveSettings" class="btn btn-primary">SAVE</button>
       </div>
-      <button id="closeSettingsBtn" class="btn" style="width:100%;margin-top:25px;" data-i18n="btn_save">SAVE & BACK</button>
     </div>
   </section>
 
-  <!-- PAUSA -->
+  <!-- Pausa -->
   <section id="pauseScreen" class="screen hidden">
-    <div class="menu-card">
-      <h2 style="margin:0 0 8px;font-size:24px;" data-i18n="pause_title">Paused</h2>
-      <p style="color:rgba(255,255,255,.45);font-size:11px;margin-bottom:25px;" data-i18n="pause_desc">The weather is waiting for you.</p>
-      <div class="btn-stack">
-        <button id="resumeBtn" class="btn btn-primary" data-i18n="btn_resume">RETURN & RELAX</button>
-        <button id="pauseSettingsBtn" class="btn" data-i18n="btn_settings">OPTIONS</button>
-        <button id="exitMenuBtn" class="btn" data-i18n="btn_mainmenu">MAIN MENU</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- RECOMPENSA -->
-  <section id="rewardScreen" class="screen hidden">
-    <div class="menu-card">
-      <div class="reward-icon">✦</div>
-      <h2 class="reward-title" data-i18n="reward_title">Phase Complete</h2>
-      <div id="rewardPhaseName" class="phase-feeling">The First Rain</div>
-      <div class="reward-coins">+100 🌧️</div>
-      <p class="reward-description" data-i18n="reward_desc">You finished this memory. The next feeling awaits.</p>
-      <div class="btn-stack">
-        <button id="nextPhaseBtn" class="btn btn-primary" data-i18n="btn_next">NEXT PHASE</button>
-        <button id="rewardMenuBtn" class="btn" data-i18n="btn_mainmenu">MAIN MENU</button>
+    <div class="card">
+      <h2>Paused</h2>
+      <div class="btn-group">
+        <button id="resumeBtn" class="btn btn-primary">RESUME</button>
+        <button id="mainMenuBtn" class="btn">QUIT TO MENU</button>
       </div>
     </div>
   </section>
 </div>
 
 <script>
-/* =========================================================
-   RAINY SKYLINE V2 (20 Phases + Living Glass + Dynamic Weather + Zen)
-========================================================= */
+/**
+ * RAINY SKYLINE - ULTIMATE CORE
+ */
 
 const state = {
-  lang: 'en',
   started: false,
   paused: false,
   isZen: false,
   currentPhase: 0,
   highestPhase: 0,
   points: 0,
-  hasInteracted: false,
   rainIntensity: 0.7,
-  ambVolume: 0.5,
-  gameSound: true,
-  musicSound: true,
+  musicVolume: 0.5,
   vibration: true,
-  lastTime: performance.now(),
   fogProgress: 0,
-  brush1: "soft",
-  brush2: "soft",
+  dpr: Math.min(window.devicePixelRatio, 2),
   activePointers: new Map(),
-  carOffset: 0,
-  elapsed: 0,
-  cleanStreak: 0,
-  lastWipe: 0,
-  zenScore: 0,
-  stars: 0,
-  phaseStartedAt: 0
+  lastTime: performance.now(),
+  carOffset: 0
 };
 
-const i18n = {
-  en: {
-    ad_loading: "Ad Loading...",
-    phase_hud: "PHASE",
-    wipe_instruction: "SWIPE TO WIPE THE FOG",
-    defog_window: "Defog the window",
-    btn_continue: "CONTINUE PHASE",
-    btn_zen: "ZEN MODE (INFINITE)",
-    btn_phases: "PHASES & MEMORIES",
-    btn_store: "FINGER STORE",
-    btn_settings: "SETTINGS",
-    phases_title: "Phases & Memories",
-    phases_desc: "Every weather holds a feeling.",
-    btn_back: "BACK",
-    store_title: "Finger Store",
-    store_desc: "Build your own way to wipe.",
-    store_coins: "coins",
-    store_finger1: "Finger 1",
-    store_finger2: "Finger 2",
-    store_info: "You can use two fingers at once. Combine them to create your perfect wiping style!",
-    settings_title: "Settings",
-    set_lang: "Language",
-    set_rain: "Rain Intensity",
-    set_vol: "Ambience Volume",
-    set_snd1: "SFX",
-    set_snd1_desc: "Noise and drops",
-    set_snd2: "Music / Atmosphere",
-    set_snd2_desc: "Background layers",
-    set_snd3: "Vibration",
-    set_snd3_desc: "Haptic feedback on thunder",
-    btn_save: "SAVE & BACK",
-    pause_title: "Paused",
-    pause_desc: "The weather is waiting for you.",
-    btn_resume: "RETURN & RELAX",
-    btn_mainmenu: "MAIN MENU",
-    reward_title: "Phase Complete",
-    reward_desc: "You finished this memory. The next feeling awaits.",
-    btn_next: "NEXT PHASE",
-    zen_progress_label: "Infinite Peace",
-    phase_locked: "🔒 Locked",
-    phase_req: "Complete previous",
-    equip: "EQUIP",
-    bonus_clean: "CLEAN BONUS",
-    zen_score: "ZEN · ",
-    star: "STAR",
-    perfect: "PERFECT WIPE",
-    audio_ready: "Tap to enable atmosphere"
-  },
-  pt: {
-    ad_loading: "Carregando Anúncio...",
-    phase_hud: "FASE",
-    wipe_instruction: "PASSE O DEDO PARA LIMPAR",
-    defog_window: "Desembace a janela",
-    btn_continue: "CONTINUAR FASE",
-    btn_zen: "MODO ZEN (INFINITO)",
-    btn_phases: "FASES & MEMÓRIAS",
-    btn_store: "LOJA DE DEDOS",
-    btn_settings: "AJUSTES",
-    phases_title: "Fases & Memórias",
-    phases_desc: "Cada clima guarda um sentimento.",
-    btn_back: "VOLTAR",
-    store_title: "Loja de Dedos",
-    store_desc: "Monte seu jeito de limpar.",
-    store_coins: "moedas",
-    store_finger1: "Dedo 1",
-    store_finger2: "Dedo 2",
-    store_info: "Você pode usar dois dedos ao mesmo tempo. Combine-os para criar sua combinação perfeita!",
-    settings_title: "Ajustes",
-    set_lang: "Idioma",
-    set_rain: "Força da Chuva",
-    set_vol: "Volume da Ambiência",
-    set_snd1: "Efeitos Sonoros",
-    set_snd1_desc: "Ruído e gotas",
-    set_snd2: "Música / Atmosfera",
-    set_snd2_desc: "Camadas de fundo",
-    set_snd3: "Vibração",
-    set_snd3_desc: "Feedback em trovões",
-    btn_save: "SALVAR E VOLTAR",
-    pause_title: "Pausa",
-    pause_desc: "O clima continua esperando por você.",
-    btn_resume: "RETORNAR E RELAXAR",
-    btn_mainmenu: "MENU PRINCIPAL",
-    reward_title: "Fase Concluída",
-    reward_desc: "Você terminou esta memória. O próximo clima te espera.",
-    btn_next: "PRÓXIMA FASE",
-    zen_progress_label: "Paz Infinita",
-    phase_locked: "🔒 Bloqueada",
-    phase_req: "Complete a anterior",
-    equip: "EQUIPAR",
-    bonus_clean: "BÔNUS DE LIMPEZA",
-    zen_score: "ZEN · ",
-    star: "ESTRELA",
-    perfect: "LIMPEZA PERFEITA",
-    audio_ready: "Toque para ativar a atmosfera"
-  }
-};
-
-function t(key) {
-  return i18n[state.lang][key] || key;
-}
-
-function updateTranslations() {
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    el.textContent = t(el.getAttribute('data-i18n'));
-  });
-  document.getElementById('langToggleBtn').textContent = state.lang === 'en' ? 'English' : 'Português';
-  if(state.isZen) document.getElementById('progressLabelText').textContent = t('zen_progress_label');
-  updatePhaseUI();
-  renderPhases();
-  renderStore();
-}
-
-/* 20 FASES (Incluindo Carro e Neve/Sol) */
 const phases = [
-  { name: {en:"First Rain", pt:"Primeira Chuva"}, feeling: {en:"Serenity", pt:"Serenidade"}, story: {en:"Quiet city rain.", pt:"Chuva quieta."}, hue: 215, sky: ["#030712", "#0f2740"], lights: ["#38bdf8", "#7dd3fc", "#fef3c7"], rain: 0.72, thunder: 0, type: "rain" },
-  { name: {en:"Distant Lights", pt:"Luzes Distantes"}, feeling: {en:"Nostalgia", pt:"Nostalgia"}, story: {en:"Windows across the street.", pt:"Janelas do outro lado da rua."}, hue: 235, sky: ["#080817", "#202044"], lights: ["#fbbf24", "#f472b6", "#818cf8"], rain: 0.76, thunder: 1, type: "rain" },
-  { name: {en:"After Midnight", pt:"Depois da Meia-Noite"}, feeling: {en:"Loneliness", pt:"Solidão"}, story: {en:"The city sleeps.", pt:"A cidade dormiu."}, hue: 225, sky: ["#020617", "#111827"], lights: ["#22d3ee", "#60a5fa", "#a5b4fc"], rain: 0.84, thunder: 2, type: "rain" },
-  { name: {en:"Neon Splash", pt:"Neon"}, feeling: {en:"Contemplation", pt:"Contemplação"}, story: {en:"Liquid reflections.", pt:"Reflexos líquidos."}, hue: 285, sky: ["#10051c", "#321344"], lights: ["#f43f5e", "#a855f7", "#06b6d4"], rain: 0.88, thunder: 3, type: "rain" },
-  { name: {en:"The Window", pt:"A Janela"}, feeling: {en:"Intimacy", pt:"Intimidade"}, story: {en:"Protected behind glass.", pt:"Protegido atrás do vidro."}, hue: 195, sky: ["#03151b", "#12323c"], lights: ["#67e8f9", "#fde68a", "#f0f9ff"], rain: 0.68, thunder: 4, type: "rain" },
-  { name: {en:"Storm", pt:"Tempestade"}, feeling: {en:"Tension", pt:"Tensão"}, story: {en:"Heavy winds and flashes.", pt:"Ventos fortes e flashes."}, hue: 210, sky: ["#02040a", "#16202d"], lights: ["#e0f2fe", "#93c5fd", "#f8fafc"], rain: 1, thunder: 5, type: "rain" },
-  { name: {en:"Horizon", pt:"Horizonte"}, feeling: {en:"Hope", pt:"Esperança"}, story: {en:"A tiny strip of light.", pt:"Uma pequena faixa de luz."}, hue: 205, sky: ["#07111c", "#24485d"], lights: ["#fde68a", "#fbbf24", "#bae6fd"], rain: 0.65, thunder: 6, type: "rain" },
-  { name: {en:"Memories", pt:"Memórias"}, feeling: {en:"Longing", pt:"Saudade"}, story: {en:"Drops carrying past moments.", pt:"Gotas carregando o passado."}, hue: 260, sky: ["#090613", "#2b183b"], lights: ["#c4b5fd", "#f9a8d4", "#fef3c7"], rain: 0.78, thunder: 7, type: "rain" },
-  { name: {en:"Silence", pt:"Silêncio"}, feeling: {en:"Peace", pt:"Paz"}, story: {en:"No cars, just water.", pt:"Sem carros, só água."}, hue: 175, sky: ["#020d0d", "#123638"], lights: ["#5eead4", "#99f6e4", "#fef9c3"], rain: 0.55, thunder: 8, type: "rain" },
-  { name: {en:"Clearing Sky", pt:"O Céu Clareia"}, feeling: {en:"Rebirth", pt:"Renascimento"}, story: {en:"Storm is leaving.", pt:"A tempestade está indo embora."}, hue: 35, sky: ["#17100a", "#513b20"], lights: ["#fde68a", "#fb923c", "#fef3c7"], rain: 0.48, thunder: 9, type: "rain" },
-  
-  // NOVAS 10 FASES (Carro, Neve, Sol)
-  { name: {en:"Moving Car", pt:"Carro em Movimento"}, feeling: {en:"Journey", pt:"Jornada"}, story: {en:"Watching lines blur past.", pt:"Vendo as luzes borradas passando."}, hue: 200, sky: ["#0a0a0a", "#1a1a1a"], lights: ["#ff0000", "#ffaa00"], rain: 0.8, thunder: 1, type: "car" },
-  { name: {en:"Snowfall", pt:"Nevasca"}, feeling: {en:"Cold", pt:"Frio"}, story: {en:"Soft white silence.", pt:"Silêncio branco e suave."}, hue: 200, sky: ["#2d3748", "#4a5568"], lights: ["#e2e8f0", "#cbd5e0"], rain: 0.4, thunder: 0, type: "snow" },
-  { name: {en:"Highway Rain", pt:"Chuva na Rodovia"}, feeling: {en:"Speed", pt:"Velocidade"}, story: {en:"Fast drops hitting the windshield.", pt:"Gotas rápidas batendo no para-brisa."}, hue: 220, sky: ["#050510", "#151530"], lights: ["#fff", "#ff0000", "#00ffff"], rain: 0.9, thunder: 2, type: "car" },
-  { name: {en:"Morning Frost", pt:"Geada Matinal"}, feeling: {en:"Crisp", pt:"Cristalino"}, story: {en:"Ice melting on the glass.", pt:"Gelo derretendo no vidro."}, hue: 190, sky: ["#4a5568", "#a0aec0"], lights: ["#fff", "#e2e8f0"], rain: 0.3, thunder: 0, type: "snow" },
-  { name: {en:"Summer Sun Shower", pt:"Chuva de Verão"}, feeling: {en:"Warmth", pt:"Calor"}, story: {en:"Rain while the sun shines.", pt:"Chuva enquanto o sol brilha."}, hue: 50, sky: ["#ecc94b", "#f6e05e"], lights: ["#fff"], rain: 0.5, thunder: 0, type: "rain" },
-  { name: {en:"Midnight Blizzard", pt:"Nevasca à Meia-Noite"}, feeling: {en:"Isolation", pt:"Isolamento"}, story: {en:"Fierce wind and blinding snow.", pt:"Vento feroz e neve cegante."}, hue: 230, sky: ["#000", "#111"], lights: ["#718096", "#a0aec0"], rain: 0.8, thunder: 3, type: "snow" },
-  { name: {en:"City Tunnel", pt:"Túnel da Cidade"}, feeling: {en:"Echo", pt:"Eco"}, story: {en:"Orange lights rushing by.", pt:"Luzes laranjas passando rápido."}, hue: 30, sky: ["#1a1005", "#3a2010"], lights: ["#f6ad55", "#ed8936"], rain: 0.5, thunder: 0, type: "car" },
-  { name: {en:"Golden Hour Drops", pt:"Gotas Douradas"}, feeling: {en:"Beautiful", pt:"Beleza"}, story: {en:"Sunsets reflecting in the water.", pt:"Pôr do sol refletindo na água."}, hue: 20, sky: ["#c53030", "#ed8936"], lights: ["#fefcbf", "#fbd38d"], rain: 0.6, thunder: 1, type: "rain" },
-  { name: {en:"Snowy Drive", pt:"Passeio na Neve"}, feeling: {en:"Cozy", pt:"Aconchego"}, story: {en:"Warm inside, frozen outside.", pt:"Quente por dentro, congelado por fora."}, hue: 210, sky: ["#1a202c", "#2d3748"], lights: ["#e2e8f0", "#ff0000"], rain: 0.6, thunder: 0, type: "car_snow" },
-  { name: {en:"The Last Wipe", pt:"A Última Limpeza"}, feeling: {en:"Closure", pt:"Despedida"}, story: {en:"The glass is finally clear.", pt:"O vidro finalmente está limpo."}, hue: 200, sky: ["#2b6cb0", "#4299e1"], lights: ["#fff", "#bee3f8"], rain: 0.2, thunder: 0, type: "rain" }
+  { name: "First Rain", hue: 210, sky: ["#020617", "#0f172a"], lights: ["#38bdf8", "#7dd3fc", "#e0f2fe"], rain: 0.6, type: "rain" },
+  { name: "Neon District", hue: 280, sky: ["#0f051a", "#2e1065"], lights: ["#f472b6", "#c084fc", "#22d3ee"], rain: 0.8, type: "rain" },
+  { name: "Midnight Drive", hue: 200, sky: ["#020617", "#000000"], lights: ["#f87171", "#fbbf24", "#ffffff"], rain: 0.5, type: "car" },
+  { name: "Winter Silence", hue: 190, sky: ["#1e293b", "#334155"], lights: ["#f1f5f9", "#cbd5e1"], rain: 0.4, type: "snow" },
+  { name: "Summer Storm", hue: 220, sky: ["#081421", "#1e3a8a"], lights: ["#fbbf24", "#60a5fa"], rain: 1.0, type: "rain", thunder: true },
+  { name: "Industrial Fog", hue: 160, sky: ["#134e4a", "#0f172a"], lights: ["#2dd4bf", "#fbbf24"], rain: 0.3, type: "rain" },
+  { name: "Golden Hour", hue: 30, sky: ["#451a03", "#78350f"], lights: ["#fcd34d", "#fb923c"], rain: 0.5, type: "rain" }
 ];
 
-const brushes = {
-  soft: { name: {en:"Soft", pt:"Suave"}, cost: 0, radius: 38, blur: 0.9, desc: {en:"Large area, smooth.", pt:"Grande área, suave."} },
-  precise: { name: {en:"Precise", pt:"Preciso"}, cost: 100, radius: 22, blur: 0.35, desc: {en:"Fine details.", pt:"Detalhes finos."} },
-  broad: { name: {en:"Broad", pt:"Largo"}, cost: 200, radius: 65, blur: 0.8, desc: {en:"Quick large wipes.", pt:"Limpeza rápida."} },
-  sharp: { name: {en:"Sharp", pt:"Nítido"}, cost: 300, radius: 17, blur: 0.12, desc: {en:"Sharp edges.", pt:"Bordas definidas."} },
-  dream: { name: {en:"Dream", pt:"Sonho"}, cost: 500, radius: 80, blur: 1.4, desc: {en:"Diffuse and huge.", pt:"Gigante e difuso."} }
-};
+// Canvas Setup
+const canvases = ['bg', 'cloud', 'rain', 'glass', 'fog'];
+const ctxs = {};
+canvases.forEach(id => {
+  const c = document.getElementById(id + 'Canvas');
+  ctxs[id] = c.getContext('2d');
+});
 
-let unlockedBrushes = { soft: true };
-
-function saveGame() {
-  localStorage.setItem("rainySkylineSave", JSON.stringify({
-    points: state.points, stars: state.stars, highestPhase: state.highestPhase, currentPhase: state.currentPhase,
-    brush1: state.brush1, brush2: state.brush2, unlockedBrushes,
-    rainIntensity: state.rainIntensity, ambVolume: state.ambVolume,
-    gameSound: state.gameSound, musicSound: state.musicSound, vibration: state.vibration,
-    lang: state.lang
-  }));
-}
-
-function loadGame() {
-  try {
-    const data = JSON.parse(localStorage.getItem("rainySkylineSave"));
-    if (!data) return;
-    state.points = Number(data.points) || 0; state.stars = Number(data.stars) || 0;
-    state.highestPhase = Math.max(0, Math.min(19, Number(data.highestPhase) || 0));
-    state.currentPhase = Math.max(0, Math.min(19, Number(data.currentPhase) || 0));
-    state.brush1 = data.brush1 || "soft"; state.brush2 = data.brush2 || "soft";
-    unlockedBrushes = data.unlockedBrushes || { soft: true };
-    unlockedBrushes.soft = true;
-    if(typeof data.rainIntensity === "number") state.rainIntensity = data.rainIntensity;
-    if(typeof data.ambVolume === "number") state.ambVolume = data.ambVolume;
-    state.gameSound = data.gameSound !== false;
-    state.musicSound = data.musicSound !== false;
-    state.vibration = data.vibration !== false;
-    if(data.lang) state.lang = data.lang;
-  } catch (error) { console.warn("Save inválido."); }
-}
-
-const bgCanvas = document.getElementById("bgCanvas");
-const rainCanvas = document.getElementById("rainCanvas");
-const glassCanvas = document.getElementById("glassCanvas");
-const fogCanvas = document.getElementById("fogCanvas");
-const bgCtx = bgCanvas.getContext("2d");
-const rainCtx = rainCanvas.getContext("2d");
-const glassCtx = glassCanvas.getContext("2d");
-const fogCtx = fogCanvas.getContext("2d");
-
-/* FASE 1 — RIO DE JANEIRO — MAPA PROCEDURAL */
-function drawPhase1RioBackground(time = 0) {
-  const sky = bgCtx.createLinearGradient(0, 0, 0, H * 0.70);
-  sky.addColorStop(0.00, "#ff5f2e");
-  sky.addColorStop(0.28, "#ff7a45");
-  sky.addColorStop(0.52, "#e96a73");
-  sky.addColorStop(0.76, "#8b6fa8");
-  sky.addColorStop(1.00, "#4f5c96");
-  bgCtx.fillStyle = sky;
-  bgCtx.fillRect(0, 0, W, H);
-
-  // Nuvens suaves e estáticas
-  bgCtx.save();
-  bgCtx.globalAlpha = 0.12;
-  bgCtx.fillStyle = "#ffd0a8";
-  [[0.18,0.19,0.22,0.055],[0.48,0.27,0.28,0.065],[0.78,0.18,0.24,0.05]].forEach(([cx,cy,rx,ry]) => {
-    bgCtx.beginPath();
-    bgCtx.ellipse(W*cx,H*cy,W*rx,H*ry,0,0,Math.PI*2);
-    bgCtx.fill();
-  });
-  bgCtx.restore();
-
-  // Sol grande com brilho
-  const sx=W*0.68, sy=H*0.30;
-  const glow=bgCtx.createRadialGradient(sx,sy,8,sx,sy,H*0.16);
-  glow.addColorStop(0,"rgba(255,248,200,0.70)");
-  glow.addColorStop(0.35,"rgba(255,196,105,0.28)");
-  glow.addColorStop(1,"rgba(255,120,45,0)");
-  bgCtx.fillStyle=glow;
-  bgCtx.beginPath(); bgCtx.arc(sx,sy,H*0.16,0,Math.PI*2); bgCtx.fill();
-  bgCtx.shadowColor="rgba(255,170,70,0.55)"; bgCtx.shadowBlur=35;
-  bgCtx.fillStyle="#fff0b0";
-  bgCtx.beginPath(); bgCtx.arc(sx,sy,H*0.075,0,Math.PI*2); bgCtx.fill();
-  bgCtx.shadowBlur=0;
-
-  // Mar
-  const horizon=H*0.67;
-  const water=bgCtx.createLinearGradient(0,horizon,0,H);
-  water.addColorStop(0,"#24345a"); water.addColorStop(0.45,"#172947"); water.addColorStop(1,"#0a1428");
-  bgCtx.fillStyle=water; bgCtx.fillRect(0,horizon,W,H-horizon);
-
-  // Montanhas do Rio
-  bgCtx.fillStyle="#11162c";
-  bgCtx.beginPath();
-  bgCtx.moveTo(0,H*0.62); bgCtx.lineTo(W*0.10,H*0.59); bgCtx.lineTo(W*0.20,H*0.52);
-  bgCtx.lineTo(W*0.29,H*0.42); bgCtx.lineTo(W*0.36,H*0.49); bgCtx.lineTo(W*0.43,H*0.55);
-  bgCtx.lineTo(W*0.49,H*0.49); bgCtx.quadraticCurveTo(W*0.53,H*0.42,W*0.57,H*0.50);
-  bgCtx.lineTo(W*0.64,H*0.56); bgCtx.lineTo(W*0.78,H*0.59); bgCtx.lineTo(W,H*0.56);
-  bgCtx.lineTo(W,horizon); bgCtx.lineTo(0,horizon); bgCtx.closePath(); bgCtx.fill();
-
-  bgCtx.fillStyle="#20284a"; bgCtx.globalAlpha=0.55;
-  bgCtx.beginPath();
-  bgCtx.moveTo(0,H*0.64); bgCtx.lineTo(W*0.16,H*0.59); bgCtx.lineTo(W*0.30,H*0.54);
-  bgCtx.lineTo(W*0.46,H*0.58); bgCtx.lineTo(W*0.62,H*0.55); bgCtx.lineTo(W*0.80,H*0.60);
-  bgCtx.lineTo(W,H*0.58); bgCtx.lineTo(W,horizon); bgCtx.lineTo(0,horizon); bgCtx.closePath(); bgCtx.fill();
-  bgCtx.globalAlpha=1;
-
-  // Cristo Redentor em silhueta
-  const cx=W*0.29, baseY=H*0.51;
-  bgCtx.fillStyle="#080d1b";
-  bgCtx.fillRect(cx-10,baseY-6,20,7);
-  bgCtx.fillRect(cx-3,baseY-54,6,49);
-  bgCtx.beginPath(); bgCtx.arc(cx,baseY-61,4.5,0,Math.PI*2); bgCtx.fill();
-  bgCtx.fillRect(cx-27,baseY-47,54,4);
-  bgCtx.fillRect(cx-1.5,baseY-69,3,8);
-
-  // Pão de Açúcar
-  bgCtx.beginPath();
-  bgCtx.moveTo(W*0.43,horizon); bgCtx.quadraticCurveTo(W*0.45,H*0.47,W*0.51,H*0.52);
-  bgCtx.quadraticCurveTo(W*0.55,H*0.57,W*0.58,horizon); bgCtx.closePath(); bgCtx.fill();
-
-  // Skyline minimalista + janelas amarelas
-  const skyline=[[0.57,0.095],[0.63,0.135],[0.69,0.085],[0.75,0.16],[0.83,0.105],[0.89,0.145],[0.96,0.075]];
-  skyline.forEach(([x,h],bi)=>{
-    const bw=W*0.042,bh=H*h,bx=W*x-bw*0.5,by=horizon-bh;
-    bgCtx.fillStyle=bi%2?"#0b1426":"#0d172b"; bgCtx.fillRect(bx,by,bw,bh);
-    if(bi%3===1) bgCtx.fillRect(bx+bw*0.30,by-5,bw*0.40,5);
-    const rows=Math.max(2,Math.floor(bh/24));
-    for(let r=0;r<rows;r++) for(let c=0;c<2;c++) if((bi*7+r*5+c*3)%4===0){
-      bgCtx.fillStyle="rgba(255,211,105,0.82)";
-      bgCtx.fillRect(bx+5+c*(bw*0.42),by+9+r*18,Math.max(2.5,bw*0.16),4);
-    }
-  });
-
-  // Luzes da orla
-  bgCtx.fillStyle="rgba(255,201,92,0.75)";
-  for(let i=0;i<34;i++){ const x=(i/33)*W; bgCtx.beginPath(); bgCtx.arc(x,horizon-3+Math.sin(i*1.7)*1.2,1.5,0,Math.PI*2); bgCtx.fill(); }
-
-  // Reflexo do sol: somente a água recebe movimento vertical de 0.9px.
-  const reflectionTop=horizon+8, reflectionBottom=H*0.90;
-  const amplitude=0.9, sliceH=2, waveLength=55, waveTime=time*0.4;
-  bgCtx.save(); bgCtx.beginPath(); bgCtx.rect(0,reflectionTop,W,reflectionBottom-reflectionTop); bgCtx.clip();
-  for(let y=reflectionTop;y<reflectionBottom;y+=sliceH){
-    const depth=(y-reflectionTop)/(reflectionBottom-reflectionTop);
-    const width=W*(0.045+depth*0.20);
-    const center=sx+Math.sin(y*0.015)*5;
-    const wave=Math.sin((y-reflectionTop)/waveLength+waveTime)*amplitude;
-    bgCtx.fillStyle=`rgba(255,164,76,${0.12*(1-depth)+0.025})`;
-    bgCtx.fillRect(center-width,y+wave,width*2,sliceH);
-    bgCtx.fillStyle=`rgba(255,220,145,${0.24*(1-depth)+0.035})`;
-    bgCtx.fillRect(center-width*0.34,y+wave,width*0.68,sliceH);
-  }
-  bgCtx.lineWidth=1;
-  for(let i=0;i<38;i++){
-    const y0=reflectionTop+8+i*((reflectionBottom-reflectionTop-16)/38);
-    const wave=Math.sin((y0-reflectionTop)/waveLength+waveTime+i*0.17)*0.9;
-    const len=W*(0.06+((i*13)%23)/100), x=((i*97)%100)/100*W;
-    bgCtx.strokeStyle=`rgba(125,165,205,${0.05+(i%5)*0.008})`;
-    bgCtx.beginPath(); bgCtx.moveTo(x,y0+wave); bgCtx.lineTo(Math.min(W,x+len),y0+wave); bgCtx.stroke();
-  }
-  bgCtx.restore();
-
-  // Coqueiros
-  function palm(px,py,scale){
-    bgCtx.fillStyle="#070c18"; bgCtx.fillRect(px,py-64*scale,5*scale,64*scale);
-    bgCtx.beginPath(); bgCtx.ellipse(px+2*scale,py-64*scale,28*scale,10*scale,-0.35,0,Math.PI*2); bgCtx.fill();
-    bgCtx.beginPath(); bgCtx.ellipse(px+2*scale,py-64*scale,28*scale,10*scale,0.35,0,Math.PI*2); bgCtx.fill();
-  }
-  palm(W*0.055,H*0.96,1.15); palm(W*0.91,H*0.96,1.05);
-
-  // Grama determinística
-  bgCtx.fillStyle="#070d18"; bgCtx.fillRect(0,H*0.91,W,H*0.09);
-  bgCtx.strokeStyle="rgba(25,58,38,0.65)"; bgCtx.lineWidth=1;
-  for(let i=0;i<120;i++){
-    const gx=(i/119)*W, gh=3+((i*17)%13);
-    bgCtx.beginPath(); bgCtx.moveTo(gx,H*0.91); bgCtx.lineTo(gx+(((i*7)%5)-2),H*0.91-gh); bgCtx.stroke();
-  }
-}
-
-let W = window.innerWidth; let H = window.innerHeight;
-// Otimização de Performance: DPR travado em 1 para poupar GPU em celulares fracos
-let DPR = 1;
-
-function setupCanvas(canvas, ctx) {
-  canvas.width = W * DPR; canvas.height = H * DPR;
-  canvas.style.width = W + "px"; canvas.style.height = H + "px";
-  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-}
-
+let W, H;
 function resize() {
-  W = window.innerWidth; H = window.innerHeight;
-  setupCanvas(bgCanvas, bgCtx); setupCanvas(rainCanvas, rainCtx);
-  setupCanvas(glassCanvas, glassCtx); setupCanvas(fogCanvas, fogCtx);
-  initFog(); generateCity(); drawCityBackground();
-}
-window.addEventListener("resize", resize);
-
-let buildings = []; let bokeh = []; let skyTexture = []; let snowTexture = [];
-let streetLights = []; let traffic = [];
-let carSpeed = 2.5;
-let rainAngle = 0;
-
-function generateCity() {
-  buildings = []; bokeh = []; streetLights = []; traffic = [];
-  const phase = phases[state.currentPhase];
-  rainAngle = (phase.type === 'car' || phase.type === 'car_snow') ? 25 * Math.PI / 180 : 0;
-  skyTexture = Array.from({length:40}, () => ({x:Math.random()*W,y:Math.random()*H*.65,r:35+Math.random()*90}));
-  snowTexture = Array.from({length:150}, () => ({x:Math.random()*W,y:Math.random()*H,r:2+Math.random()*18}));
-  let x = -40;
-  while (x < W + 100) {
-    buildings.push({ x, width: 45 + Math.random() * 80, height: 100 + Math.random() * H * .5, depth: .25 + Math.random() * .75 });
-    x += buildings[buildings.length-1].width + 4;
-  }
-  for (let i = 0; i < (state.isZen ? 18 : 42); i++) {
-    bokeh.push({ x: Math.random() * W, y: H * .25 + Math.random() * H * .55, r: 8 + Math.random() * 35, color: phase.lights[Math.floor(Math.random() * phase.lights.length)], alpha: .04 + Math.random() * .12 });
-  }
-  for(let i=0;i<10;i++) streetLights.push({x:Math.random()*W,y:H*(.60+Math.random()*.18),h:45+Math.random()*90,glow:phase.lights[i%phase.lights.length]});
-  for(let i=0;i<7;i++) traffic.push({x:Math.random()*W,y:H*(.72+Math.random()*.14),speed:35+Math.random()*100,scale:.5+Math.random()*.8,tail:phase.lights[(i+1)%phase.lights.length]});
-}
-
-function drawLandmark(ctx, W, H, type, alpha=1, offset=0) {
-  ctx.save(); ctx.globalAlpha = alpha; ctx.fillStyle = "#0a1930";
-  const base = H * .70; const sx = offset;
-  if(type === "rio" || type === "mix") {
-    // Cristo Redentor
-    const cx=W*.25+sx, cy=H*.45; ctx.fillRect(cx-3,cy-55,6,55); ctx.fillRect(cx-18,cy-47,36,4); ctx.fillRect(cx-2,cy-62,4,15); ctx.fillRect(cx-24,cy-40,48,4);
-    // Pão de Açúcar
-    ctx.beginPath(); ctx.arc(W*.48+sx,H*.58,58,Math.PI,Math.PI*2); ctx.fill();
-    // Baixos prédios
-    for(let i=0;i<8;i++) ctx.fillRect(W*.06+i*W*.055+sx,base-(18+(i%3)*12),W*.045,18+(i%3)*12);
-    // Coqueiros
-    for(let i=0;i<3;i++){const x=W*(.72+i*.07)+sx;ctx.fillRect(x,base-55,3,55);ctx.beginPath();ctx.arc(x+2,base-58,17,0,Math.PI*2);ctx.fill();}
-  }
-  if(type === "ny" || type === "mix") {
-    // Estátua da Liberdade
-    const cx=W*.23+sx, cy=H*.48; ctx.fillRect(cx-3,cy-48,6,48); ctx.fillRect(cx-10,cy-4,20,4); ctx.fillRect(cx-3,cy-66,6,18); ctx.beginPath();ctx.arc(cx,cy-72,7,0,Math.PI*2);ctx.fill(); ctx.fillRect(cx-20,cy-76,16,3);
-    // Skyline alto
-    for(let i=0;i<9;i++){const h=70+(i%4)*35;ctx.fillRect(W*.42+i*W*.065+sx,base-h,W*.05,h);}
-  }
-  if(type === "paris" || type === "mix") {
-    // Torre Eiffel estilizada
-    const cx=W*.70+sx, top=H*.38; ctx.fillRect(cx-2,top,4,base-top); ctx.fillRect(cx-25,base-3,50,4); ctx.beginPath();ctx.arc(cx,top+3,5,0,Math.PI*2);ctx.fill(); ctx.fillRect(cx-14,top+45,28,4); ctx.fillRect(cx-20,top+75,40,4);
-    for(let i=0;i<6;i++) ctx.fillRect(W*.52+i*W*.055+sx,base-(35+(i%2)*18),W*.045,35+(i%2)*18);
-  }
-  // Lua e reflexo
-  ctx.fillStyle="#dbe7f5"; ctx.beginPath();ctx.arc(W*.82+sx,H*.22,26,0,Math.PI*2);ctx.fill();
-  ctx.globalAlpha=alpha*.16; ctx.fillStyle="#dbe7f5"; for(let i=0;i<7;i++) ctx.beginPath(),ctx.arc(W*.82+sx+i*9,base+20+i*11,3+(i%3),0,Math.PI*2),ctx.fill();
-  ctx.restore();
-}
-
-function getLandmarkType() {
-  if (state.currentPhase < 5) return "rio";
-  if (state.currentPhase < 10) return "ny";
-  if (state.currentPhase < 15) return "paris";
-  return "mix";
-}
-
-function drawParallax(ctx, speed) {
-  const p=phases[state.currentPhase]; const t=state.carOffset; const landmark=getLandmarkType();
-  for(let layer=0;layer<3;layer++){
-    const factor=.12+layer*.13; const ox=-((t*speed*factor)%(W+260));
-    drawLandmark(ctx,W,H,landmark, .32+layer*.18, ox);
-    drawLandmark(ctx,W,H,landmark, .32+layer*.18, ox+W+260);
-  }
-}
-
-function drawCityBackground() {
-  const phase = phases[state.currentPhase];
-  bgCtx.clearRect(0, 0, W, H);
-  
-  
-  if (state.currentPhase === 0) {
-    drawPhase1RioBackground(phase1AnimTime);
-    return;
-  }
-
-const sky = bgCtx.createLinearGradient(0, 0, 0, H);
-  sky.addColorStop(0, phase.sky[0]); sky.addColorStop(.55, phase.sky[1]); sky.addColorStop(1, "#020308");
-  bgCtx.fillStyle = sky; bgCtx.fillRect(0, 0, W, H);
-  bgCtx.save();
-  bgCtx.globalAlpha = .06;
-  skyTexture.forEach(c => { bgCtx.fillStyle = "#ffffff"; bgCtx.beginPath(); bgCtx.arc(c.x,c.y,c.r,0,Math.PI*2); bgCtx.fill(); });
-  bgCtx.restore();
-
-  // Bokeh Draw (animado se for carro)
-  bokeh.forEach(light => {
-    let lx = light.x;
-    if(phase.type === 'car' || phase.type === 'car_snow') {
-        lx = (light.x - state.carOffset * (light.r/10)) % W;
-        if (lx < 0) lx += W;
-    }
-    const gradient = bgCtx.createRadialGradient(lx, light.y, 0, lx, light.y, light.r);
-    gradient.addColorStop(0, light.color); gradient.addColorStop(1, "transparent");
-    bgCtx.fillStyle = gradient; bgCtx.globalAlpha = light.alpha;
-    bgCtx.beginPath(); bgCtx.arc(lx, light.y, light.r, 0, Math.PI * 2); bgCtx.fill();
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvases.forEach(id => {
+    const c = document.getElementById(id + 'Canvas');
+    c.width = W * state.dpr;
+    c.height = H * state.dpr;
+    ctxs[id].scale(state.dpr, state.dpr);
   });
-  bgCtx.restore();
+  if (state.started) {
+    initFog();
+    drawStaticBackground();
+  }
+}
+window.addEventListener('resize', resize);
+resize();
 
-  drawLandmark(bgCtx, W, H, getLandmarkType(), phase.type === 'car' || phase.type === 'car_snow' ? .22 : .12, 0);
-  if (phase.type === 'car' || phase.type === 'car_snow') drawParallax(bgCtx, carSpeed);
+/**
+ * AUDIO ENGINE - Procedural Piano & Rain
+ */
+let audioCtx, masterGain, pianoGain;
+const pentatonic = [130.81, 146.83, 164.81, 196.00, 220.00, 261.63, 293.66, 329.63, 392.00, 440.00];
 
-  if (phase.type !== 'car' && phase.type !== 'car_snow') {
-    buildings.forEach((building, index) => {
-      const y = H - building.height;
-      bgCtx.fillStyle = `hsl(${phase.hue}, 25%, ${Math.max(2, 9 * building.depth)}%)`;
-      bgCtx.fillRect(building.x, y, building.width, building.height);
-      const rows = Math.floor(building.height / 17); const columns = Math.max(1, Math.floor(building.width / 18));
-      for (let row = 0; row < rows; row++) {
-        for (let col = 0; col < columns; col++) {
-          if ((index * 97 + row * 31 + col * 17) % 11 > 5) continue;
-          bgCtx.fillStyle = phase.lights[(index + row + col) % phase.lights.length];
-          bgCtx.globalAlpha = .08 + (((index*97+row*31+col*17)%11) / 11) * .35;
-          bgCtx.fillRect(building.x + 7 + col * 18, y + 9 + row * 17, 6, 5);
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  masterGain = audioCtx.createGain();
+  masterGain.connect(audioCtx.destination);
+  
+  // Ambient Drone
+  const drone = audioCtx.createOscillator();
+  const dGain = audioCtx.createGain();
+  drone.type = 'sine';
+  drone.frequency.value = 65.41; // C2
+  dGain.gain.value = 0.05;
+  drone.connect(dGain);
+  dGain.connect(masterGain);
+  drone.start();
+
+  pianoGain = audioCtx.createGain();
+  pianoGain.connect(masterGain);
+  
+  schedulePiano();
+  updateAudioVolumes();
+}
+
+function updateAudioVolumes() {
+  if (!masterGain) return;
+  masterGain.gain.setTargetAtTime(state.musicVolume, audioCtx.currentTime, 0.1);
+}
+
+function playPianoNote() {
+  if (!state.started || state.paused || state.musicVolume < 0.1) return;
+  const freq = pentatonic[Math.floor(Math.random() * pentatonic.length)];
+  const osc = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+  
+  g.gain.setValueAtTime(0, audioCtx.currentTime);
+  g.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + 0.1);
+  g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 4);
+  
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.value = 800;
+
+  osc.connect(filter);
+  filter.connect(g);
+  g.connect(pianoGain);
+  
+  osc.start();
+  osc.stop(audioCtx.currentTime + 4);
+}
+
+function schedulePiano() {
+  const next = 3000 + Math.random() * 5000;
+  setTimeout(() => {
+    playPianoNote();
+    schedulePiano();
+  }, next);
+}
+
+/**
+ * VISUAL ENGINE
+ */
+let buildings = [];
+let clouds = [];
+
+function drawStaticBackground() {
+  const p = phases[state.currentPhase];
+  const g = ctxs.bg.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, p.sky[0]);
+  g.addColorStop(1, p.sky[1]);
+  ctxs.bg.fillStyle = g;
+  ctxs.bg.fillRect(0, 0, W, H);
+
+  buildings = [];
+  let x = -50;
+  while (x < W) {
+    const w = 60 + Math.random() * 100;
+    const h = 150 + Math.random() * (H * 0.6);
+    buildings.push({ x, w, h, color: `rgba(2, 6, 23, 0.95)`, lights: [] });
+    
+    // Generate windows
+    const b = buildings[buildings.length - 1];
+    for (let wy = H - h + 20; wy < H - 20; wy += 25) {
+      for (let wx = x + 10; wx < x + w - 10; wx += 20) {
+        if (Math.random() > 0.7) {
+          b.lights.push({ x: wx, y: wy, color: p.lights[Math.floor(Math.random() * p.lights.length)] });
         }
       }
-      bgCtx.globalAlpha = 1;
-    });
-  }
-
-  // Wet road + reflections
-  const roadY = H * .72;
-  bgCtx.fillStyle = "rgba(2,5,10,.68)"; bgCtx.fillRect(0,roadY,W,H-roadY);
-  bgCtx.strokeStyle = "rgba(255,255,255,.035)"; bgCtx.lineWidth=1;
-  for(let y=roadY+18;y<H;y+=22){ bgCtx.beginPath(); bgCtx.moveTo(0,y); bgCtx.lineTo(W,y+Math.sin(y*.03)*8); bgCtx.stroke(); }
-  streetLights.forEach(l=>{
-    bgCtx.strokeStyle="rgba(170,200,220,.18)"; bgCtx.lineWidth=2; bgCtx.beginPath(); bgCtx.moveTo(l.x,l.y); bgCtx.lineTo(l.x,l.y-l.h); bgCtx.stroke();
-    const g=bgCtx.createRadialGradient(l.x,l.y-l.h,0,l.x,l.y-l.h,24); g.addColorStop(0,l.glow); g.addColorStop(1,"transparent"); bgCtx.fillStyle=g; bgCtx.globalAlpha=.22; bgCtx.beginPath(); bgCtx.arc(l.x,l.y-l.h,24,0,Math.PI*2); bgCtx.fill(); bgCtx.globalAlpha=1;
-  });
-  traffic.forEach(c=>{
-    let x=(c.x-state.carOffset*c.speed/100)% (W+180); if(x< -120)x+=W+180;
-    const y=c.y, sc=c.scale;
-    bgCtx.fillStyle="rgba(8,12,18,.9)"; bgCtx.fillRect(x,y,42*sc,10*sc);
-    const rg=bgCtx.createRadialGradient(x+5*sc,y+5*sc,0,x+5*sc,y+5*sc,18*sc); rg.addColorStop(0,c.tail); rg.addColorStop(1,"transparent"); bgCtx.fillStyle=rg; bgCtx.globalAlpha=.35; bgCtx.beginPath(); bgCtx.arc(x+5*sc,y+5*sc,18*sc,0,Math.PI*2); bgCtx.fill(); bgCtx.globalAlpha=1;
-  });
-
-  if ([0,6,9,14,19].includes(state.currentPhase)) {
-    const grassY=H*.85; bgCtx.fillStyle="#1a3d1a"; bgCtx.fillRect(0,grassY,W,H-grassY);
-    for(let i=0;i<120;i++){ const x=Math.random()*W; const h=2+Math.random()*4; bgCtx.fillStyle=(i%2?"#2d5a2d":"#3a7a3a"); bgCtx.fillRect(x,grassY-h,1,h); }
-  }
-
-  const ground = bgCtx.createLinearGradient(0, H * .76, 0, H);
-  ground.addColorStop(0, "rgba(0,0,0,0)"); ground.addColorStop(1, "rgba(0,0,0,.55)");
-  bgCtx.fillStyle = ground; bgCtx.fillRect(0, H * .7, W, H * .3);
-}
-
-class Particle {
-  constructor() { this.reset(true); }
-  reset(initial = false) {
-    const phase = phases[state.currentPhase];
-    this.isSnow = phase.type === 'snow' || phase.type === 'car_snow';
-    this.x = Math.random() * (W + 200) - 100;
-    this.y = initial ? Math.random() * H : -Math.random() * H;
-    this.vy = this.isSnow ? (80 + Math.random() * 180) : (500 + Math.random() * 1050);
-    this.len = this.isSnow ? (3 + Math.random() * 4) : (14 + Math.random() * 35);
-    this.alpha = .08 + Math.random() * .27;
-    this.width = .5 + Math.random() * 1.2;
-    this.wind = (this.isSnow ? (Math.random() * 2 - 1) : (-1.5 - Math.random() * 3));
-    this.z = .5 + Math.random() * .8;
-    this.splash = 0;
-  }
-  update(dt) {
-    const phase = phases[state.currentPhase];
-    let spd = this.vy * dt * (.35 + state.rainIntensity * .9);
-    if(phase.type === 'car' || phase.type === 'car_snow') this.x += carSpeed * 2 * dt;
-    this.y += spd;
-    this.x += this.wind * dt * (this.isSnow ? 50 : (20 + phase.rain * 30));
-    if (!this.isSnow && this.y > H*.74 && Math.random()<.035) this.splash=.12;
-    if(this.splash>0) this.splash-=dt;
-    if (this.y > H + 80 || this.x < -100) this.reset();
-  }
-  draw() {
-    if(this.isSnow) {
-      rainCtx.fillStyle = `rgba(255,255,255,${this.alpha*2})`;
-      rainCtx.beginPath(); rainCtx.arc(this.x, this.y, this.len/2, 0, Math.PI*2); rainCtx.fill();
-    } else {
-      rainCtx.strokeStyle = `rgba(185,220,255,${this.alpha * (0.65 + state.rainIntensity*.5)})`; rainCtx.lineWidth = this.width;
-      rainCtx.beginPath(); rainCtx.moveTo(this.x, this.y); rainCtx.lineTo(this.x + Math.sin(rainAngle) * this.len, this.y + Math.cos(rainAngle) * this.len); rainCtx.stroke();
-      if(this.splash>0){ rainCtx.globalAlpha=Math.max(0,this.splash*6); rainCtx.beginPath(); rainCtx.ellipse(this.x,this.y,4,1.5,0,0,Math.PI*2); rainCtx.stroke(); rainCtx.globalAlpha=1; }
     }
+    x += w + 5;
   }
 }
 
-// Otimização: menos partículas para preservar bateria em celulares baixos
-const rainParticles = Array.from({ length: 120 }, () => new Particle());
-const glassDrops = [];
+function updateClouds() {
+  ctxs.cloud.clearRect(0, 0, W, H);
+  ctxs.cloud.fillStyle = 'rgba(255,255,255,0.05)';
+  clouds.forEach(c => {
+    c.x += c.speed;
+    if (c.x > W + 100) c.x = -100;
+    ctxs.cloud.beginPath();
+    ctxs.cloud.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+    ctxs.cloud.fill();
+  });
+}
 
-class GlassDrop {
-  constructor() { this.reset(true); }
-  reset(initial = false) {
-    this.x = Math.random() * W; this.y = initial ? Math.random() * H : -100;
-    this.r = 1.5 + Math.random() * 4.5; this.vy = 8 + Math.random() * 38;
-    this.vx = -1 + Math.random() * 2; this.alpha = .15 + Math.random() * .4;
-    this.stretch = .5 + Math.random() * 2;
-    this.trail = []; this.mergeCooldown = 0;
+// Clouds init
+for(let i=0; i<15; i++) clouds.push({ x: Math.random()*W, y: Math.random()*H*0.5, r: 50+Math.random()*100, speed: 0.1 + Math.random()*0.2 });
+
+class Drop {
+  constructor() { this.reset(); }
+  reset() {
+    this.x = Math.random() * W;
+    this.y = -20;
+    this.r = 1 + Math.random() * 3;
+    this.vy = 2 + Math.random() * 5;
+    this.life = 1;
   }
-  update(dt) {
-    const phase = phases[state.currentPhase];
-    if(phase.type === 'car' || phase.type === 'car_snow') { this.x -= 30 * dt; this.vx = -2 - Math.random(); } // Diagonal wipe effect
-    this.y += this.vy * dt; this.x += this.vx * dt;
-    this.trail.unshift({x:this.x,y:this.y}); if(this.trail.length>5)this.trail.pop();
-    this.mergeCooldown -= dt;
-    if(this.mergeCooldown<=0 && Math.random()<.015){ this.vy += 4; this.r=Math.min(7,this.r+.35); this.stretch=Math.min(3,this.stretch+.08); this.mergeCooldown=.8; }
-    if (this.y > H + 30 || this.x < -30) this.reset();
+  update() {
+    this.y += this.vy;
+    if (this.y > H) this.reset();
   }
-  draw() {
-    const gradient = glassCtx.createRadialGradient(this.x - this.r * .35, this.y - this.r * .35, 0, this.x, this.y, this.r * 1.5);
-    gradient.addColorStop(0, `rgba(255,255,255,${this.alpha})`); gradient.addColorStop(1, "rgba(20,50,80,0)");
-    glassCtx.fillStyle = gradient; glassCtx.beginPath();
-    if(this.trail.length>1){ glassCtx.strokeStyle=`rgba(190,225,255,${this.alpha*.22})`; glassCtx.lineWidth=Math.max(1,this.r*.45); glassCtx.beginPath(); this.trail.forEach((q,i)=>{if(i===0)glassCtx.moveTo(q.x,q.y);else glassCtx.lineTo(q.x,q.y)}); glassCtx.stroke(); }
-    glassCtx.ellipse(this.x, this.y, this.r, this.r * this.stretch, -.1, 0, Math.PI * 2); glassCtx.fill();
+  draw(ctx) {
+    ctx.fillStyle = `rgba(255,255,255,0.3)`;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    ctx.fill();
   }
 }
 
-const GRID_X = 28;
-const GRID_Y = 17;
-let fogGrid = [];
-function createFogGrid() { fogGrid = Array.from({ length: GRID_X * GRID_Y }, () => 0); }
+const rain = Array.from({ length: 150 }, () => new Drop());
 
 function initFog() {
-  createFogGrid();
-  fogCtx.globalCompositeOperation = "source-over";
-  fogCtx.clearRect(0, 0, W, H);
-  const isSnow = phases[state.currentPhase].type === "snow" || phases[state.currentPhase].type === "car_snow";
-  const fog = fogCtx.createRadialGradient(W*.48,H*.45,0,W*.5,H*.5,Math.max(W,H)*.85);
-  fog.addColorStop(0, isSnow ? "#e8e8e8" : "rgba(235,242,245,.78)");
-  fog.addColorStop(.5, isSnow ? "#d2d2d2" : "rgba(205,220,228,.72)");
-  fog.addColorStop(1, isSnow ? "#ffffff" : "rgba(150,175,190,.64)");
-  fogCtx.fillStyle = fog; fogCtx.fillRect(0, 0, W, H);
-  fogCtx.globalAlpha=.10;
-  for(let i=0;i<(isSnow?150:120);i++){ let p=snowTexture[i] || {x:Math.random()*W,y:Math.random()*H,r:10+Math.random()*50}; let r=isSnow?p.r:10+Math.random()*50; fogCtx.fillStyle="rgba(255,255,255,.1)"; fogCtx.beginPath(); fogCtx.arc(p.x,p.y,r,0,Math.PI*2); fogCtx.fill(); }
-  fogCtx.globalAlpha=1;
-  state.fogProgress = 0; updateProgress();
-}
-
-function clearFog(x, y, brush) {
-  const isSnow = phases[state.currentPhase].type === "snow" || phases[state.currentPhase].type === "car_snow";
-  if (isSnow) {
-    if (!state.hasInteracted) { state.hasInteracted = true; document.getElementById("instruction").classList.add("hidden-text"); }
-    const gx = Math.floor((x / W) * GRID_X); const gy = Math.floor((y / H) * GRID_Y);
-    const rx = Math.ceil((brush.radius / W) * GRID_X) + 1; const ry = Math.ceil((brush.radius / H) * GRID_Y) + 1;
-    let firstCoat = false, secondCoat = false;
-    for (let yy = gy - ry; yy <= gy + ry; yy++) for (let xx = gx - rx; xx <= gx + rx; xx++) {
-      if (xx < 0 || yy < 0 || xx >= GRID_X || yy >= GRID_Y) continue;
-      const px=(xx+.5)/GRID_X*W, py=(yy+.5)/GRID_Y*H;
-      if (Math.hypot(px-x,py-y) > brush.radius) continue;
-      const i=yy*GRID_X+xx;
-      if (fogGrid[i] === 0) { fogGrid[i]=1; firstCoat=true; }
-      else if (fogGrid[i] === 1) { fogGrid[i]=2; secondCoat=true; }
-    }
-    fogCtx.save();
-    fogCtx.globalCompositeOperation="destination-out";
-    fogCtx.globalAlpha=secondCoat ? 1 : .45;
-    fogCtx.beginPath(); fogCtx.arc(x,y,brush.radius,0,Math.PI*2); fogCtx.fill();
-    fogCtx.restore();
-    updateProgress();
-    return;
-  }
-  if (!state.hasInteracted) { state.hasInteracted = true; document.getElementById("instruction").classList.add("hidden-text"); }
-  const radius = brush.radius; const softness = Math.max(.02, Math.min(1.4, brush.blur));
-  const now=performance.now(); state.cleanStreak = (now-state.lastWipe<350)?state.cleanStreak+1:1; state.lastWipe=now;
-  fogCtx.save(); fogCtx.globalCompositeOperation = "destination-out";
-  const inner = radius * Math.max(.05, .45 - softness * .15);
-  const gradient = fogCtx.createRadialGradient(x, y, inner, x, y, radius);
-  gradient.addColorStop(0, "rgba(0,0,0,1)"); gradient.addColorStop(1, "rgba(0,0,0,0)");
-  fogCtx.fillStyle = gradient; fogCtx.beginPath(); fogCtx.arc(x, y, radius, 0, Math.PI * 2); fogCtx.fill(); fogCtx.restore();
-  glassCtx.save(); glassCtx.globalAlpha=.18; glassCtx.strokeStyle="rgba(210,240,255,.8)"; glassCtx.lineWidth=1; glassCtx.beginPath(); glassCtx.arc(x,y,radius*.9,0,Math.PI*2); glassCtx.stroke(); glassCtx.restore();
-  markFogGrid(x, y, radius);
-  if(state.cleanStreak>45 && Math.random()<.001) showToast(t('perfect'));
+  const ctx = ctxs.fog;
+  ctx.globalCompositeOperation = 'source-over';
+  const g = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, W);
+  g.addColorStop(0, 'rgba(200, 215, 225, 0.85)');
+  g.addColorStop(1, 'rgba(150, 165, 175, 0.9)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+  state.fogProgress = 0;
   updateProgress();
 }
-function markFogGrid(x, y, radius) {
-  const gx = Math.floor((x / W) * GRID_X); const gy = Math.floor((y / H) * GRID_Y);
-  const rx = Math.ceil((radius / W) * GRID_X) + 1; const ry = Math.ceil((radius / H) * GRID_Y) + 1;
-  for (let yy = gy - ry; yy <= gy + ry; yy++) {
-    for (let xx = gx - rx; xx <= gx + rx; xx++) {
-      if (xx < 0 || yy < 0 || xx >= GRID_X || yy >= GRID_Y) continue;
-      const px = (xx + .5) / GRID_X * W; const py = (yy + .5) / GRID_Y * H;
-      if (Math.hypot(px - x, py - y) <= radius) fogGrid[yy * GRID_X + xx] = true;
+
+function clearFog(x, y) {
+  const ctx = ctxs.fog;
+  ctx.globalCompositeOperation = 'destination-out';
+  const g = ctx.createRadialGradient(x, y, 0, x, y, 45);
+  g.addColorStop(0, 'rgba(0,0,0,1)');
+  g.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(x, y, 45, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // Sparkle effect
+  if (Math.random() > 0.9) {
+    showToast("Clear vision...", 1000);
+  }
+}
+
+/**
+ * GAME LOOP
+ */
+function loop(time) {
+  const dt = time - state.lastTime;
+  state.lastTime = time;
+
+  if (state.started && !state.paused) {
+    // Draw Background with Bloom
+    ctxs.bg.clearRect(0, 0, W, H);
+    drawStaticBackground(); // Redraw static part
+    
+    buildings.forEach(b => {
+      ctxs.bg.fillStyle = b.color;
+      ctxs.bg.fillRect(b.x, H - b.h, b.w, b.h);
+      
+      b.lights.forEach(l => {
+        // Subtle flicker
+        const op = 0.3 + Math.random() * 0.7;
+        ctxs.bg.shadowBlur = 10;
+        ctxs.bg.shadowColor = l.color;
+        ctxs.bg.fillStyle = l.color;
+        ctxs.bg.globalAlpha = op;
+        ctxs.bg.fillRect(l.x, l.y, 4, 3);
+        ctxs.bg.globalAlpha = 1;
+        ctxs.bg.shadowBlur = 0;
+      });
+    });
+
+    updateClouds();
+
+    // Rain
+    ctxs.rain.clearRect(0, 0, W, H);
+    rain.forEach(d => {
+      d.update();
+      d.draw(ctxs.rain);
+    });
+
+    if (state.isZen) {
+      // Slow condensation
+      ctxs.fog.globalCompositeOperation = 'source-over';
+      ctxs.fog.fillStyle = 'rgba(180, 195, 205, 0.005)';
+      ctxs.fog.fillRect(0, 0, W, H);
     }
   }
+
+  requestAnimationFrame(loop);
+}
+
+/**
+ * INTERACTION & UI
+ */
+const fogCanvas = document.getElementById('fogCanvas');
+fogCanvas.addEventListener('pointerdown', e => {
+  initAudio();
+  state.activePointers.set(e.pointerId, true);
+  clearFog(e.clientX, e.clientY);
+});
+
+fogCanvas.addEventListener('pointermove', e => {
+  if (state.activePointers.has(e.pointerId)) {
+    clearFog(e.clientX, e.clientY);
+    calculateProgress();
+  }
+});
+
+fogCanvas.addEventListener('pointerup', e => state.activePointers.delete(e.pointerId));
+
+function calculateProgress() {
+  // Rough calculation using a small canvas sample could be done here
+  // For performance, we'll increment based on distance moved
+  state.fogProgress += 0.001; 
+  if (state.fogProgress > 1) state.fogProgress = 1;
+  updateProgress();
 }
 
 function updateProgress() {
-  const isSnow = phases[state.currentPhase].type === "snow" || phases[state.currentPhase].type === "car_snow";
-  let cleared = isSnow ? fogGrid.filter(v => v === 2 || v === true).length : fogGrid.filter(v => v).length;
-  state.fogProgress = cleared / fogGrid.length;
-  document.getElementById("progressFill").style.width = Math.min(100, state.fogProgress * 100) + "%";
-
-  if(state.isZen){
-    state.zenScore = Math.max(state.zenScore, Math.floor(state.fogProgress*100));
-    const z=document.getElementById("zenScoreBadge"); z.textContent=t("zen_score")+state.zenScore; z.classList.add("show");
+  document.getElementById('progressFill').style.width = (state.fogProgress * 100) + '%';
+  if (state.fogProgress >= 1 && !state.isZen) {
+    showToast("Phase Complete", 3000);
+    setTimeout(nextPhase, 2000);
   }
-  if (state.fogProgress >= .99 && state.started && !state.paused && !state.isZen) completePhase();
 }
 
-function handlePointerDown(e) { if(!state.started || state.paused) return; initAudio(); fogCanvas.setPointerCapture?.(e.pointerId); state.activePointers.set(e.pointerId, {x: e.clientX, y: e.clientY}); clearFog(e.clientX, e.clientY, brushes[state.activePointers.size <= 1 ? state.brush1 : state.brush2]); }
-function handlePointerMove(e) { if(!state.started || state.paused || !state.activePointers.has(e.pointerId)) return; state.activePointers.set(e.pointerId, {x: e.clientX, y: e.clientY}); clearFog(e.clientX, e.clientY, brushes[state.activePointers.size <= 1 ? state.brush1 : state.brush2]); }
-function handlePointerUp(e) { state.activePointers.delete(e.pointerId); }
-fogCanvas.addEventListener("pointerdown", handlePointerDown); fogCanvas.addEventListener("pointermove", handlePointerMove); fogCanvas.addEventListener("pointerup", handlePointerUp); fogCanvas.addEventListener("pointercancel", handlePointerUp);
-
-let audioCtx = null, masterGain = null, rainGain = null, droneGain = null, windNode = null, thunderTimer = null, carLoop = null, carLoopGain = null;
-function initAudio(){
-  if(audioCtx){ if(audioCtx.state==='suspended') audioCtx.resume(); return; }
-  try{
-    audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-    masterGain=audioCtx.createGain(); masterGain.gain.value=state.ambVolume; masterGain.connect(audioCtx.destination);
-    rainGain=audioCtx.createGain(); rainGain.gain.value=.045; rainGain.connect(masterGain);
-    droneGain=audioCtx.createGain(); droneGain.gain.value=.018; droneGain.connect(masterGain);
-    const buffer=audioCtx.createBuffer(1,audioCtx.sampleRate*2,audioCtx.sampleRate), data=buffer.getChannelData(0);
-    for(let i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*.35;
-    const src=audioCtx.createBufferSource(); src.buffer=buffer; src.loop=true;
-    const filter=audioCtx.createBiquadFilter(); filter.type='lowpass'; filter.frequency.value=2600;
-    src.connect(filter); filter.connect(rainGain); src.start();
-    const osc=audioCtx.createOscillator(); osc.type='sine'; osc.frequency.value=72; osc.connect(droneGain); osc.start();
-    carLoopGain=audioCtx.createGain(); carLoopGain.gain.value=0; carLoopGain.connect(masterGain);
-    const carBuffer=audioCtx.createBuffer(1,audioCtx.sampleRate*2,audioCtx.sampleRate), carData=carBuffer.getChannelData(0);
-    for(let i=0;i<carData.length;i++) carData[i]=(Math.random()*2-1)*.18;
-    carLoop=audioCtx.createBufferSource(); carLoop.buffer=carBuffer; carLoop.loop=true;
-    const carFilter=audioCtx.createBiquadFilter(); carFilter.type='lowpass'; carFilter.frequency.value=650;
-    carLoop.connect(carFilter); carFilter.connect(carLoopGain); carLoop.start();
-  }catch(e){ audioCtx=null; }
-}
-function updateAudio(){ if(!masterGain)return; masterGain.gain.setTargetAtTime(state.ambVolume,audioCtx.currentTime,.08); if(rainGain) rainGain.gain.setTargetAtTime(state.musicSound?(.025+.045*state.rainIntensity):0,audioCtx.currentTime,.12); if(carLoopGain){ const isCar=phases[state.currentPhase].type==='car'||phases[state.currentPhase].type==='car_snow'; carLoopGain.gain.setTargetAtTime(isCar&&state.gameSound?.22:0,audioCtx.currentTime,.08); } }
-function blip(freq,dur,vol){ if(!audioCtx||!state.gameSound)return; const o=audioCtx.createOscillator(),g=audioCtx.createGain(); o.frequency.value=freq; o.type='sine'; g.gain.setValueAtTime(0,audioCtx.currentTime);g.gain.linearRampToValueAtTime(vol,audioCtx.currentTime+.01);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+dur);o.connect(g);g.connect(masterGain);o.start();o.stop(audioCtx.currentTime+dur+.02);}
-function playThunder(v){ initAudio(); if(state.gameSound&&audioCtx){ const o=audioCtx.createOscillator(),g=audioCtx.createGain(),f=audioCtx.createBiquadFilter(); o.type='sawtooth';o.frequency.setValueAtTime(55,audioCtx.currentTime);o.frequency.exponentialRampToValueAtTime(25,audioCtx.currentTime+.7);f.type='lowpass';f.frequency.value=180;g.gain.setValueAtTime(.001,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.16*state.ambVolume,audioCtx.currentTime+.03);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.8);o.connect(f);f.connect(g);g.connect(masterGain);o.start();o.stop(audioCtx.currentTime+.85); } if(state.vibration&&navigator.vibrate)navigator.vibrate([25,35,45]); lightning(); }
-function startThunderSchedule(){ if(thunderTimer)clearTimeout(thunderTimer); const p=phases[state.currentPhase]; if(!p.thunder)return; thunderTimer=setTimeout(()=>{if(state.started&&!state.paused)playThunder(p.thunder);startThunderSchedule();},7000+Math.random()*14000); }
-function lightning(){ const f=document.getElementById('lightningFlash'); f.style.opacity=.12+Math.random()*.32; setTimeout(()=>f.style.opacity=0,70); if(Math.random()<.35)setTimeout(()=>{f.style.opacity=.06;setTimeout(()=>f.style.opacity=0,45)},100); }
-function showToast(text){const el=document.getElementById('toast');el.textContent=text;el.classList.add('show');clearTimeout(showToast.t);showToast.t=setTimeout(()=>el.classList.remove('show'),900);}
-
-function showAd(callback) {
-  const ad = document.getElementById("adScreen");
-  ad.classList.remove("hidden");
-  setTimeout(() => { ad.classList.add("hidden"); if(callback) callback(); }, 2000); // AD Placeholder time
+function showToast(msg, duration) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
 }
 
-function completePhase() {
-  state.started = false;
-  const elapsed=(performance.now()-state.phaseStartedAt)/1000;
-  const bonus=elapsed<35?50:elapsed<60?25:0;
-  const star=state.fogProgress>.88?2:1;
-  state.points += 100+bonus; state.stars += star;
-  if (state.currentPhase < phases.length - 1) state.highestPhase = Math.max(state.highestPhase, state.currentPhase + 1);
-  saveGame(); // AUTOSAVE
-  document.getElementById("rewardPhaseName").textContent = phases[state.currentPhase].name[state.lang] + "  ·  " + star + " ★" + (bonus?"  +"+bonus:"");
-  
-  showAd(() => {
-    document.getElementById("hud").classList.add("hidden");
-    document.getElementById("rewardScreen").classList.remove("hidden");
-    updateCoins();
-  });
+function nextPhase() {
+  state.currentPhase = (state.currentPhase + 1) % phases.length;
+  state.fogProgress = 0;
+  initFog();
+  drawStaticBackground();
 }
 
-function startPhase(idx, zen = false) {
-  if (idx > state.highestPhase && !zen) return;
-  state.currentPhase = idx; state.started = true; state.paused = false; state.isZen = zen;
-  state.hasInteracted = false; state.activePointers.clear(); state.elapsed=0; state.cleanStreak=0; state.zenScore=0; state.phaseStartedAt=performance.now();
-  generateCity(); drawCityBackground(); initFog(); updatePhaseUI();
-  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-  document.getElementById("hud").classList.remove("hidden");
-  document.getElementById("instruction").classList.remove("hidden-text");
-  document.getElementById('progressLabelText').textContent = zen ? t('zen_progress_label') : t('defog_window');
-  initAudio(); updateAudio(); startThunderSchedule();
-}
-
-function updatePhaseUI() {
-  const p = phases[state.currentPhase];
-  document.getElementById("phaseDisplay").textContent = state.currentPhase + 1;
-  document.getElementById("menuPhaseName").textContent = p.name[state.lang];
-  document.getElementById("menuPhaseFeeling").textContent = p.feeling[state.lang];
-  document.getElementById("menuPhaseStory").textContent = p.story[state.lang];
-  updateCoins();
-}
-function updateCoins() { document.getElementById("pointsDisplay").textContent = state.points; document.getElementById("storeCoins").textContent = state.points; }
-
-function renderPhases() {
-  const list = document.getElementById("phaseList"); list.innerHTML = "";
-  phases.forEach((p, i) => {
-    const unlocked = i <= state.highestPhase;
-    const div = document.createElement("div");
-    div.className = "phase-item " + (i === state.currentPhase ? "active " : "") + (!unlocked ? "locked" : "");
-    div.innerHTML = `<div class="phase-number">${t('phase_hud')} ${i + 1}</div><div class="phase-name">${unlocked ? p.name[state.lang] : t('phase_locked')}</div><div class="phase-mini-feeling">${unlocked ? p.feeling[state.lang] : t('phase_req')}</div>`;
-    if (unlocked) div.onclick = () => startPhase(i);
-    list.appendChild(div);
-  });
-}
-
-function renderStore() {
-  const grid = document.getElementById("storeGrid"); grid.innerHTML = "";
-  Object.keys(brushes).forEach(k => {
-    const b = brushes[k]; const unlocked = unlockedBrushes[k]; const div = document.createElement("div");
-    div.className = "store-item " + (state.brush1 === k || state.brush2 === k ? "active" : "");
-    div.innerHTML = `<div class="store-preview"></div><div class="store-item-title">${b.name[state.lang]}</div><div class="store-item-desc">${b.desc[state.lang]}</div><div class="store-item-cost">${unlocked ? t('equip') : b.cost + " 🌧️"}</div>`;
-    div.onclick = () => {
-      if (!unlocked) { if(state.points >= b.cost) { state.points -= b.cost; unlockedBrushes[k] = true; saveGame(); updateCoins(); renderStore(); } return; }
-      if (state.brush1 === k) state.brush2 = k; else state.brush1 = k;
-      saveGame(); renderStore(); updateFingerSlots();
-    };
-    grid.appendChild(div);
-  });
-  updateFingerSlots();
-}
-
-function updateFingerSlots() {
-  document.getElementById("slot1Name").textContent = brushes[state.brush1].name[state.lang];
-  document.getElementById("slot2Name").textContent = brushes[state.brush2].name[state.lang];
-}
-
-let phase1AnimTime = 0;
-
-function loop(time) {
-  const dt = Math.min((time - state.lastTime) / 1000, 0.1); state.lastTime = time;
-  if (state.started && !state.paused) {
-    state.elapsed += dt; updateAudio();
-    if (state.currentPhase === 0) {
-      phase1AnimTime += dt;
-      drawCityBackground();
-    }
-    if(phases[state.currentPhase].type === 'car' || phases[state.currentPhase].type === 'car_snow') {
-      state.carOffset += dt * carSpeed; drawCityBackground(); // Animated BG
-    }
-    rainCtx.clearRect(0, 0, W, H); glassCtx.clearRect(0, 0, W, H);
-    rainParticles.forEach(p => { p.update(dt); p.draw(); });
-    glassDrops.forEach(d => { d.update(dt); d.draw(); });
-    
-    // Zen Mode Refog logic
-    if(state.isZen){
-      // Condensation returns slowly and locally, creating an endless breathing window.
-      fogCtx.globalCompositeOperation="source-over"; fogCtx.fillStyle=`rgba(210,225,232,${0.006+state.rainIntensity*.004})`; fogCtx.fillRect(0,0,W,H);
-      if(Math.random()<.22){ for(let i=0;i<fogGrid.length;i++) if(fogGrid[i]&&Math.random()<.018) fogGrid[i]=false; }
-      updateProgress();
-    }
-  }
-  requestAnimationFrame(loop);
-}
-
-// Event Listeners
-document.getElementById("continueBtn").onclick = () => { initAudio(); startPhase(state.currentPhase); };
-document.getElementById("zenBtn").onclick = () => { initAudio(); startPhase(Math.floor(Math.random()*phases.length), true); };
-document.getElementById("phasesBtn").onclick = () => { renderPhases(); document.getElementById("phasesScreen").classList.remove("hidden"); };
-document.getElementById("closePhasesBtn").onclick = () => document.getElementById("phasesScreen").classList.add("hidden");
-document.getElementById("storeBtn").onclick = () => { renderStore(); document.getElementById("storeScreen").classList.remove("hidden"); };
-document.getElementById("closeStoreBtn").onclick = () => document.getElementById("storeScreen").classList.add("hidden");
-document.getElementById("pauseBtn").onclick = () => { state.paused = true; document.getElementById("pauseScreen").classList.remove("hidden"); };
-document.getElementById("resumeBtn").onclick = () => { state.paused = false; document.getElementById("pauseScreen").classList.add("hidden"); };
-document.getElementById("settingsBtn").onclick = () => document.getElementById("settingsScreen").classList.remove("hidden");
-document.getElementById("pauseSettingsBtn").onclick = () => document.getElementById("settingsScreen").classList.remove("hidden");
-document.getElementById("closeSettingsBtn").onclick = () => { saveGame(); document.getElementById("settingsScreen").classList.add("hidden"); };
-document.getElementById("exitMenuBtn").onclick = () => showAd(() => { state.started = false; state.paused = false; initFog(); document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden')); document.getElementById("mainMenu").classList.remove("hidden"); });
-document.getElementById("nextPhaseBtn").onclick = () => { if(state.currentPhase < phases.length - 1) startPhase(state.currentPhase + 1); else document.getElementById("exitMenuBtn").click(); };
-document.getElementById("rewardMenuBtn").onclick = () => document.getElementById("exitMenuBtn").click();
-
-document.getElementById("langToggleBtn").onclick = () => {
-  state.lang = state.lang === 'en' ? 'pt' : 'en';
-  updateTranslations(); saveGame();
+// BUTTONS
+document.getElementById('startBtn').onclick = () => {
+  state.started = true;
+  document.getElementById('mainMenu').classList.add('hidden');
+  document.getElementById('hud').classList.remove('hidden');
+  initAudio();
 };
 
-
-// Atmospheric settings
-document.getElementById('rainSlider').addEventListener('input',e=>{state.rainIntensity=Number(e.target.value)/100;document.getElementById('rainVal').textContent=Math.round(state.rainIntensity*100)+'%';updateAudio();saveGame();});
-document.getElementById('ambSlider').addEventListener('input',e=>{state.ambVolume=Number(e.target.value)/100;document.getElementById('ambVal').textContent=Math.round(state.ambVolume*100)+'%';updateAudio();saveGame();});
-document.getElementById('gameSoundToggle').onclick=()=>{state.gameSound=!state.gameSound;document.getElementById('gameSoundToggle').classList.toggle('on',state.gameSound);saveGame();};
-document.getElementById('musicToggle').onclick=()=>{state.musicSound=!state.musicSound;document.getElementById('musicToggle').classList.toggle('on',state.musicSound);updateAudio();saveGame();};
-document.getElementById('vibrationToggle').onclick=()=>{state.vibration=!state.vibration;document.getElementById('vibrationToggle').classList.toggle('on',state.vibration);saveGame();};
-
-// Init (Splash removed)
-window.onload = () => {
-  loadGame(); updateTranslations();
-  document.getElementById("rainSlider").value=Math.round(state.rainIntensity*100); document.getElementById("rainVal").textContent=Math.round(state.rainIntensity*100)+"%";
-  document.getElementById("ambSlider").value=Math.round(state.ambVolume*100); document.getElementById("ambVal").textContent=Math.round(state.ambVolume*100)+"%";
-  document.getElementById("gameSoundToggle").classList.toggle("on",state.gameSound); document.getElementById("musicToggle").classList.toggle("on",state.musicSound); document.getElementById("vibrationToggle").classList.toggle("on",state.vibration); resize();
-  document.getElementById('mainMenu').classList.remove('hidden');
-  requestAnimationFrame(loop);
+document.getElementById('zenBtn').onclick = () => {
+  state.isZen = true;
+  document.getElementById('startBtn').click();
 };
-</script>
-<script>
-window.addEventListener("error", function(e) {
-  document.body.innerHTML = `
-    <div style="
-      position:fixed;
-      inset:0;
-      background:#030712;
-      color:white;
-      padding:30px;
-      font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-      overflow:auto;
-      z-index:999999;
-    ">
-      <h2 style="color:#38bdf8;">Rainy Skyline — Erro de inicialização</h2>
-      <p>${e.message}</p>
-      <p style="color:#94a3b8;font-size:13px;">
-        Linha: ${e.lineno || "desconhecida"}
-      </p>
-    </div>
-  `;
-});
+
+document.getElementById('pauseBtn').onclick = () => {
+  state.paused = true;
+  document.getElementById('pauseScreen').classList.remove('hidden');
+};
+
+document.getElementById('resumeBtn').onclick = () => {
+  state.paused = false;
+  document.getElementById('pauseScreen').classList.add('hidden');
+};
+
+document.getElementById('mainMenuBtn').onclick = () => {
+  location.reload();
+};
+
+document.getElementById('settingsBtn').onclick = () => {
+  document.getElementById('settingsScreen').classList.remove('hidden');
+};
+
+document.getElementById('saveSettings').onclick = () => {
+  document.getElementById('settingsScreen').classList.add('hidden');
+};
+
+document.getElementById('rainSlider').oninput = (e) => {
+  state.rainIntensity = e.target.value / 100;
+  document.getElementById('rainVal').textContent = e.target.value + '%';
+};
+
+document.getElementById('musicSlider').oninput = (e) => {
+  state.musicVolume = e.target.value / 100;
+  document.getElementById('musicVal').textContent = e.target.value + '%';
+  updateAudioVolumes();
+};
+
+// Start Loop
+requestAnimationFrame(loop);
+initFog();
+drawStaticBackground();
+
 </script>
 </body>
 </html>
