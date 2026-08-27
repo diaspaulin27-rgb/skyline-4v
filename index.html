@@ -862,9 +862,9 @@
         this.rotation = Math.random() * Math.PI * 2;
 
         // Mais visível que a V5, mas sem brilho de "bolha".
-        this.alpha = 0.30 + Math.random() * 0.38;
-        this.edge = 0.42 + Math.random() * 0.65;
-        this.highlight = 0.10 + Math.random() * 0.16;
+        this.alpha = 0.34 + Math.random() * 0.30;
+        this.edge = 0.58 + Math.random() * 0.72;
+        this.highlight = 0.065 + Math.random() * 0.105;
 
         this.seed = Math.random() * 100000;
         this.irregularity = 0.10 + Math.random() * 0.16;
@@ -872,7 +872,7 @@
         // Estado físico da gota.
         this.vy = 0;
         this.vx = 0;
-        this.dripping = this.radius > 3.0 && Math.random() < 0.16;
+        this.dripping = this.radius > 3.0 && Math.random() < 0.11;
 
         if (this.dripping) {
           this.vy = 0.012 + Math.random() * 0.018;
@@ -956,11 +956,11 @@
 
           fill.addColorStop(
             0,
-            `rgba(255,255,255,${this.alpha * 0.045})`
+            `rgba(255,255,255,${this.alpha * 0.022})`
           );
           fill.addColorStop(
             0.42,
-            `rgba(220,235,240,${this.alpha * 0.025})`
+            `rgba(220,235,240,${this.alpha * 0.012})`
           );
           fill.addColorStop(
             1,
@@ -984,8 +984,8 @@
         ctx.closePath();
 
         ctx.strokeStyle =
-          `rgba(12,20,27,${this.alpha * 0.34})`;
-        ctx.lineWidth = Math.max(0.24, this.edge * 0.72);
+          `rgba(12,20,27,${this.alpha * 0.46})`;
+        ctx.lineWidth = Math.max(0.24, this.edge * 0.82);
         ctx.stroke();
 
         // Borda luminosa deslocada — cria a aparência de refração real,
@@ -1005,7 +1005,7 @@
           }
 
           ctx.strokeStyle =
-            `rgba(255,255,255,${this.highlight * 0.72})`;
+            `rgba(255,255,255,${this.highlight * 0.58})`;
           ctx.lineWidth = Math.max(0.22, this.edge * 0.52);
           ctx.stroke();
         }
@@ -1022,7 +1022,7 @@
           );
 
           ctx.fillStyle =
-            `rgba(255,255,255,${this.highlight * 0.48})`;
+            `rgba(255,255,255,${this.highlight * 0.34})`;
           ctx.fill();
         }
 
@@ -1039,11 +1039,11 @@
 
           grad.addColorStop(
             0,
-            `rgba(220,235,240,${this.alpha * 0.16})`
+            `rgba(220,235,240,${this.alpha * 0.12})`
           );
           grad.addColorStop(
             0.55,
-            `rgba(220,235,240,${this.alpha * 0.07})`
+            `rgba(220,235,240,${this.alpha * 0.045})`
           );
           grad.addColorStop(
             1,
