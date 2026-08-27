@@ -843,15 +843,14 @@
         this.x = Math.random() * this.W;
         this.y = Math.random() * this.H;
 
-        // Distribuição inspirada nas referências:
-        // muitas microgotas, várias pequenas/médias e poucas grandes.
+        // Distribuição sem microgotas:
+        // pequenas predominam, médias dão variedade e poucas grandes
+        // criam pontos de destaque no vidro.
         const r = Math.random();
 
-        if (r < 0.62) {
-          this.radius = 0.45 + Math.random() * 1.25;
-        } else if (r < 0.88) {
+        if (r < 0.70) {
           this.radius = 1.15 + Math.random() * 2.35;
-        } else if (r < 0.975) {
+        } else if (r < 0.95) {
           this.radius = 3.1 + Math.random() * 3.8;
         } else {
           this.radius = 6.5 + Math.random() * 5.5;
@@ -1173,7 +1172,7 @@
           if (dx * dx + dy * dy < hit * hit) {
             d.hitCount++;
 
-            // Microgotas somem imediatamente.
+            // Gotas pequenas somem imediatamente.
             // Gotas grandes podem precisar de mais uma passagem.
             if (
               d.radius < 2.5 ||
