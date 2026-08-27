@@ -1,4 +1,4 @@
-   <!DOCTYPE html>
+    <!DOCTYPE html>
     <html lang="en">
     <head>
     <meta charset="UTF-8">
@@ -904,7 +904,7 @@
 
     class GlassDrops {
       constructor(canvas) {
-        this.canvas=canvas; this.count=320; this.drops=[]; this.resize(); this.create();
+        this.canvas=canvas; this.count=100; this.drops=[]; this.resize(); this.create();
       }
       resize(){ this.W=window.innerWidth; this.H=window.innerHeight; for(const d of this.drops){d.W=this.W;d.H=this.H;} }
       create(){ this.drops=[]; for(let i=0;i<this.count;i++)this.drops.push(new GlassDrop(this.W,this.H)); }
