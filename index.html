@@ -1,4 +1,4 @@
-   <!DOCTYPE html>
+    <!DOCTYPE html>
     <html lang="en">
     <head>
     <meta charset="UTF-8">
@@ -826,9 +826,16 @@
     }
 
     const rainParticles = Array.from({ length: 180 }, () => new Particle());
+    // ============================================================
+    // GOTAS NO VIDRO — V6
+    // Referência visual: gotículas reais em vidro, sem aparência
+    // de bolha 3D. A maioria fica presa; poucas escorrem.
+    // ============================================================
+
     class GlassDrop {
       constructor(W = window.innerWidth, H = window.innerHeight) {
-        this.W = W; this.H = H;
+        this.W = W;
+        this.H = H;
         this.reset(true);
       }
 
@@ -836,48 +843,71 @@
         this.x = Math.random() * this.W;
         this.y = Math.random() * this.H;
 
-        // Muitas microgotas, poucas gotas médias e raríssimas grandes.
+        // Distribuição inspirada nas referências:
+        // muitas microgotas, várias pequenas/médias e poucas grandes.
         const r = Math.random();
-        if (r < .70) this.radius = .55 + Math.random() * 1.75;
-        else if (r < .95) this.radius = 1.7 + Math.random() * 3.8;
-        else this.radius = 5.0 + Math.random() * 7.0;
 
-        // Formato irregular de gotícula aderida ao vidro.
-        this.scaleX = .68 + Math.random() * .55;
-        this.scaleY = .82 + Math.random() * .72;
+        if (r < 0.62) {
+          this.radius = 0.45 + Math.random() * 1.25;
+        } else if (r < 0.88) {
+          this.radius = 1.15 + Math.random() * 2.35;
+        } else if (r < 0.975) {
+          this.radius = 3.1 + Math.random() * 3.8;
+        } else {
+          this.radius = 6.5 + Math.random() * 5.5;
+        }
+
+        // Gotas reais raramente são círculos perfeitos.
+        this.scaleX = 0.72 + Math.random() * 0.72;
+        this.scaleY = 0.72 + Math.random() * 0.95;
         this.rotation = Math.random() * Math.PI * 2;
 
-        // Transparência baixa: a paisagem continua protagonista.
-        this.alpha = .16 + Math.random() * .28;
-        this.edge = .16 + Math.random() * .34;
-        this.highlight = .025 + Math.random() * .085;
+        // Mais visível que a V5, mas sem brilho de "bolha".
+        this.alpha = 0.30 + Math.random() * 0.38;
+        this.edge = 0.42 + Math.random() * 0.65;
+        this.highlight = 0.10 + Math.random() * 0.16;
 
-        // Pequenas assimetrias determinísticas para não parecerem círculos clonados.
-        this.seed = Math.random() * 10000;
-        this.irregularity = .06 + Math.random() * .10;
+        this.seed = Math.random() * 100000;
+        this.irregularity = 0.10 + Math.random() * 0.16;
 
-        // Apenas poucas gotas grandes escorrem.
+        // Estado físico da gota.
         this.vy = 0;
-        this.dripping = this.radius > 4.2 && Math.random() < .22;
-        if (this.dripping) this.vy = .002 + Math.random() * .006;
+        this.vx = 0;
+        this.dripping = this.radius > 3.0 && Math.random() < 0.16;
 
-        // Pequena cauda de escorrimento, só nas gotas grandes.
-        this.trail = this.dripping ? (.35 + Math.random() * .75) : 0;
+        if (this.dripping) {
+          this.vy = 0.012 + Math.random() * 0.018;
+          this.vx = (Math.random() - 0.5) * 0.004;
+        }
 
+        this.trail = this.dripping
+          ? 0.7 + Math.random() * 1.6
+          : 0;
+
+        this.age = initial ? Math.random() * 20 : 0;
         this.alive = true;
         this.hitCount = 0;
       }
 
       update(dt) {
-        if (!this.alive || !this.dripping) return;
+        if (!this.alive) return;
 
-        // Escorrimento muito lento, em segundos e não em pixels/frame.
-        this.y += this.vy * dt * 60;
-        this.vy += .00008 * dt * 60;
+        this.age += dt;
 
-        if (this.y > this.H + 30) {
-          this.y = -15;
-          this.vy = .002 + Math.random() * .006;
+        if (this.dripping) {
+          // Escorrimento lento, sem "chuva caindo" no vidro.
+          this.y += this.vy * dt * 60;
+          this.x += this.vx * dt * 60;
+
+          this.vy += 0.000035 * dt * 60;
+
+          // Pequena deformação progressiva durante o escorrimento.
+          this.scaleY = Math.min(2.4, this.scaleY + dt * 0.003);
+
+          if (this.y > this.H + 35) {
+            this.reset(false);
+            this.y = -12;
+          }
         }
       }
 
@@ -889,82 +919,149 @@
         ctx.rotate(this.rotation);
 
         const r = this.radius;
-        const sx = this.scaleX, sy = this.scaleY;
+        const sx = this.scaleX;
+        const sy = this.scaleY;
 
-        // Corpo quase invisível. A gota é definida principalmente pelo contorno.
         ctx.scale(sx, sy);
 
-        const points = r < 2.2 ? 12 : 16;
+        const points = r < 1.4 ? 10 : (r < 3.2 ? 14 : 18);
         const pts = [];
 
         for (let i = 0; i < points; i++) {
           const a = (Math.PI * 2 / points) * i;
-          const n =
-            1 +
-            Math.sin(i * 2.91 + this.seed) * this.irregularity +
-            Math.cos(i * 4.37 + this.seed * .31) * this.irregularity * .55;
 
-          // Leve achatamento na base e assimetria lateral.
-          const vertical = 1 + Math.sin(a + .8) * .035;
+          // Assimetria orgânica, sem polígonos óbvios.
+          const wave =
+            Math.sin(a * 3 + this.seed) * this.irregularity +
+            Math.cos(a * 5.1 + this.seed * 0.37) * this.irregularity * 0.55;
+
+          const topBias =
+            1 + Math.sin(a) * -0.035 + Math.sin(a * 2 + this.seed) * 0.025;
+
           pts.push([
-            Math.cos(a) * r * n,
-            Math.sin(a) * r * n * vertical
+            Math.cos(a) * r * (1 + wave) * topBias,
+            Math.sin(a) * r * (1 + wave)
           ]);
         }
 
-        // Preenchimento extremamente discreto.
-        if (r > 1.4) {
+        // Interior transparente: a paisagem continua visível através da gota.
+        if (r > 1.0) {
           const fill = ctx.createRadialGradient(
-            -r * .18, -r * .22, Math.max(.1, r * .05),
-            0, 0, r * 1.15
+            -r * 0.22,
+            -r * 0.28,
+            Math.max(0.1, r * 0.05),
+            0,
+            0,
+            r * 1.25
           );
-          fill.addColorStop(0, `rgba(235,245,248,${this.alpha * .10})`);
-          fill.addColorStop(.55, `rgba(190,215,222,${this.alpha * .045})`);
-          fill.addColorStop(1, "rgba(255,255,255,0)");
+
+          fill.addColorStop(
+            0,
+            `rgba(255,255,255,${this.alpha * 0.045})`
+          );
+          fill.addColorStop(
+            0.42,
+            `rgba(220,235,240,${this.alpha * 0.025})`
+          );
+          fill.addColorStop(
+            1,
+            "rgba(255,255,255,0)"
+          );
 
           ctx.beginPath();
-          pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]));
+          pts.forEach((p, i) =>
+            i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])
+          );
           ctx.closePath();
           ctx.fillStyle = fill;
           ctx.fill();
         }
 
-        // Contorno fino e quebrado, inspirado em gotículas reais no vidro.
+        // Borda escura muito sutil — dá definição em fundos claros.
         ctx.beginPath();
-        pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]));
+        pts.forEach((p, i) =>
+          i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])
+        );
         ctx.closePath();
 
-        ctx.strokeStyle = `rgba(225,238,242,${this.alpha * .42})`;
-        ctx.lineWidth = Math.max(.22, this.edge);
+        ctx.strokeStyle =
+          `rgba(12,20,27,${this.alpha * 0.34})`;
+        ctx.lineWidth = Math.max(0.24, this.edge * 0.72);
         ctx.stroke();
 
-        // Um único pequeno reflexo de borda, nunca um "brilho dentro da bolha".
-        if (r > 2.4) {
+        // Borda luminosa deslocada — cria a aparência de refração real,
+        // sem transformar a gota em esfera brilhante.
+        if (r > 0.9) {
           ctx.beginPath();
-          ctx.arc(
-            -r * .24,
-            -r * .20,
-            Math.max(.35, r * .42),
-            Math.PI * 1.08,
-            Math.PI * 1.72
-          );
-          ctx.strokeStyle = `rgba(255,255,255,${this.highlight})`;
-          ctx.lineWidth = Math.max(.25, this.edge * .7);
+
+          for (let i = 0; i < points; i++) {
+            const a = (Math.PI * 2 / points) * i;
+            const p = pts[i];
+
+            // Só uma parte do contorno recebe luz.
+            if (a > Math.PI * 0.95 && a < Math.PI * 1.75) {
+              if (i === 0) ctx.moveTo(p[0], p[1]);
+              else ctx.lineTo(p[0], p[1]);
+            }
+          }
+
+          ctx.strokeStyle =
+            `rgba(255,255,255,${this.highlight * 0.72})`;
+          ctx.lineWidth = Math.max(0.22, this.edge * 0.52);
           ctx.stroke();
         }
 
-        // Cauda mínima de algumas gotas que estão escorrendo.
-        if (this.dripping && r > 4.2) {
-          const tail = r * this.trail;
-          const grad = ctx.createLinearGradient(0, r * .65, 0, r * .65 + tail);
-          grad.addColorStop(0, `rgba(215,232,237,${this.alpha * .22})`);
-          grad.addColorStop(1, "rgba(215,232,237,0)");
+        // Pequeno reflexo de ambiente, não um ponto branco central.
+        if (r > 2.2) {
+          ctx.beginPath();
+          ctx.arc(
+            -r * 0.28,
+            -r * 0.25,
+            Math.max(0.25, r * 0.18),
+            0,
+            Math.PI * 2
+          );
+
+          ctx.fillStyle =
+            `rgba(255,255,255,${this.highlight * 0.48})`;
+          ctx.fill();
+        }
+
+        // Trilha muito fina de algumas gotas que escorrem.
+        if (this.dripping && r > 3.0) {
+          const tail = Math.min(r * this.trail, 18);
+
+          const grad = ctx.createLinearGradient(
+            0,
+            r * 0.55,
+            0,
+            r * 0.55 + tail
+          );
+
+          grad.addColorStop(
+            0,
+            `rgba(220,235,240,${this.alpha * 0.16})`
+          );
+          grad.addColorStop(
+            0.55,
+            `rgba(220,235,240,${this.alpha * 0.07})`
+          );
+          grad.addColorStop(
+            1,
+            "rgba(220,235,240,0)"
+          );
 
           ctx.beginPath();
-          ctx.moveTo(-r * .12, r * .62);
-          ctx.quadraticCurveTo(r * .04, r * .90, r * .02, r * .65 + tail);
+          ctx.moveTo(-r * 0.06, r * 0.62);
+          ctx.quadraticCurveTo(
+            r * 0.06,
+            r * 0.9,
+            r * 0.02,
+            r * 0.62 + tail
+          );
+
           ctx.strokeStyle = grad;
-          ctx.lineWidth = Math.max(.3, r * .10);
+          ctx.lineWidth = Math.max(0.22, r * 0.055);
           ctx.stroke();
         }
 
@@ -975,7 +1072,10 @@
     class GlassDrops {
       constructor(canvas) {
         this.canvas = canvas;
+
+        // Quantidade mantida baixa para não poluir a paisagem.
         this.count = 100;
+
         this.drops = [];
         this.resize();
         this.create();
@@ -984,38 +1084,102 @@
       resize() {
         this.W = window.innerWidth;
         this.H = window.innerHeight;
-        for (const d of this.drops) { d.W = this.W; d.H = this.H; }
+
+        for (const d of this.drops) {
+          d.W = this.W;
+          d.H = this.H;
+        }
       }
 
       create() {
         this.drops = [];
+
         for (let i = 0; i < this.count; i++) {
           const d = new GlassDrop(this.W, this.H);
-          // Todas já nascem espalhadas pelo vidro; nenhuma "entra" pelo topo.
+
+          // Todas aparecem já no vidro no começo da fase.
+          d.x = Math.random() * this.W;
           d.y = Math.random() * this.H;
+
           this.drops.push(d);
         }
       }
 
       update(dt) {
-        for (const d of this.drops) d.update(dt);
+        for (const d of this.drops) {
+          d.update(dt);
+        }
+
+        // Mecânica discreta: gotas próximas podem se unir.
+        // Isso acontece apenas entre gotas médias/grandes para
+        // preservar a grande quantidade de microgotas.
+        for (let i = 0; i < this.drops.length; i++) {
+          const a = this.drops[i];
+
+          if (!a.alive || a.radius < 2.8) continue;
+
+          for (let j = i + 1; j < this.drops.length; j++) {
+            const b = this.drops[j];
+
+            if (!b.alive || b.radius < 1.8) continue;
+
+            const dx = b.x - a.x;
+            const dy = b.y - a.y;
+            const limit = Math.max(2.5, (a.radius + b.radius) * 0.72);
+
+            if (dx * dx + dy * dy < limit * limit) {
+              // A maior absorve a menor.
+              const area =
+                a.radius * a.radius +
+                b.radius * b.radius;
+
+              a.radius = Math.min(10, Math.sqrt(area));
+
+              a.scaleX =
+                Math.min(1.8, (a.scaleX + b.scaleX) * 0.5);
+
+              a.scaleY =
+                Math.min(2.6, (a.scaleY + b.scaleY) * 0.5);
+
+              a.dripping =
+                a.dripping ||
+                b.dripping ||
+                (a.radius > 4.8 && Math.random() < 0.12);
+
+              if (a.dripping && a.vy === 0) {
+                a.vy = 0.012 + Math.random() * 0.018;
+              }
+
+              b.alive = false;
+            }
+          }
+        }
       }
 
       draw(ctx) {
-        for (const d of this.drops) d.draw(ctx);
+        for (const d of this.drops) {
+          d.draw(ctx);
+        }
       }
 
       wipe(x, y, radius) {
         for (const d of this.drops) {
           if (!d.alive) continue;
 
-          const dx = d.x - x, dy = d.y - y;
-          const hit = radius + Math.max(1, d.radius * .75);
+          const dx = d.x - x;
+          const dy = d.y - y;
+          const hit = radius + Math.max(1.0, d.radius * 0.72);
 
           if (dx * dx + dy * dy < hit * hit) {
             d.hitCount++;
-            // Gotas grandes resistem um pouco mais, como água aderida ao vidro.
-            if (d.radius < 3.2 || d.hitCount >= 2 || Math.random() > .20) {
+
+            // Microgotas somem imediatamente.
+            // Gotas grandes podem precisar de mais uma passagem.
+            if (
+              d.radius < 2.5 ||
+              d.hitCount >= 2 ||
+              Math.random() > 0.16
+            ) {
               d.alive = false;
             }
           }
@@ -1027,7 +1191,7 @@
           if (!d.alive) {
             d.reset(false);
 
-            // Reposição fora da trilha imediata do dedo.
+            // Reposição imediata no vidro, nunca caindo do topo.
             d.x = Math.random() * this.W;
             d.y = Math.random() * this.H;
             d.alive = true;
