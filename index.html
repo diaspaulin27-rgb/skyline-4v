@@ -1,4 +1,4 @@
-    <!DOCTYPE html>
+   <!DOCTYPE html>
     <html lang="en">
     <head>
     <meta charset="UTF-8">
@@ -822,24 +822,6 @@
         rainCtx.lineTo(this.x + dx, this.y + dy);
         rainCtx.stroke();
 
-        // Pequeno respingo elíptico, apenas para as gotas próximas.
-        if (this.splash > 0) {
-          const p = Math.max(0, this.splash);
-          const progress = 1 - Math.min(1, p / 0.28);
-          rainCtx.strokeStyle = `rgba(205,230,255,${p * 0.30})`;
-          rainCtx.lineWidth = Math.max(0.55, this.width * 0.8);
-          rainCtx.beginPath();
-          rainCtx.ellipse(
-            this.x,
-            this._ground,
-            this.splashSize * (0.55 + progress),
-            this.splashSize * 0.22 * (0.55 + progress),
-            0,
-            0,
-            Math.PI * 2
-          );
-          rainCtx.stroke();
-        }
       }
     }
 
