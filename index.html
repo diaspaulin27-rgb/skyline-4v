@@ -949,7 +949,7 @@ function initFog() {
   fogCtx.globalCompositeOperation = "source-over";
   fogCtx.clearRect(0, 0, W, H);
   const fog = fogCtx.createRadialGradient(W*.48,H*.45,0,W*.5,H*.5,Math.max(W,H)*.85);
-  fog.addColorStop(0, "rgba(235,242,245,.78)"); fog.addColorStop(.5, "rgba(205,220,228,.72)"); fog.addColorStop(1, "rgba(150,175,190,.64)");
+  fog.addColorStop(0, "rgba(235,242,245,.58)"); fog.addColorStop(.5, "rgba(205,220,228,.48)"); fog.addColorStop(1, "rgba(150,175,190,.38)");
   fogCtx.fillStyle = fog; fogCtx.fillRect(0, 0, W, H);
   fogCtx.globalAlpha=.13;
   for(let i=0;i<120;i++){ let x=Math.random()*W,y=Math.random()*H,r=10+Math.random()*50; fogCtx.fillStyle="rgba(255,255,255,.08)"; fogCtx.beginPath(); fogCtx.arc(x,y,r,0,Math.PI*2); fogCtx.fill(); }
@@ -986,14 +986,14 @@ function clearFog(x, y, brush) {
   const vignette = Math.max(0, Math.min(1, brush.vignette == null ? .45 : brush.vignette));
   const now=performance.now(); state.cleanStreak = (now-state.lastWipe<350)?state.cleanStreak+1:1; state.lastWipe=now;
   fogCtx.save(); fogCtx.globalCompositeOperation = "destination-out";
-  const inner = radius * Math.max(.05, .45 - softness * .15);
+  const inner = radius * 0.15;
   const gradient = fogCtx.createRadialGradient(x, y, inner, x, y, radius);
   gradient.addColorStop(0, "rgba(0,0,0,1)");
-  gradient.addColorStop(Math.max(.5, 1 - vignette * .45), "rgba(0,0,0," + (0.72 - vignette * .32) + ")");
+  gradient.addColorStop(0.65, "rgba(0,0,0,0.65)");
   gradient.addColorStop(1, "rgba(0,0,0,0)");
   fogCtx.fillStyle = gradient; fogCtx.beginPath(); fogCtx.arc(x, y, radius, 0, Math.PI * 2); fogCtx.fill(); fogCtx.restore();
   glassDropsSystem.wipe(x, y, radius);
-  glassCtx.save(); glassCtx.globalAlpha=.18; glassCtx.strokeStyle="rgba(210,240,255,.8)"; glassCtx.lineWidth=1; glassCtx.beginPath(); glassCtx.arc(x,y,radius*.9,0,Math.PI*2); glassCtx.stroke(); glassCtx.restore();
+  /* círculo azul removido - fix risco no segundo 11 */
   markFogGrid(x, y, radius);
   if(state.cleanStreak>55 && Math.random()<.00035) showToast(t('perfect'));
   updateProgress();
@@ -1020,7 +1020,7 @@ function updateProgress() {
     state.zenScore = Math.max(state.zenScore, Math.floor(state.fogProgress*100));
     const z=document.getElementById("zenScoreBadge"); z.textContent=t("zen_score")+state.zenScore; z.classList.add("show");
   }
-  if (state.fogProgress >= .99 && state.started && !state.paused && !state.isZen) completePhase();
+  if (state.fogProgress >= .88 && state.started && !state.paused && !state.isZen) completePhase();
 }
 
 function getPointerBrushKey(pointerId) {
