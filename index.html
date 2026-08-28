@@ -471,6 +471,55 @@
         perfect: "PERFECT WIPE",
         audio_ready: "Tap to enable atmosphere"
       },
+      es: {
+        zen_auto_fog: "Regenerar niebla automáticamente",
+        zen_auto_fog_desc: "La niebla vuelve lentamente en el Modo Zen.",
+        ad_loading: "Cargando anuncio...",
+        phase_hud: "FASE",
+        wipe_instruction: "DESLIZA PARA LIMPIAR LA NIEBLA",
+        defog_window: "Desempaña la ventana",
+        btn_continue: "CONTINUAR FASE",
+        btn_zen: "MODO ZEN (INFINITO)",
+        btn_phases: "FASES Y MEMORIAS",
+        btn_store: "TIENDA DE DEDOS",
+        btn_settings: "AJUSTES",
+        phases_title: "Fases y Memorias",
+        phases_desc: "Cada clima guarda un sentimiento.",
+        btn_back: "VOLVER",
+        store_title: "Tienda de Dedos",
+        store_desc: "Construye tu forma de limpiar.",
+        store_coins: "monedas",
+        store_finger1: "Dedo 1",
+        store_finger2: "Dedo 2",
+        store_info: "Puedes usar dos dedos al mismo tiempo. Combínalos para crear tu estilo perfecto.",
+        settings_title: "Ajustes",
+        set_lang: "Idioma",
+        set_rain: "Intensidad de la lluvia",
+        set_vol: "Volumen de ambiente",
+        set_snd1: "Efectos de sonido",
+        set_snd1_desc: "Ruido y gotas",
+        set_snd2: "Música / Atmósfera",
+        set_snd2_desc: "Capas de fondo",
+        set_snd3: "Vibración",
+        set_snd3_desc: "Respuesta háptica con truenos",
+        btn_save: "GUARDAR Y VOLVER",
+        pause_title: "Pausa",
+        pause_desc: "El clima te está esperando.",
+        btn_resume: "VOLVER Y RELAJARSE",
+        btn_mainmenu: "MENÚ PRINCIPAL",
+        reward_title: "Fase completada",
+        reward_desc: "Terminaste este recuerdo. El próximo clima te espera.",
+        btn_next: "SIGUIENTE FASE",
+        zen_progress_label: "Paz infinita",
+        phase_locked: "🔒 Bloqueada",
+        phase_req: "Completa la anterior",
+        equip: "EQUIPAR",
+        bonus_clean: "BONUS DE LIMPIEZA",
+        zen_score: "ZEN · ",
+        star: "ESTRELLA",
+        perfect: "LIMPIEZA PERFECTA",
+        audio_ready: "Toca para activar la atmósfera"
+      },
       pt: {
         zen_auto_fog: "Regenerar névoa automaticamente",
         zen_auto_fog_desc: "A névoa retorna lentamente no Modo Zen.",
@@ -530,7 +579,7 @@
       document.querySelectorAll('[data-i18n]').forEach(el => {
         el.textContent = t(el.getAttribute('data-i18n'));
       });
-      document.getElementById('langToggleBtn').textContent = state.lang === 'en' ? 'English' : 'Português';
+      document.getElementById('langToggleBtn').textContent = state.lang === 'en' ? 'English' : state.lang === 'es' ? 'Español' : 'Português';
       if(state.isZen) document.getElementById('progressLabelText').textContent = t('zen_progress_label');
       document.getElementById("zenFogSettingTitle").textContent = t("zen_auto_fog");
       document.getElementById("zenFogSettingDesc").textContent = t("zen_auto_fog_desc");
@@ -613,7 +662,7 @@ const phases = [
         brush1: state.brush1, brush2: state.brush2, unlockedBrushes,
         rainIntensity: state.rainIntensity, ambVolume: state.ambVolume,
         gameSound: state.gameSound, musicSound: state.musicSound, vibration: state.vibration,
-        lang: state.lang
+        lang: state.lang, zenAutoFog: state.zenAutoFog
       }));
     }
 
@@ -636,6 +685,7 @@ const phases = [
         state.musicSound = data.musicSound !== false;
         state.vibration = data.vibration !== false;
         if(data.lang) state.lang = data.lang;
+         state.zenAutoFog = data.zenAutoFog !== false;
       } catch (error) { console.warn("Save inválido."); }
     }
 
@@ -1353,6 +1403,25 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       document.getElementById("slot2Name").textContent = brushes[state.brush2].name[state.lang];
     }
 
+    /* ZEN — escala climática: cada nível muda densidade, velocidade,
+       comprimento/comportamento visual e, no topo, começa a entrar neve. */
+    const ZEN_CLIMATE = {
+      10:{density:.18,speed:.42,length:.55,snow:.00},
+      20:{density:.28,speed:.50,length:.62,snow:.00},
+      30:{density:.40,speed:.58,length:.70,snow:.00},
+      40:{density:.52,speed:.68,length:.78,snow:.00},
+      50:{density:.64,speed:.78,length:.86,snow:.00},
+      60:{density:.76,speed:.88,length:.94,snow:.00},
+      70:{density:.88,speed:1.00,length:1.02,snow:.00},
+      80:{density:1.00,speed:1.12,length:1.08,snow:.00},
+      90:{density:1.12,speed:1.25,length:1.14,snow:.00},
+      100:{density:1.18,speed:1.30,length:1.08,snow:.30}
+    };
+    function getZenClimate(){
+      const level=Math.max(10,Math.min(100,Math.round(state.rainIntensity*100/10)*10));
+      return ZEN_CLIMATE[level] || ZEN_CLIMATE[70];
+    }
+
     function loop(time) {
       const dt = Math.min((time - state.lastTime) / 1000, 0.1); state.lastTime = time;
       if (state.started && !state.paused) {
@@ -1365,7 +1434,8 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         rainCtx.clearRect(0, 0, W, H); glassCtx.clearRect(0, 0, W, H);
         const phase = phases[state.currentPhase];
         const zenIntensity = state.isZen ? Math.max(0.10, Math.min(1, state.rainIntensity)) : state.rainIntensity;
-        const zenSnow = state.isZen && zenIntensity >= 0.999;
+        const climate = state.isZen ? getZenClimate() : null;
+        const zenSnow = !!(climate && climate.snow > 0);
         const styleDensity = ({
           light:.68, steady:1.00, heavy:1.24, neon:1.08, soft:.78,
           storm:1.42, breeze:.70, memory:.92, drizzle:.56, clearing:.44,
@@ -1373,20 +1443,30 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
           sunShower:.72, blizzard:1.30, tunnelRain:1.12, goldenRain:.74,
           snowDrive:.90, finalRain:.82
         })[phase.rainStyle || "steady"] || 1;
-        // Intensidade controla quantidade e velocidade, enquanto o rainStyle ajusta a densidade da fase.
-        const activeRainCount = Math.max(16, Math.min(rainParticles.length,
-          Math.round((16 + zenIntensity * (rainParticles.length - 16)) * styleDensity)
+        const climateDensity = climate ? climate.density : 1;
+        const activeRainCount = Math.max(8, Math.min(rainParticles.length,
+          Math.round((8 + zenIntensity * (rainParticles.length - 8)) * styleDensity * climateDensity)
         ));
         for(let i=0;i<activeRainCount;i++){
-          rainParticles[i].update(dt);
-          if(zenSnow){
-            const p = rainParticles[i];
+          const p = rainParticles[i];
+          const baseVy = p.vy;
+          const baseLen = p.len;
+          if(climate){
+            p.vy = baseVy * climate.speed;
+            p.len = baseLen * climate.length;
+          }
+          p.update(dt);
+          if(zenSnow && Math.random() < climate.snow){
             const oldSnow = p.isSnow;
             p.isSnow = true;
             p.draw();
             p.isSnow = oldSnow;
           } else {
-            rainParticles[i].draw();
+            p.draw();
+          }
+          if(climate){
+            p.vy = baseVy;
+            p.len = baseLen;
           }
         }
         for(let i=activeRainCount;i<rainParticles.length;i++){ if(rainParticles[i].y > H + 80) rainParticles[i].reset(); }
@@ -1394,14 +1474,28 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         glassDropsSystem.draw(glassCtx);
         glassDropsSystem.replenish();
         
-        // Zen Mode Refog logic
+        // Zen Mode Refog logic — mesmo sistema, agora reconstruindo
+        // a névoa de forma lenta até retornar ao estado inicial.
         if(state.isZen){
-          // Condensation returns slowly and locally, creating an endless breathing window.
           if(state.zenAutoFog){
-            fogCtx.globalCompositeOperation="source-over";
-            fogCtx.fillStyle=`rgba(210,225,232,${0.0020+state.rainIntensity*.0015})`;
-            fogCtx.fillRect(0,0,W,H);
-            if(Math.random()<.055){ for(let i=0;i<fogGrid.length;i++) if(fogGrid[i]&&Math.random()<.006) fogGrid[i]=false; }
+            state.zenMistCooldown += dt;
+            if(state.zenMistCooldown >= 0.55){
+              state.zenMistCooldown = 0;
+              const cells = Math.max(1, Math.round(fogGrid.length * 0.018));
+              let restored = 0;
+              for(let n=0;n<cells;n++){
+                const idx = Math.floor(Math.random()*fogGrid.length);
+                if(fogGrid[idx]){
+                  fogGrid[idx] = false;
+                  restored++;
+                }
+              }
+              if(restored){
+                fogCtx.globalCompositeOperation="source-over";
+                fogCtx.fillStyle="rgba(245,249,252,.56)";
+                fogCtx.fillRect(0,0,W,H);
+              }
+            }
           }
           updateProgress();
         }
@@ -1445,7 +1539,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     document.getElementById("rewardMenuBtn").onclick = () => document.getElementById("exitMenuBtn").click();
 
     document.getElementById("langToggleBtn").onclick = () => {
-      state.lang = state.lang === 'en' ? 'pt' : 'en';
+      state.lang = state.lang === 'en' ? 'es' : state.lang === 'es' ? 'pt' : 'en';
       updateTranslations(); saveGame();
     };
 
