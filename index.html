@@ -1,4 +1,4 @@
-    <!DOCTYPE html>
+  <!DOCTYPE html>
     <html lang="en">
     <head>
     <meta charset="UTF-8">
@@ -857,8 +857,8 @@
         }
 
         // Gotas reais raramente são círculos perfeitos.
-        this.scaleX = 0.72 + Math.random() * 0.72;
-        this.scaleY = 0.72 + Math.random() * 0.95;
+        this.scaleX = 0.88 + Math.random() * 0.24;
+        this.scaleY = 0.88 + Math.random() * 0.28;
         this.rotation = Math.random() * Math.PI * 2;
 
         // Mais visível que a V5, mas sem brilho de "bolha".
@@ -867,7 +867,7 @@
         this.highlight = 0.065 + Math.random() * 0.105;
 
         this.seed = Math.random() * 100000;
-        this.irregularity = 0.10 + Math.random() * 0.16;
+        this.irregularity = 0.018 + Math.random() * 0.035;
 
         // Estado físico da gota.
         this.vy = 0;
@@ -1101,6 +1101,18 @@
           d.y = Math.random() * this.H;
 
           this.drops.push(d);
+        }
+      }
+
+      resetForPhase() {
+        // Gotas já aparecem distribuídas no vidro quando uma nova fase começa.
+        for (const d of this.drops) {
+          d.W = this.W;
+          d.H = this.H;
+          d.reset(true);
+          d.x = Math.random() * this.W;
+          d.y = Math.random() * this.H;
+          d.alive = true;
         }
       }
 
