@@ -1,4 +1,4 @@
-  <!DOCTYPE html>
+   <!DOCTYPE html>
     <html lang="en">
     <head>
     <meta charset="UTF-8">
@@ -1251,7 +1251,10 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     function updateProgress() {
       let cleared = fogGrid.filter(v => v).length;
       state.fogProgress = cleared / fogGrid.length;
-      document.getElementById("progressFill").style.width = Math.min(100, state.fogProgress * 100) + "%";
+      const progressFill = document.getElementById("progressFill");
+      if(progressFill) {
+        progressFill.style.width = Math.min(100, state.fogProgress * 100) + "%";
+      }
 
       if(state.isZen){
           if(state.zenAutoFog){
