@@ -1,4 +1,4 @@
-    <!DOCTYPE html>
+  <!DOCTYPE html>
     <html lang="en">
     <head>
     <meta charset="UTF-8">
@@ -1655,12 +1655,8 @@ function rsDrawZenWeather(){
 
 const rsLoopBeforeFinal=loop;
 loop=function(time){
-  const dt=Math.min((time-state.lastTime)/1000,.1);
   rsLoopBeforeFinal(time);
-  rsDrawCarMotion(dt);
   rsDrawZenWeather();
-  rsUpdateZenHudVisibility();
-  rsUpdateCarEngine();
 };
 
 </script>
