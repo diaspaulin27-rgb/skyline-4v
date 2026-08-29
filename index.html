@@ -1,4 +1,4 @@
-   <!DOCTYPE html>
+    <!DOCTYPE html>
     <html lang="en">
     <head>
     <meta charset="UTF-8">
@@ -1251,65 +1251,8 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     function updateProgress() {
       let cleared = fogGrid.filter(v => v).length;
       state.fogProgress = cleared / fogGrid.length;
-      const progressFill = document.getElementById("progressFill");
-      if(progressFill) {
-        progressFill.style.width = Math.min(100, state.fogProgress * 100) + "%";
-      }
+      document.getElementById("progressFill").style.width = Math.min(100, state.fogProgress * 100) + "%";
 
-      if(state.isZen){
-          if(state.zenAutoFog){
-            state.zenMistCooldown += dt;
-
-            if(state.zenMistCooldown >= 0.55){
-              state.zenMistCooldown = 0;
-
-              // Regeneração gradual usando a mesma névoa-base do ACcompleted.
-              // Cada ciclo restaura pequenas áreas, mantendo o efeito lento.
-              const cells = Math.max(1, Math.round(fogGrid.length * 0.018));
-              let restored = 0;
-
-              fogCtx.save();
-              fogCtx.globalCompositeOperation = "source-over";
-
-              for(let n=0;n<cells;n++){
-                const idx = Math.floor(Math.random()*fogGrid.length);
-
-                // A célula só é restaurada se tiver sido limpa.
-                if(fogGrid[idx]){
-                  fogGrid[idx] = false;
-
-                  const gx = idx % GRID_X;
-                  const gy = Math.floor(idx / GRID_X);
-                  const cx = (gx + 0.5) / GRID_X * W;
-                  const cy = (gy + 0.5) / GRID_Y * H;
-                  const rw = W / GRID_X * 1.7;
-                  const rh = H / GRID_Y * 1.7;
-
-                  // Base clara + irregularidade difusa, igual à linguagem
-                  // visual usada por initFog() do ACcompleted.
-                  const fogGrad = fogCtx.createRadialGradient(
-                    cx, cy, 0,
-                    cx, cy, Math.max(rw, rh)
-                  );
-                  fogGrad.addColorStop(0, "rgba(245,249,252,.56)");
-                  fogGrad.addColorStop(.72, "rgba(245,249,252,.42)");
-                  fogGrad.addColorStop(1, "rgba(245,249,252,0)");
-
-                  fogCtx.fillStyle = fogGrad;
-                  fogCtx.beginPath();
-                  fogCtx.ellipse(cx, cy, rw, rh, 0, 0, Math.PI*2);
-                  fogCtx.fill();
-
-                  restored++;
-                }
-              }
-
-              fogCtx.restore();
-            }
-          }
-
-          updateProgress();
-        }
       if (state.fogProgress >= .995 && state.started && !state.paused && !state.isZen) completePhase();
     }
 
