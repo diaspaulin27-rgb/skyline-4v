@@ -1470,29 +1470,21 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         glassDropsSystem.draw(glassCtx);
         glassDropsSystem.replenish();
         
-        // Zen Mode Refog logic — mesmo sistema, agora reconstruindo
-        // a névoa de forma lenta até retornar ao estado inicial.
         if(state.isZen){
           if(state.zenAutoFog){
-            state.zenMistCooldown += dt;
-            if(state.zenMistCooldown >= 0.55){
-              state.zenMistCooldown = 0;
-              const cells = Math.max(1, Math.round(fogGrid.length * 0.018));
-              let restored = 0;
-              for(let n=0;n<cells;n++){
-                const idx = Math.floor(Math.random()*fogGrid.length);
-                if(fogGrid[idx]){
-                  fogGrid[idx] = false;
-                  restored++;
-                }
-              }
-              if(restored){
-                fogCtx.globalCompositeOperation="source-over";
-                fogCtx.fillStyle="rgba(245,249,252,.56)";
-                fogCtx.fillRect(0,0,W,H);
+            // ACcompleted regeneration:
+            // subtle continuous condensation + occasional local return.
+            fogCtx.globalCompositeOperation="source-over";
+            fogCtx.fillStyle=`rgba(210,225,232,${0.006+state.rainIntensity*.004})`;
+            fogCtx.fillRect(0,0,W,H);
+
+            if(Math.random()<.22){
+              for(let i=0;i<fogGrid.length;i++){
+                if(fogGrid[i] && Math.random()<.018) fogGrid[i]=false;
               }
             }
           }
+
           updateProgress();
         }
       }
