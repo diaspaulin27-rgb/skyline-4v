@@ -213,6 +213,7 @@ input[type="range"]::-webkit-slider-thumb { appearance: none; width: 18px; heigh
 .reward-coins { font-size: 28px; color: var(--primary); margin: 15px 0; font-weight: 700; text-shadow: 0 0 20px rgba(56,189,248,.45); }
 .reward-description { color: rgba(255,255,255,.55); font-size: 12px; line-height: 1.5; margin-bottom: 24px; }
 
+
 /* V2 atmospheric polish */
 #weatherGlow{position:absolute;inset:0;z-index:6;pointer-events:none;opacity:0;mix-blend-mode:screen;background:none;}
 #cleanSpark{position:absolute;inset:0;z-index:10;pointer-events:none;}
@@ -310,21 +311,25 @@ input[type="range"]::-webkit-slider-thumb { appearance: none; width: 18px; heigh
     </div>
   </section>
 
-  <!-- CONFIGURAÇÕES (MENU PRINCIPAL / GERAL) -->
+  <!-- CONFIGURAÇÕES -->
   <section id="settingsScreen" class="screen hidden">
     <div class="menu-card">
       <h2 style="margin:0 0 20px;" data-i18n="settings_title">Settings</h2>
       <div style="text-align:left;">
-        <div class="setting-row" id="mainLangRow">
+        
+        <div class="setting-row" id="settingLangRow">
           <span data-i18n="set_lang">Language</span>
           <button id="langToggleBtn" class="btn btn-small" style="padding: 5px 10px; min-height:30px;">English</button>
         </div>
 
-        <div class="setting-row" id="rainIntensityRow"><span data-i18n="set_rain">Rain Intensity</span><span id="rainVal">70%</span></div>
-        <input id="rainSlider" type="range" min="0" max="100" value="70">
-
+        <div class="setting-row" id="settingRainRow"><span data-i18n="set_rain">Rain Intensity</span><span id="rainVal">70%</span></div>
+        <input id="rainSlider" type="range" min="10" max="100" value="70">
+        
         <div class="setting-row" style="margin-top:22px;"><span data-i18n="set_vol">Ambience Volume</span><span id="ambVal">50%</span></div>
         <input id="ambSlider" type="range" min="0" max="100" value="50">
+
+        <div class="setting-row" style="margin-top:22px;"><span data-i18n="set_rain_sound">Som da Chuva</span><span id="rainSoundVal">50%</span></div>
+        <input id="rainSoundSlider" type="range" min="0" max="100" value="50">
 
         <div style="margin-top:25px;">
           <div class="toggle-row">
@@ -333,6 +338,17 @@ input[type="range"]::-webkit-slider-thumb { appearance: none; width: 18px; heigh
           </div>
         </div>
       </div>
+
+      <div id="zenSettingsContainer" style="display:none; text-align:left; margin-top:20px;">
+        <div class="toggle-row" style="border-top:1px solid rgba(255,255,255,.06);">
+          <div class="toggle-text">
+            <strong id="zenFogSettingTitle">Regenerar névoa automaticamente</strong>
+            <span id="zenFogSettingDesc">A névoa retorna lentamente no Modo Zen.</span>
+          </div>
+          <div id="zenFogToggle" class="toggle on"></div>
+        </div>
+      </div>
+
       <button id="closeSettingsBtn" class="btn" style="width:100%;margin-top:25px;" data-i18n="btn_save">SAVE & BACK</button>
     </div>
   </section>
@@ -342,37 +358,9 @@ input[type="range"]::-webkit-slider-thumb { appearance: none; width: 18px; heigh
     <div class="menu-card">
       <h2 style="margin:0 0 8px;font-size:24px;" data-i18n="pause_title">Paused</h2>
       <p style="color:rgba(255,255,255,.45);font-size:11px;margin-bottom:25px;" data-i18n="pause_desc">The weather is waiting for you.</p>
-      
-      <!-- Submenu de Ajustes do Pause Integrado -->
-      <div id="pauseSettingsContainer" style="display:none; text-align:left; margin-bottom:20px;">
-        <div class="setting-row" id="pauseRainIntensityRow"><span data-i18n="set_rain">Rain Intensity</span><span id="pauseRainVal">70%</span></div>
-        <input id="pauseRainSlider" type="range" min="0" max="100" value="70">
-
-        <div class="setting-row" style="margin-top:15px;"><span data-i18n="set_vol">Ambience Volume</span><span id="pauseAmbVal">50%</span></div>
-        <input id="pauseAmbSlider" type="range" min="0" max="100" value="50">
-
-        <div class="toggle-row" style="margin-top:15px;">
-          <div class="toggle-text"><strong data-i18n="set_snd3">Vibration</strong><span data-i18n="set_snd3_desc">Haptic feedback on thunder</span></div>
-          <div id="pauseVibrationToggle" class="toggle on"></div>
-        </div>
-
-        <div id="zenFogSetting" style="display:none; margin-top:10px;">
-          <div class="toggle-row">
-            <div class="toggle-text">
-              <strong id="zenFogSettingTitle">Regenerar névoa automaticamente</strong>
-              <span id="zenFogSettingDesc">A névoa retorna lentamente no Modo Zen.</span>
-            </div>
-            <div id="zenFogToggle" class="toggle on"></div>
-          </div>
-        </div>
-        
-        <button id="closePauseSettingsBtn" class="btn" style="width:100%;margin-top:15px;" data-i18n="btn_back">BACK</button>
-      </div>
-
-      <!-- Botoes de Navegacao do Pause -->
-      <div id="pauseButtonsStack" class="btn-stack">
+      <div class="btn-stack">
         <button id="resumeBtn" class="btn btn-primary" data-i18n="btn_resume">RETURN & RELAX</button>
-        <button id="pauseSettingsBtn" class="btn" data-i18n="btn_settings">SETTINGS</button>
+        <button id="pauseSettingsBtn" class="btn" data-i18n="btn_settings">OPTIONS</button>
         <button id="exitMenuBtn" class="btn" data-i18n="btn_mainmenu">MAIN MENU</button>
       </div>
     </div>
@@ -410,6 +398,7 @@ const state = {
   hasInteracted: false,
   rainIntensity: 0.7,
   ambVolume: 0.5,
+  rainSoundVolume: 0.5,
   gameSound: true,
   musicSound: true,
   vibration: true,
@@ -454,7 +443,7 @@ const i18n = {
     store_info: "You can use two fingers at once. Combine them to create your perfect wiping style!",
     settings_title: "Settings",
     set_lang: "Language",
-    set_rain: "Rain Sound",
+    set_rain: "Rain Intensity",
     set_vol: "Ambience Volume",
     set_snd1: "SFX",
     set_snd1_desc: "Noise and drops",
@@ -503,7 +492,7 @@ const i18n = {
     store_info: "Puedes usar dos dedos al mismo tiempo. Combínalos para crear tu estilo perfecto.",
     settings_title: "Ajustes",
     set_lang: "Idioma",
-    set_rain: "Sonido de la lluvia",
+    set_rain: "Intensidad de la lluvia",
     set_vol: "Volumen de ambiente",
     set_snd1: "Efectos de sonido",
     set_snd1_desc: "Ruido y gotas",
@@ -552,7 +541,7 @@ const i18n = {
     store_info: "Você pode usar dois dedos ao mesmo tempo. Combine-os para criar sua combinação perfeita!",
     settings_title: "Ajustes",
     set_lang: "Idioma",
-    set_rain: "Som da Chuva",
+    set_rain: "Força da Chuva",
     set_vol: "Volume da Ambiência",
     set_snd1: "Efeitos Sonoros",
     set_snd1_desc: "Ruído e gotas",
@@ -572,10 +561,10 @@ const i18n = {
     phase_locked: "🔒 Bloqueada",
     phase_req: "Complete a anterior",
     equip: "EQUIPAR",
-    bonus_clean: "BÔNUS DE LIMPIEZA",
+    bonus_clean: "BÔNUS DE LIMPEZA",
     zen_score: "ZEN · ",
     star: "ESTRELA",
-    perfect: "LIMPIEZA PERFEITA",
+    perfect: "LIMPEZA PERFEITA",
     audio_ready: "Toque para ativar a atmosfera"
   }
 };
@@ -665,7 +654,7 @@ function saveGame() {
   localStorage.setItem("rainySkylineSave", JSON.stringify({
     points: state.points, stars: state.stars, highestPhase: state.highestPhase, currentPhase: state.currentPhase,
     brush1: state.brush1, brush2: state.brush2, unlockedBrushes,
-    rainIntensity: state.rainIntensity, ambVolume: state.ambVolume,
+    rainIntensity: state.rainIntensity, ambVolume: state.ambVolume, rainSoundVolume: state.rainSoundVolume,
     gameSound: state.gameSound, musicSound: state.musicSound, vibration: state.vibration,
     lang: state.lang, zenAutoFog: state.zenAutoFog
   }));
@@ -684,6 +673,7 @@ function loadGame() {
     unlockedBrushes.soft = true;
     if(typeof data.rainIntensity === "number") state.rainIntensity = data.rainIntensity;
     if(typeof data.ambVolume === "number") state.ambVolume = data.ambVolume;
+    if(typeof data.rainSoundVolume === "number") state.rainSoundVolume = data.rainSoundVolume;
     state.gameSound = data.gameSound !== false;
     state.musicSound = data.musicSound !== false;
     state.vibration = data.vibration !== false;
@@ -1251,11 +1241,7 @@ function handlePointerUp(e) {
   state.activePointers.delete(e.pointerId);
   state.pointerBrushes.delete(e.pointerId);
 }
-
-fogCanvas.addEventListener("pointerdown", handlePointerDown);
-fogCanvas.addEventListener("pointermove", handlePointerMove);
-fogCanvas.addEventListener("pointerup", handlePointerUp);
-fogCanvas.addEventListener("pointercancel", handlePointerUp);
+fogCanvas.addEventListener("pointerdown", handlePointerDown); fogCanvas.addEventListener("pointermove", handlePointerMove); fogCanvas.addEventListener("pointerup", handlePointerUp); fogCanvas.addEventListener("pointercancel", handlePointerUp);
 
 let audioCtx = null, masterGain = null, rainGain = null, droneGain = null, windNode = null, thunderTimer = null;
 
@@ -1264,7 +1250,7 @@ function initAudio(){
   try{
     audioCtx=new (window.AudioContext||window.webkitAudioContext)();
     masterGain=audioCtx.createGain(); masterGain.gain.value=state.ambVolume; masterGain.connect(audioCtx.destination);
-    rainGain=audioCtx.createGain(); rainGain.gain.value=.045; rainGain.connect(masterGain);
+    rainGain=audioCtx.createGain(); rainGain.gain.value=.045 * state.rainSoundVolume; rainGain.connect(masterGain);
     droneGain=audioCtx.createGain(); droneGain.gain.value=.018; droneGain.connect(masterGain);
     const buffer=audioCtx.createBuffer(1,audioCtx.sampleRate*2,audioCtx.sampleRate), data=buffer.getChannelData(0);
     for(let i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*.35;
@@ -1275,14 +1261,15 @@ function initAudio(){
   }catch(e){ audioCtx=null; }
 }
 
-function updateAudio(){ if(!masterGain)return; masterGain.gain.setTargetAtTime(state.ambVolume,audioCtx.currentTime,.08); if(rainGain) rainGain.gain.setTargetAtTime(state.musicSound?(.025+.045*state.rainIntensity):0,audioCtx.currentTime,.12); }
+function updateAudio(){ 
+  if(!masterGain)return; 
+  masterGain.gain.setTargetAtTime(state.ambVolume,audioCtx.currentTime,.08); 
+  if(rainGain) rainGain.gain.setTargetAtTime((.025+.045*state.rainIntensity) * state.rainSoundVolume,audioCtx.currentTime,.12); 
+}
 
 function playThunder(v){ initAudio(); if(state.gameSound&&audioCtx){ const o=audioCtx.createOscillator(),g=audioCtx.createGain(),f=audioCtx.createBiquadFilter(); o.type='sawtooth';o.frequency.setValueAtTime(55,audioCtx.currentTime);o.frequency.exponentialRampToValueAtTime(25,audioCtx.currentTime+.7);f.type='lowpass';f.frequency.value=180;g.gain.setValueAtTime(.001,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.16*state.ambVolume,audioCtx.currentTime+.03);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.8);o.connect(f);f.connect(g);g.connect(masterGain);o.start();o.stop(audioCtx.currentTime+.85); } if(state.vibration&&navigator.vibrate)navigator.vibrate([25,35,45]); lightning(); }
-
 function startThunderSchedule(){ if(thunderTimer)clearTimeout(thunderTimer); const p=phases[state.currentPhase]; if(!p.thunder)return; thunderTimer=setTimeout(()=>{if(state.started&&!state.paused)playThunder(p.thunder);startThunderSchedule();},7000+Math.random()*14000); }
-
 function lightning(){ const f=document.getElementById('lightningFlash'); f.style.opacity=.12+Math.random()*.32; setTimeout(()=>f.style.opacity=0,70); if(Math.random()<.35)setTimeout(()=>{f.style.opacity=.06;setTimeout(()=>f.style.opacity=0,45)},100); }
-
 function showToast(text){const el=document.getElementById('toast');el.textContent=text;el.classList.add('show');clearTimeout(showToast.t);showToast.t=setTimeout(()=>el.classList.remove('show'),900);}
 
 function showAd(callback) {
@@ -1332,10 +1319,8 @@ function updatePhaseUI() {
   document.getElementById("phaseDisplay").parentElement.style.display = zen ? "none" : "";
   document.getElementById("currencyHud").style.display = zen ? "none" : "";
   document.getElementById("zenMistBtn").style.display = (zen && !state.zenAutoFog) ? "flex" : "none";
-  document.getElementById("zenFogSetting").style.display = zen ? "block" : "none";
   document.getElementById("zenFogToggle").classList.toggle("on", state.zenAutoFog);
 }
-
 function updateCoins() { document.getElementById("pointsDisplay").textContent = state.points; document.getElementById("storeCoins").textContent = state.points; }
 
 function renderPhases() {
@@ -1386,9 +1371,51 @@ const ZEN_CLIMATE = {
   100:{density:1.18,speed:1.30,length:1.08,snow:.30}
 };
 
+const ZEN_RAIN_TEXTS = {
+  10: "poucas gotas, pequenas, lentas",
+  20: "chuva leve",
+  30: "chuva moderada",
+  40: "chuva normal",
+  50: "chuva forte",
+  60: "chuva pesada",
+  70: "tempestade",
+  80: "tempestade intensa",
+  90: "tempestade extrema",
+  100: "chuva extrema + neve começando gradualmente"
+};
+
 function getZenClimate(){
   const level=Math.max(10,Math.min(100,Math.round(state.rainIntensity*100/10)*10));
   return ZEN_CLIMATE[level] || ZEN_CLIMATE[70];
+}
+
+function updateRainValDisplay() {
+  const level = Math.max(10, Math.min(100, Math.round(state.rainIntensity * 100 / 10) * 10));
+  const desc = ZEN_RAIN_TEXTS[level] || "";
+  document.getElementById("rainVal").textContent = level + "% (" + desc + ")";
+}
+
+function openSettings(fromSource) {
+  const isMainMenu = (fromSource === 'mainMenu');
+  
+  document.getElementById("settingLangRow").style.display = isMainMenu ? "flex" : "none";
+  document.getElementById("settingRainRow").style.display = state.isZen ? "flex" : "none";
+  document.getElementById("rainSlider").style.display = state.isZen ? "block" : "none";
+  document.getElementById("zenSettingsContainer").style.display = state.isZen ? "block" : "none";
+  
+  document.getElementById("ambSlider").value = Math.round(state.ambVolume * 100);
+  document.getElementById("ambVal").textContent = Math.round(state.ambVolume * 100) + "%";
+  
+  document.getElementById("rainSoundSlider").value = Math.round(state.rainSoundVolume * 100);
+  document.getElementById("rainSoundVal").textContent = Math.round(state.rainSoundVolume * 100) + "%";
+  
+  document.getElementById("rainSlider").value = Math.round(state.rainIntensity * 100);
+  updateRainValDisplay();
+  
+  document.getElementById("vibrationToggle").classList.toggle("on", state.vibration);
+  document.getElementById("zenFogToggle").classList.toggle("on", state.zenAutoFog);
+  
+  document.getElementById("settingsScreen").classList.remove("hidden");
 }
 
 function loop(time) {
@@ -1469,14 +1496,10 @@ document.getElementById("closePhasesBtn").onclick = () => document.getElementByI
 document.getElementById("storeBtn").onclick = () => { renderStore(); document.getElementById("storeScreen").classList.remove("hidden"); };
 document.getElementById("closeStoreBtn").onclick = () => document.getElementById("storeScreen").classList.add("hidden");
 
-// Modificação Item 32: Botao de Pause abre o menu de pausa diretamente sem travar os ajustes
 document.getElementById("pauseBtn").onclick = () => {
   state.paused = true;
-  document.getElementById("pauseSettingsContainer").style.display = "none";
-  document.getElementById("pauseButtonsStack").style.display = "flex";
   document.getElementById("pauseScreen").classList.remove("hidden");
 };
-
 document.getElementById("resumeBtn").onclick = () => { state.paused = false; document.getElementById("pauseScreen").classList.add("hidden"); };
 
 document.getElementById("zenMistBtn").onclick = () => {
@@ -1493,36 +1516,30 @@ document.getElementById("zenFogToggle").onclick = () => {
   updatePhaseUI();
 };
 
-// Modificação Item 34: Configuracoes do Menu Principal
-document.getElementById("settingsBtn").onclick = () => {
-  document.getElementById("mainLangRow").style.display = "flex";
-  document.getElementById("settingsScreen").classList.remove("hidden");
+document.getElementById("vibrationToggle").onclick = () => {
+  state.vibration = !state.vibration;
+  document.getElementById("vibrationToggle").classList.toggle("on", state.vibration);
 };
 
-// Modificação Item 35 e 36: Configuracoes no Pause (Modo Principal e Zen)
-document.getElementById("pauseSettingsBtn").onclick = () => {
-  document.getElementById("pauseButtonsStack").style.display = "none";
-  document.getElementById("pauseSettingsContainer").style.display = "block";
-  
-  // Item 36: No Modo Zen exibe o controle de Regeneração e Intensidade de Chuva
-  // Item 37: Garante que Idioma NAO apareça dentro das fases/zen
-  if (state.isZen) {
-    document.getElementById("pauseRainIntensityRow").style.display = "flex";
-    document.getElementById("pauseRainSlider").style.display = "block";
-    document.getElementById("zenFogSetting").style.display = "block";
-    document.getElementById("zenFogToggle").classList.toggle("on", state.zenAutoFog);
-  } else {
-    document.getElementById("pauseRainIntensityRow").style.display = "flex";
-    document.getElementById("pauseRainSlider").style.display = "block";
-    document.getElementById("zenFogSetting").style.display = "none";
-  }
+document.getElementById("ambSlider").oninput = (e) => {
+  state.ambVolume = e.target.value / 100;
+  document.getElementById("ambVal").textContent = e.target.value + "%";
+  updateAudio();
 };
 
-document.getElementById("closePauseSettingsBtn").onclick = () => {
-  saveGame();
-  document.getElementById("pauseSettingsContainer").style.display = "none";
-  document.getElementById("pauseButtonsStack").style.display = "flex";
+document.getElementById("rainSoundSlider").oninput = (e) => {
+  state.rainSoundVolume = e.target.value / 100;
+  document.getElementById("rainSoundVal").textContent = e.target.value + "%";
+  updateAudio();
 };
+
+document.getElementById("rainSlider").oninput = (e) => {
+  state.rainIntensity = e.target.value / 100;
+  updateRainValDisplay();
+};
+
+document.getElementById("settingsBtn").onclick = () => openSettings('mainMenu');
+document.getElementById("pauseSettingsBtn").onclick = () => openSettings('pauseMenu');
 
 document.getElementById("closeSettingsBtn").onclick = () => { saveGame(); document.getElementById("settingsScreen").classList.add("hidden"); };
 document.getElementById("exitMenuBtn").onclick = () => showAd(() => { state.started = false; state.paused = false; initFog(); document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden')); document.getElementById("mainMenu").classList.remove("hidden"); });
@@ -1534,68 +1551,9 @@ document.getElementById("langToggleBtn").onclick = () => {
   updateTranslations(); saveGame();
 };
 
-// Sliders Menu Principal
-document.getElementById('rainSlider').addEventListener('input',e=>{
-  state.rainIntensity=Number(e.target.value)/100;
-  document.getElementById('rainVal').textContent=Math.round(state.rainIntensity*100)+'%';
-  document.getElementById('pauseRainSlider').value=e.target.value;
-  document.getElementById('pauseRainVal').textContent=Math.round(state.rainIntensity*100)+'%';
-  updateAudio();saveGame();
-});
-
-document.getElementById('ambSlider').addEventListener('input',e=>{
-  state.ambVolume=Number(e.target.value)/100;
-  document.getElementById('ambVal').textContent=Math.round(state.ambVolume*100)+'%';
-  document.getElementById('pauseAmbSlider').value=e.target.value;
-  document.getElementById('pauseAmbVal').textContent=Math.round(state.ambVolume*100)+'%';
-  updateAudio();saveGame();
-});
-
-// Sliders Pause
-document.getElementById('pauseRainSlider').addEventListener('input',e=>{
-  state.rainIntensity=Number(e.target.value)/100;
-  document.getElementById('pauseRainVal').textContent=Math.round(state.rainIntensity*100)+'%';
-  document.getElementById('rainSlider').value=e.target.value;
-  document.getElementById('rainVal').textContent=Math.round(state.rainIntensity*100)+'%';
-  updateAudio();saveGame();
-});
-
-document.getElementById('pauseAmbSlider').addEventListener('input',e=>{
-  state.ambVolume=Number(e.target.value)/100;
-  document.getElementById('pauseAmbVal').textContent=Math.round(state.ambVolume*100)+'%';
-  document.getElementById('ambSlider').value=e.target.value;
-  document.getElementById('ambVal').textContent=Math.round(state.ambVolume*100)+'%';
-  updateAudio();saveGame();
-});
-
-// Vibração Toggles
-document.getElementById('vibrationToggle').onclick=()=>{
-  state.vibration=!state.vibration;
-  document.getElementById('vibrationToggle').classList.toggle('on',state.vibration);
-  document.getElementById('pauseVibrationToggle').classList.toggle('on',state.vibration);
-  saveGame();
-};
-
-document.getElementById('pauseVibrationToggle').onclick=()=>{
-  state.vibration=!state.vibration;
-  document.getElementById('pauseVibrationToggle').classList.toggle('on',state.vibration);
-  document.getElementById('vibrationToggle').classList.toggle('on',state.vibration);
-  saveGame();
-};
-
-// Init
-window.onload = () => {
-  loadGame(); updateTranslations();
-  document.getElementById("rainSlider").value=Math.round(state.rainIntensity*100); document.getElementById("rainVal").textContent=Math.round(state.rainIntensity*100)+"%";
-  document.getElementById("pauseRainSlider").value=Math.round(state.rainIntensity*100); document.getElementById("pauseRainVal").textContent=Math.round(state.rainIntensity*100)+"%";
-  document.getElementById("ambSlider").value=Math.round(state.ambVolume*100); document.getElementById("ambVal").textContent=Math.round(state.ambVolume*100)+"%";
-  document.getElementById("pauseAmbSlider").value=Math.round(state.ambVolume*100); document.getElementById("pauseAmbVal").textContent=Math.round(state.ambVolume*100)+"%";
-  document.getElementById("vibrationToggle").classList.toggle("on",state.vibration);
-  document.getElementById("pauseVibrationToggle").classList.toggle("on",state.vibration);
-  resize();
-  document.getElementById('mainMenu').classList.remove('hidden');
-  requestAnimationFrame(loop);
-};
+loadGame();
+updateTranslations();
+requestAnimationFrame(loop);
 </script>
 </body>
 </html>
