@@ -791,7 +791,7 @@ const phases = [
 
     function saveGame() {
       const payload = {
-        version: 5,
+        version: 6,
         points: state.points, stars: state.stars, highestPhase: state.highestPhase,
         currentPhase: state.resumePhase ?? state.currentPhase,
         brush1: state.brush1, brush2: state.brush2, unlockedBrushes,
@@ -922,12 +922,12 @@ const phases = [
 
     function resize() {
       const preserveFog = state.started && fogCanvas.width > 0 && fogCanvas.height > 0;
-      let fogSnapshot=null, previousGrid=null, previousGridX=0, previousGridY=0;
-      if(preserveFog){
-        fogSnapshot=document.createElement("canvas");
-        fogSnapshot.width=fogCanvas.width;
-        fogSnapshot.height=fogCanvas.height;
-        fogSnapshot.getContext("2d").drawImage(fogCanvas,0,0);
+      let fogMaskSnapshot=null, previousGrid=null, previousGridX=0, previousGridY=0;
+      if(preserveFog && typeof fogMaskCanvas !== "undefined" && fogMaskCanvas.width){
+        fogMaskSnapshot=document.createElement("canvas");
+        fogMaskSnapshot.width=fogMaskCanvas.width;
+        fogMaskSnapshot.height=fogMaskCanvas.height;
+        fogMaskSnapshot.getContext("2d").drawImage(fogMaskCanvas,0,0);
         previousGrid=fogGrid.slice();
         previousGridX=GRID_X;
         previousGridY=GRID_Y;
@@ -941,8 +941,13 @@ const phases = [
       setupCanvas(glassCanvas, glassCtx); setupCanvas(fogCanvas, fogCtx);
       if (typeof glassDropsSystem !== "undefined") glassDropsSystem.resize();
       generateCity(); drawCityBackground();
-      if(preserveFog && fogSnapshot && previousGrid?.length){
-        fogCtx.drawImage(fogSnapshot,0,0,fogSnapshot.width,fogSnapshot.height,0,0,W,H);
+      if(preserveFog && fogMaskSnapshot && previousGrid?.length){
+        initFog();
+        fogMaskCtx.save();
+        fogMaskCtx.setTransform(1,0,0,1,0,0);
+        fogMaskCtx.clearRect(0,0,fogMaskCanvas.width,fogMaskCanvas.height);
+        fogMaskCtx.drawImage(fogMaskSnapshot,0,0,fogMaskSnapshot.width,fogMaskSnapshot.height,0,0,fogMaskCanvas.width,fogMaskCanvas.height);
+        fogMaskCtx.restore();
         createFogGrid();
         for(let y=0;y<GRID_Y;y++){
           for(let x=0;x<GRID_X;x++){
@@ -953,6 +958,8 @@ const phases = [
             if(previousGrid[oldY*previousGridX+oldX]===1){ fogGrid[index]=1; fogClearedCells++; }
           }
         }
+        fogVisualDirty=true;
+        renderFog(true);
         updateProgress(true);
       } else initFog();
     }
@@ -1069,9 +1076,11 @@ const phases = [
         this.isSnow = phase.type === 'snow' || phase.type === 'car_snow';
         this.rainStyle = phase.rainStyle || (this.isSnow ? 'snowSoft' : 'steady');
 
-        // Profundidade real: 0 = fundo / quase imperceptível, 1 = primeiro plano.
-        // Cada partícula mantém seu Z para criar paralaxe visual e evitar o aspecto de "listras iguais".
-        this.z = Math.random();
+        // Fundo abundante, plano médio definido e primeiro plano raro e desfocado.
+        const depthRoll=Math.random();
+        if(depthRoll<.55){ this.layer=0; this.z=.08+Math.random()*.34; }
+        else if(depthRoll<.90){ this.layer=1; this.z=.43+Math.random()*.36; }
+        else { this.layer=2; this.z=.80+Math.random()*.20; }
 
         const speedByStyle = {
           light:.62, steady:.85, heavy:1.12, neon:.96, soft:.72,
@@ -1080,72 +1089,70 @@ const phases = [
           sunShower:.72, blizzard:1.16, tunnelRain:1.14, goldenRain:.70,
           snowDrive:.84, finalRain:.66
         };
-        const densityByStyle = {
-          light:.68, steady:1.00, heavy:1.24, neon:1.08, soft:.78,
-          storm:1.42, breeze:.70, memory:.92, drizzle:.56, clearing:.44,
-          carRain:1.00, snowSoft:.66, highwayRain:1.18, snowLight:.74,
-          sunShower:.72, blizzard:1.30, tunnelRain:1.12, goldenRain:.74,
-          snowDrive:.90, finalRain:.82
-        };
         this.styleSpeed = speedByStyle[this.rainStyle] || .85;
-        this.styleDensity = densityByStyle[this.rainStyle] || 1;
-
-        // Distribuição espacial: as gotas próximas são maiores, mais rápidas e mais visíveis.
-        const depth = 0.22 + this.z * 1.08;
-        const far = 1 - this.z;
 
         this.x = Math.random() * (W + 220) - 110;
-        this.y = initial ? Math.random() * H : -Math.random() * H;
+        this.y = initial ? Math.random() * H : -20-Math.random() * H;
 
         if (this.isSnow) {
-          this.vy = (48 + Math.random() * 132) * depth;
-          this.len = (2.0 + Math.random() * 4.0) * (0.58 + this.z * 0.72);
-          this.width = (0.8 + Math.random() * 1.7) * (0.52 + this.z * 0.72);
-          this.alpha = (0.045 + Math.random() * 0.16) * (0.42 + this.z * 0.72);
-          this.wind = (Math.random() * 2 - 1) * (8 + this.z * 20);
-          this.sway = 0.8 + Math.random() * 1.8;
+          const snowLayer=[
+            {vy:[24,62],size:[.45,1.05],alpha:[.035,.10],blur:0},
+            {vy:[48,105],size:[.9,1.9],alpha:[.09,.22],blur:0},
+            {vy:[72,150],size:[1.8,3.8],alpha:[.16,.34],blur:.65}
+          ][this.layer];
+          this.vy=snowLayer.vy[0]+Math.random()*(snowLayer.vy[1]-snowLayer.vy[0]);
+          this.len=this.width=snowLayer.size[0]+Math.random()*(snowLayer.size[1]-snowLayer.size[0]);
+          this.alpha=snowLayer.alpha[0]+Math.random()*(snowLayer.alpha[1]-snowLayer.alpha[0]);
+          this.blur=snowLayer.blur;
+          this.wind=(Math.random()-.5)*(18+this.layer*25);
+          this.gustAmp=7+this.layer*10+Math.random()*8;
         } else {
-          this.vy = (235 + Math.random() * 610) * depth;
-          this.len = (3.2 + Math.random() * 10.5) * (0.52 + this.z * 0.82);
-          this.width = (0.28 + Math.random() * 0.82) * (0.52 + this.z * 0.82);
-          this.alpha = (0.025 + Math.random() * 0.135) * (0.34 + this.z * 0.9);
-          this.wind = (-2.2 - Math.random() * 5.0) * (0.38 + this.z * 0.58);
-          this.sway = 0.10 + Math.random() * 0.32;
+          const rainLayer=[
+            {vy:[220,410],len:[2.2,6.5],width:[.24,.52],alpha:[.035,.105],blur:0},
+            {vy:[450,820],len:[7.5,18],width:[.48,1.0],alpha:[.08,.19],blur:0},
+            {vy:[820,1370],len:[22,56],width:[1.15,2.45],alpha:[.11,.24],blur:.85+Math.random()*1.25}
+          ][this.layer];
+          this.vy=rainLayer.vy[0]+Math.random()*(rainLayer.vy[1]-rainLayer.vy[0]);
+          this.len=rainLayer.len[0]+Math.random()*(rainLayer.len[1]-rainLayer.len[0]);
+          this.width=rainLayer.width[0]+Math.random()*(rainLayer.width[1]-rainLayer.width[0]);
+          this.alpha=rainLayer.alpha[0]+Math.random()*(rainLayer.alpha[1]-rainLayer.alpha[0]);
+          this.blur=rainLayer.blur;
+          const styleWind=({storm:-64,heavy:-34,highwayRain:-82,carRain:-58,tunnelRain:-48,blizzard:-70})[this.rainStyle]??-18;
+          this.wind=styleWind+(Math.random()-.5)*(38+this.layer*54);
+          this.gustAmp=12+this.layer*22+Math.random()*18;
         }
 
         this.phase = Math.random() * Math.PI * 2;
         this.age = Math.random() * 10;
+        this.pulse=.72+Math.random()*.56;
+        this.currentVx=this.wind;
+        this.currentVy=this.vy;
+        this.isBead=this.layer===0&&Math.random()<.38;
         this.splash = 0;
         this.splashSize = 0;
         this.lastSplashY = -999;
         this._ground = H * (0.80 + Math.random() * 0.08);
-        this.far = far;
       }
 
       update(dt) {
         const phase = phases[state.currentPhase] || phases[0];
-        const intensity = 0.44 + getEffectiveRainIntensity() * 0.82;
+        const intensity = 0.46 + getEffectiveRainIntensity() * 0.78;
         this.age += dt;
-
-        // Velocidade depende da intensidade, do tipo da fase e da profundidade.
-        const speed = this.vy * intensity * this.styleSpeed;
-        this.y += speed * dt;
-
-        // Vento/paralaxe: gotas próximas desviam um pouco mais.
-        const gust = Math.sin(this.age * (0.55 + this.sway) + this.phase) * this.sway;
-        const windFactor = this.isSnow ? (0.35 + this.z * 0.9) : (0.28 + this.z * 0.72);
-        this.x += (this.wind + gust * (this.isSnow ? 7 : 2.2)) * windFactor * dt;
-
+        const broadGust=Math.sin(state.elapsed*.61)*.62+Math.sin(state.elapsed*.19+1.8)*.38;
+        const localGust=Math.sin(this.age*(.7+this.pulse)+this.phase);
+        this.currentVx=this.wind+broadGust*this.gustAmp+localGust*this.gustAmp*.28;
+        this.currentVy=this.vy*intensity*this.styleSpeed*(.96+Math.sin(state.elapsed*.34+this.phase)*.04);
         if (phase.type === 'car' || phase.type === 'car_snow') {
-          const carParticleSpeed = phase.type === 'car_snow' ? 105 : 155;
-          this.x += carParticleSpeed * (0.45 + this.z * 0.8) * dt;
+          const carParticleSpeed = phase.type === 'car_snow' ? 92 : 185;
+          this.currentVx+=carParticleSpeed*(.35+this.z*.95);
         }
+        this.x+=this.currentVx*dt;
+        this.y+=this.currentVy*dt;
 
-        // Respingos somente no primeiro plano e perto da linha de contato com a água/chão.
-        if (!this.isSnow && this.z > 0.58 && this.y > this._ground && this.lastSplashY !== this._ground) {
-          if (Math.random() < (0.012 + getEffectiveRainIntensity() * 0.020) * (0.55 + this.z)) {
-            this.splash = 0.11 + this.z * 0.14;
-            this.splashSize = 1.7 + this.z * 3.2;
+        if (!this.isSnow && this.layer>0 && this.y>this._ground && this.lastSplashY!==this._ground) {
+          if(Math.random()<(this.layer===2?.22:.055)*getEffectiveRainIntensity()){
+            this.splash=.10+this.z*.13;
+            this.splashSize=1.5+this.z*3.5;
             this.lastSplashY = this._ground;
           }
         }
@@ -1156,295 +1163,309 @@ const phases = [
 
       draw() {
         if (this.isSnow) {
-          const a = Math.min(0.42, this.alpha * (0.72 + this.z * 0.8));
+          const a=Math.min(.42,this.alpha*(.70+getEffectiveRainIntensity()*.34));
+          rainCtx.save();
+          if(this.blur) rainCtx.filter=`blur(${this.blur}px)`;
           rainCtx.fillStyle = `rgba(255,255,255,${a})`;
           rainCtx.beginPath();
           rainCtx.arc(this.x, this.y, this.width, 0, Math.PI * 2);
           rainCtx.fill();
+          rainCtx.restore();
           return;
         }
 
-        const depthAlpha = 0.42 + this.z * 0.62;
-        const a = Math.min(0.30, this.alpha * (0.56 + getEffectiveRainIntensity() * 0.48) * depthAlpha);
-        const dx = this.wind * (0.22 + this.z * 0.34);
-        const dy = this.len;
+        const a=Math.min(.32,this.alpha*(.72+getEffectiveRainIntensity()*.42));
+        if(this.isBead){
+          rainCtx.fillStyle=`rgba(190,222,245,${a*.72})`;
+          rainCtx.beginPath();
+          rainCtx.ellipse(this.x,this.y,Math.max(.25,this.width*.62),Math.max(.7,this.len*.26),0,0,Math.PI*2);
+          rainCtx.fill();
+          return;
+        }
 
-        rainCtx.strokeStyle = `rgba(${178 + Math.round(this.z * 22)},${210 + Math.round(this.z * 28)},${242 + Math.round(this.z * 13)},${a})`;
-        rainCtx.lineWidth = this.width;
-        rainCtx.lineCap = 'round';
+        const travelTime=this.len/Math.max(1,this.currentVy);
+        const tailX=this.x-this.currentVx*travelTime;
+        const tailY=this.y-this.len;
+        const bend=Math.sin(this.age*1.7+this.phase)*(this.layer===2?3.2:this.layer===1?1.2:.35);
+        const red=182+Math.round(this.z*28);
+        const green=212+Math.round(this.z*27);
+        const blue=238+Math.round(this.z*17);
+        const gradient=rainCtx.createLinearGradient(tailX,tailY,this.x,this.y);
+        gradient.addColorStop(0,`rgba(${red},${green},${blue},0)`);
+        gradient.addColorStop(.42,`rgba(${red},${green},${blue},${a*.36})`);
+        gradient.addColorStop(1,`rgba(${red},${green},${blue},${a})`);
+
+        rainCtx.save();
+        if(this.blur) rainCtx.filter=`blur(${this.blur}px)`;
+        rainCtx.strokeStyle=gradient;
+        rainCtx.lineWidth=this.width;
+        rainCtx.lineCap="round";
         rainCtx.beginPath();
-        rainCtx.moveTo(this.x, this.y);
-        rainCtx.lineTo(this.x + dx, this.y + dy);
+        rainCtx.moveTo(tailX,tailY);
+        rainCtx.quadraticCurveTo((tailX+this.x)*.5+bend,(tailY+this.y)*.5,this.x,this.y);
         rainCtx.stroke();
+        rainCtx.restore();
 
+        if(this.splash>0){
+          const life=Math.max(0,this.splash/.30);
+          rainCtx.strokeStyle=`rgba(185,220,244,${a*life*.7})`;
+          rainCtx.lineWidth=Math.max(.35,this.width*.5);
+          rainCtx.beginPath();
+          rainCtx.ellipse(this.x,this._ground,this.splashSize*(1.4-life*.35),this.splashSize*.30,0,0,Math.PI*2);
+          rainCtx.stroke();
+        }
       }
     }
 
     const rainParticles = Array.from({ length: lowPowerDevice ? 120 : 180 }, () => new Particle());
     // ============================================================
-    // GOTAS NO VIDRO — V6
-    // Referência visual: gotículas reais em vidro, sem aparência
-    // de bolha 3D. A maioria fica presa; poucas escorrem.
+    // GOTAS NO VIDRO — V7 FÍSICA SUAVE
+    // Pequenas gotas são recolhidas pelo toque. Gotas maiores recebem impulso,
+    // fundem-se e escorrem, abrindo trilhas discretas na condensação.
     // ============================================================
 
     class GlassDrop {
-  constructor() {
-    this.reset(true);
-  }
+      constructor() { this.reset(true); }
 
-  reset(initial = false) {
-    this.x = Math.random() * W;
-    this.y = Math.random() * H;
+      reset(initial=false) {
+        this.x=Math.random()*W;
+        this.y=Math.random()*H;
+        const roll=Math.random();
+        if(roll<.70) this.r=1.8+Math.random()*2.2;
+        else if(roll<.95) this.r=3.8+Math.random()*3.0;
+        else this.r=7+Math.random()*5;
 
-    // Gotas mais redondas: pequenas variações de escala,
-    // sem deformação de "slime".
-    const r = Math.random();
-    if (r < 0.70) this.r = 1.8 + Math.random() * 2.2;
-    else if (r < 0.95) this.r = 3.8 + Math.random() * 3.0;
-    else this.r = 7.0 + Math.random() * 5.0;
+        this.scaleX=.92+Math.random()*.12;
+        this.scaleY=.94+Math.random()*.14;
+        this.rotation=(Math.random()-.5)*.32;
+        this.alpha=.34+Math.random()*.30;
+        this.edge=.58+Math.random()*.62;
+        this.highlight=.06+Math.random()*.09;
+        this.vx=0;
+        this.vy=0;
+        this.dripping=this.r>5 && Math.random()<.075;
+        if(this.dripping){
+          this.vx=(Math.random()-.5)*2.4;
+          this.vy=7+Math.random()*13;
+        }
+        this.alive=true;
+        this.hitCount=0;
+        this.respawnAt=0;
+        this.spawnProgress=initial?1:0;
+        this.lastInteractAt=-9999;
+        this.trailAccumulator=0;
+        this.trailX=this.x;
+        this.trailY=this.y;
+      }
 
-    this.scaleX = 0.92 + Math.random() * 0.12;
-    this.scaleY = 0.94 + Math.random() * 0.14;
-    this.rotation = Math.random() * Math.PI * 2;
+      scheduleRespawn(delay=3000) {
+        this.alive=false;
+        this.dripping=false;
+        this.vx=0;
+        this.vy=0;
+        this.respawnAt=performance.now()+delay;
+      }
 
-    this.alpha = 0.34 + Math.random() * 0.30;
-    this.edge = 0.58 + Math.random() * 0.62;
-    this.highlight = 0.06 + Math.random() * 0.09;
+      update(dt) {
+        if(!this.alive) return;
+        this.spawnProgress=Math.min(1,this.spawnProgress+dt*3.35);
+        if(!this.dripping && Math.abs(this.vx)<.2 && Math.abs(this.vy)<.2) return;
 
-    this.vy = 0;
-    this.vx = 0;
+        this.vy=Math.min(185,this.vy+(24+this.r*2.2)*dt);
+        this.x+=this.vx*dt;
+        this.y+=this.vy*dt;
+        this.vx*=Math.exp(-dt*.72);
+        if(this.r>4.8 || this.vy>15) this.dripping=true;
 
-    // Poucas gotas escorrem.
-    this.dripping = this.r > 4 && Math.random() < 0.11;
-    if (this.dripping) {
-      this.vy = 0.10 + Math.random() * 0.22;
-      this.vx = (Math.random() - 0.5) * 0.018;
+        if(this.y>H+35 || this.x<-35 || this.x>W+35) this.scheduleRespawn(3000);
+      }
+
+      draw(ctx) {
+        if(!this.alive || this.spawnProgress<=0) return;
+        const stretch=this.dripping?Math.min(.46,Math.max(0,this.vy-8)/240):0;
+        ctx.save();
+        ctx.globalAlpha=this.spawnProgress;
+        ctx.translate(this.x,this.y);
+        ctx.rotate(this.rotation*(1-stretch));
+        ctx.scale(this.scaleX*(1-stretch*.20),this.scaleY*(1+stretch));
+
+        const r=this.r;
+        const points=r<2.5?20:24;
+        ctx.beginPath();
+        for(let i=0;i<=points;i++){
+          const angle=Math.PI*2*(i/points);
+          const tiny=1+Math.sin(angle*3+this.x*.01)*.012+Math.cos(angle*5+this.y*.01)*.008;
+          const px=Math.cos(angle)*r*tiny;
+          const py=Math.sin(angle)*r*tiny;
+          if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+        }
+        ctx.closePath();
+
+        const fill=ctx.createRadialGradient(-r*.22,-r*.25,0,0,0,r);
+        fill.addColorStop(0,`rgba(255,255,255,${this.highlight*.20})`);
+        fill.addColorStop(.55,`rgba(220,235,240,${this.alpha*.035})`);
+        fill.addColorStop(1,"rgba(255,255,255,0)");
+        ctx.fillStyle=fill;
+        ctx.fill();
+        ctx.strokeStyle=`rgba(22,32,40,${this.alpha*.48})`;
+        ctx.lineWidth=Math.max(.32,this.edge*.72);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(-r*.22,-r*.20,Math.max(.25,r*.55),Math.PI*1.06,Math.PI*1.58);
+        ctx.strokeStyle=`rgba(255,255,255,${this.highlight*.62})`;
+        ctx.lineWidth=Math.max(.22,this.edge*.48);
+        ctx.stroke();
+
+        if(this.dripping && r>4){
+          ctx.beginPath();
+          ctx.moveTo(0,-r*.62);
+          ctx.lineTo(-this.vx*.025,-r*(1.45+stretch*3.2));
+          ctx.strokeStyle=`rgba(220,235,240,${this.alpha*.10})`;
+          ctx.lineWidth=Math.max(.32,r*.07);
+          ctx.lineCap="round";
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
     }
 
-    this.alive = true;
-    this.hitCount = 0;
-    this.respawnAt = 0;
-  }
+    class GlassDrops {
+      constructor(canvas) {
+        this.canvas=canvas;
+        const cfg=GLASS_DROP_PHASES[state.currentPhase]||GLASS_DROP_PHASES[0];
+        this.count=cfg.count;
+        this.drops=[];
+        this.mergeAccumulator=0;
+        this.resize();
+        this.create();
+      }
 
-  update(dt) {
-    if (!this.dripping) return;
+      resize() {
+        this.W=window.innerWidth;
+        this.H=window.innerHeight;
+      }
 
-    this.y += this.vy * dt * 60;
-    this.x += this.vx * dt * 60;
-    this.vy = Math.min(1.15, this.vy + 0.0008 * dt * 60);
+      configureDrop(drop,initial=true) {
+        const cfg=GLASS_DROP_PHASES[state.currentPhase]||GLASS_DROP_PHASES[0];
+        drop.reset(initial);
+        const roll=Math.random();
+        drop.r=roll<.70
+          ? cfg.min+Math.random()*(cfg.max-cfg.min)*.55
+          : cfg.min+Math.random()*(cfg.max-cfg.min);
+        drop.x=Math.random()*this.W;
+        drop.y=Math.random()*this.H;
+        drop.vx=0;
+        drop.vy=0;
+        drop.dripping=drop.r>5 && Math.random()<.075;
+        if(drop.dripping) drop.vy=7+Math.random()*13;
+        drop.trailX=drop.x;
+        drop.trailY=drop.y;
+        return drop;
+      }
 
-    if (this.y > H + 30) {
-      this.reset();
-      this.y = -10;
-    }
-  }
+      create() {
+        this.drops=[];
+        for(let i=0;i<this.count;i++) this.drops.push(this.configureDrop(new GlassDrop(),true));
+      }
 
-  draw(ctx) {
-    if (!this.alive) return;
+      resetForPhase() {
+        const cfg=GLASS_DROP_PHASES[state.currentPhase]||GLASS_DROP_PHASES[0];
+        this.count=cfg.count;
+        this.create();
+      }
 
-    ctx.save();
-    ctx.translate(this.x, this.y);
-    ctx.rotate(this.rotation);
-    ctx.scale(this.scaleX, this.scaleY);
+      update(dt) {
+        for(const drop of this.drops){
+          if(!drop.alive) continue;
+          const oldX=drop.x;
+          const oldY=drop.y;
+          drop.update(dt);
+          if(!drop.alive || !drop.dripping || drop.r<4) continue;
+          const moved=Math.hypot(drop.x-oldX,drop.y-oldY);
+          drop.trailAccumulator+=moved;
+          if(drop.trailAccumulator>=2.5){
+            clearFogTrailByDrop(drop.trailX,drop.trailY,drop.x,drop.y,drop.r);
+            drop.trailAccumulator=0;
+            drop.trailX=drop.x;
+            drop.trailY=drop.y;
+          }
+        }
 
-    const r = this.r;
-    const points = r < 2.5 ? 20 : 24;
+        // A fusão roda oito vezes por segundo para manter o custo baixo.
+        this.mergeAccumulator+=dt;
+        if(this.mergeAccumulator<.125) return;
+        this.mergeAccumulator=0;
 
-    // Forma circular/oval quase perfeita.
-    ctx.beginPath();
-    for (let i = 0; i <= points; i++) {
-      const a = Math.PI * 2 * (i / points);
-      const tiny =
-        1 +
-        Math.sin(a * 3 + this.x * 0.01) * 0.012 +
-        Math.cos(a * 5 + this.y * 0.01) * 0.008;
+        for(let i=0;i<this.drops.length;i++){
+          const a=this.drops[i];
+          if(!a.alive || a.r<2.8) continue;
+          for(let j=i+1;j<this.drops.length;j++){
+            const b=this.drops[j];
+            if(!b.alive || b.r<1.9) continue;
+            const dx=b.x-a.x;
+            const dy=b.y-a.y;
+            const limit=Math.max(2.4,(a.r+b.r)*.68);
+            if(dx*dx+dy*dy>=limit*limit) continue;
 
-      const px = Math.cos(a) * r * tiny;
-      const py = Math.sin(a) * r * tiny;
+            const areaA=a.r*a.r;
+            const areaB=b.r*b.r;
+            const area=areaA+areaB;
+            a.x=(a.x*areaA+b.x*areaB)/area;
+            a.y=(a.y*areaA+b.y*areaB)/area;
+            a.vx=(a.vx*areaA+b.vx*areaB)/area;
+            a.vy=Math.max(8,(a.vy*areaA+b.vy*areaB)/area);
+            a.r=Math.min(13,Math.sqrt(area));
+            a.dripping=a.dripping||b.dripping||a.r>=5.2;
+            a.spawnProgress=Math.max(a.spawnProgress,b.spawnProgress);
+            a.trailX=a.x;
+            a.trailY=a.y;
+            b.scheduleRespawn(3000);
+          }
+        }
+      }
 
-      if (i === 0) ctx.moveTo(px, py);
-      else ctx.lineTo(px, py);
-    }
-    ctx.closePath();
+      draw(ctx) {
+        for(const drop of this.drops) drop.draw(ctx);
+      }
 
-    // Interior extremamente sutil.
-    const fill = ctx.createRadialGradient(
-      -r * 0.22, -r * 0.25, 0,
-      0, 0, r
-    );
-    fill.addColorStop(0, `rgba(255,255,255,${this.highlight * 0.20})`);
-    fill.addColorStop(0.55, `rgba(220,235,240,${this.alpha * 0.035})`);
-    fill.addColorStop(1, "rgba(255,255,255,0)");
+      interact(x,y,radius,motionX=0,motionY=0) {
+        const now=performance.now();
+        const motion=Math.hypot(motionX,motionY);
+        for(const drop of this.drops){
+          if(!drop.alive || now-drop.lastInteractAt<80) continue;
+          const dx=drop.x-x;
+          const dy=drop.y-y;
+          const hit=radius+Math.max(1,drop.r*.72);
+          if(dx*dx+dy*dy>=hit*hit) continue;
 
-    ctx.fillStyle = fill;
-    ctx.fill();
-
-    // Contorno definido, sem aspecto de bolha.
-    ctx.strokeStyle = `rgba(22,32,40,${this.alpha * 0.48})`;
-    ctx.lineWidth = Math.max(0.32, this.edge * 0.72);
-    ctx.stroke();
-
-    // Pequeno reflexo lateral, não um ponto branco central.
-    ctx.beginPath();
-    ctx.arc(
-      -r * 0.22,
-      -r * 0.20,
-      Math.max(0.25, r * 0.55),
-      Math.PI * 1.06,
-      Math.PI * 1.58
-    );
-    ctx.strokeStyle = `rgba(255,255,255,${this.highlight * 0.62})`;
-    ctx.lineWidth = Math.max(0.22, this.edge * 0.48);
-    ctx.stroke();
-
-    // Pequena trilha somente nas gotas que realmente escorrem.
-    if (this.dripping && r > 4) {
-      ctx.beginPath();
-      ctx.moveTo(0, r * 0.65);
-      ctx.lineTo(0, r * 0.65 + Math.min(16, r * 1.4));
-      ctx.strokeStyle = `rgba(220,235,240,${this.alpha * 0.045})`;
-      ctx.lineWidth = Math.max(0.2, r * 0.045);
-      ctx.stroke();
-    }
-
-    ctx.restore();
-  }
-}
-
-class GlassDrops {
-  constructor(canvas) {
-    this.canvas = canvas;
-
-    // A quantidade passa a representar a intensidade da chuva da fase.
-    const cfg = GLASS_DROP_PHASES[state.currentPhase] || GLASS_DROP_PHASES[0];
-    this.count = cfg.count;
-    this.phaseDropMin = cfg.min;
-    this.phaseDropMax = cfg.max;
-
-    this.drops = [];
-    this.mergeAccumulator = 0;
-    this.resize();
-    this.create();
-  }
-
-  resize() {
-    this.W = window.innerWidth;
-    this.H = window.innerHeight;
-
-    for (const d of this.drops) {
-      d.W = this.W;
-      d.H = this.H;
-    }
-  }
-
-  create() {
-    this.drops = [];
-
-    // Todas as gotas já nascem distribuídas pelo vidro.
-    for (let i = 0; i < this.count; i++) {
-      const d = new GlassDrop();
-      d.x = Math.random() * this.W;
-      d.y = Math.random() * this.H;
-      const cfg = GLASS_DROP_PHASES[state.currentPhase] || GLASS_DROP_PHASES[0];
-      const sizeRoll = Math.random();
-      if (sizeRoll < 0.70) d.r = cfg.min + Math.random() * (cfg.max - cfg.min) * 0.55;
-      else d.r = cfg.min + Math.random() * (cfg.max - cfg.min);
-      d.alive = true;
-      this.drops.push(d);
-    }
-  }
-
-  resetForPhase() {
-    // Nova distribuição instantânea ao começar cada fase.
-    const cfg = GLASS_DROP_PHASES[state.currentPhase] || GLASS_DROP_PHASES[0];
-    this.count = cfg.count;
-    this.drops.length = 0;
-
-    for (let i = 0; i < this.count; i++) {
-      const d = new GlassDrop();
-      const sizeRoll = Math.random();
-      if (sizeRoll < 0.70) d.r = cfg.min + Math.random() * (cfg.max - cfg.min) * 0.55;
-      else d.r = cfg.min + Math.random() * (cfg.max - cfg.min);
-      d.x = Math.random() * this.W;
-      d.y = Math.random() * this.H;
-      d.alive = true;
-      this.drops.push(d);
-    }
-  }
-
-  update(dt) {
-    for (const d of this.drops) d.update(dt);
-
-    // A fusão é cara; 8 vezes por segundo é visualmente suficiente e poupa bateria.
-    this.mergeAccumulator += dt;
-    if (this.mergeAccumulator < 0.125) return;
-    this.mergeAccumulator = 0;
-
-    // Fusão apenas entre gotas médias/grandes.
-    for (let i = 0; i < this.drops.length; i++) {
-      const a = this.drops[i];
-      if (!a.alive || a.r < 3.0) continue;
-
-      for (let j = i + 1; j < this.drops.length; j++) {
-        const b = this.drops[j];
-        if (!b.alive || b.r < 2.0) continue;
-
-        const dx = b.x - a.x;
-        const dy = b.y - a.y;
-        const limit = Math.max(2.5, (a.r + b.r) * 0.70);
-
-        if (dx * dx + dy * dy < limit * limit) {
-          const area = a.r * a.r + b.r * b.r;
-          a.r = Math.min(12, Math.sqrt(area));
-          a.dripping = a.dripping || b.dripping ||
-            (a.r > 5 && Math.random() < 0.10);
-
-          if (a.dripping && a.vy === 0) {
-            a.vy = 0.10 + Math.random() * 0.22;
+          drop.lastInteractAt=now;
+          drop.hitCount++;
+          // As gotas pequenas são recolhidas; as maiores acompanham o gesto.
+          if(drop.r<2.75 || (drop.r<4.8 && drop.hitCount>=3)){
+            drop.scheduleRespawn(3000);
+            continue;
           }
 
-          b.alive = false;
-          b.respawnAt = performance.now() + 3000;
+          const fallbackLength=Math.hypot(dx,dy)||1;
+          const nx=motion>.5?motionX/motion:dx/fallbackLength;
+          const ny=motion>.5?motionY/motion:dy/fallbackLength;
+          const impulse=Math.min(235,58+motion*6.5);
+          drop.vx=Math.max(-210,Math.min(210,drop.vx+nx*impulse));
+          drop.vy=Math.max(-90,Math.min(185,drop.vy+ny*impulse+20+drop.r*1.8));
+          drop.dripping=true;
+          drop.trailX=drop.x;
+          drop.trailY=drop.y;
+        }
+      }
+
+      replenish() {
+        const now=performance.now();
+        for(const drop of this.drops){
+          if(!drop.alive && now>=drop.respawnAt) this.configureDrop(drop,false);
         }
       }
     }
-  }
-
-  draw(ctx) {
-    for (const d of this.drops) d.draw(ctx);
-  }
-
-  wipe(x, y, radius) {
-    for (const d of this.drops) {
-      if (!d.alive) continue;
-
-      const dx = d.x - x;
-      const dy = d.y - y;
-      const hit = radius + Math.max(1, d.r * 0.72);
-
-      if (dx * dx + dy * dy < hit * hit) {
-        d.hitCount++;
-
-        if (d.r < 2.5 || d.hitCount >= 2 || Math.random() > 0.16) {
-          d.alive = false;
-          d.respawnAt = performance.now() + 3000;
-        }
-      }
-    }
-  }
-
-  replenish() {
-    const now = performance.now();
-    for (const d of this.drops) {
-      if (!d.alive && now >= d.respawnAt) {
-        d.reset(false);
-        d.x = Math.random() * this.W;
-        d.y = Math.random() * this.H;
-        d.alive = true;
-      }
-    }
-  }
-}
 
 const glassDropsSystem = new GlassDrops(glassCanvas);
     let GRID_X = 18;
@@ -1452,18 +1473,71 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     let fogGrid = [];
     let fogClearedCells = 0;
     let fogPlayableCells = 1;
-    // Guarda a aparência original da condensação para o Zen restaurá-la sem
-    // acumular uma camada branca opaca sobre a paisagem.
-    const fogBaseCanvas = document.createElement("canvas");
-    const fogBaseCtx = fogBaseCanvas.getContext("2d");
+    // A textura visual e a máscara de cobertura vivem separadas. Assim o Zen
+    // recupera apenas a máscara, sem repintar o mesmo canvas ou criar halos.
+    const fogTextureCanvas = document.createElement("canvas");
+    const fogTextureCtx = fogTextureCanvas.getContext("2d");
+    const fogMaskCanvas = document.createElement("canvas");
+    const fogMaskCtx = fogMaskCanvas.getContext("2d");
+    let fogVisualDirty = true;
     const brushStampCache = new Map();
 
-    function captureFogBase() {
-      fogBaseCanvas.width = fogCanvas.width;
-      fogBaseCanvas.height = fogCanvas.height;
-      fogBaseCtx.setTransform(1,0,0,1,0,0);
-      fogBaseCtx.clearRect(0,0,fogBaseCanvas.width,fogBaseCanvas.height);
-      fogBaseCtx.drawImage(fogCanvas,0,0);
+    function captureFogTexture() {
+      fogTextureCanvas.width = fogCanvas.width;
+      fogTextureCanvas.height = fogCanvas.height;
+      fogTextureCtx.setTransform(1,0,0,1,0,0);
+      fogTextureCtx.clearRect(0,0,fogTextureCanvas.width,fogTextureCanvas.height);
+      fogTextureCtx.drawImage(fogCanvas,0,0);
+
+      fogMaskCanvas.width = fogCanvas.width;
+      fogMaskCanvas.height = fogCanvas.height;
+      fogMaskCtx.setTransform(DPR,0,0,DPR,0,0);
+      fogMaskCtx.globalCompositeOperation="source-over";
+      fogMaskCtx.fillStyle="#fff";
+      fogMaskCtx.fillRect(0,0,W,H);
+      fogVisualDirty=true;
+    }
+
+    function renderFog(force=false) {
+      if(!force && !fogVisualDirty) return;
+      if(!fogTextureCanvas.width || !fogMaskCanvas.width) return;
+      fogCtx.save();
+      fogCtx.setTransform(1,0,0,1,0,0);
+      fogCtx.globalCompositeOperation="source-over";
+      fogCtx.globalAlpha=1;
+      fogCtx.clearRect(0,0,fogCanvas.width,fogCanvas.height);
+      fogCtx.drawImage(fogTextureCanvas,0,0);
+      fogCtx.globalCompositeOperation="destination-in";
+      fogCtx.drawImage(fogMaskCanvas,0,0);
+      fogCtx.restore();
+      fogVisualDirty=false;
+    }
+
+    function refillFogMask(alpha) {
+      fogMaskCtx.save();
+      fogMaskCtx.globalCompositeOperation="source-over";
+      const amount=Math.max(0,Math.min(1,alpha));
+      // Retorno-base muito suave em toda a área.
+      fogMaskCtx.fillStyle=`rgba(255,255,255,${amount*.58})`;
+      fogMaskCtx.fillRect(0,0,W,H);
+
+      // Uma massa larga de condensação deriva lentamente pela janela. O raio
+      // grande impede círculos visíveis e quebra o retorno uniforme.
+      const driftX=W*(.50+Math.sin(state.elapsed*.115)*.24);
+      const driftY=H*(.48+Math.cos(state.elapsed*.087)*.20);
+      const driftRadius=Math.max(W,H)*.88;
+      const drift=fogMaskCtx.createRadialGradient(driftX,driftY,0,driftX,driftY,driftRadius);
+      drift.addColorStop(0,`rgba(255,255,255,${amount*.78})`);
+      drift.addColorStop(1,"rgba(255,255,255,0)");
+      fogMaskCtx.fillStyle=drift;
+      fogMaskCtx.fillRect(0,0,W,H);
+
+      // Vidro condensa um pouco antes nas bordas frias.
+      fogMaskCtx.strokeStyle=`rgba(255,255,255,${amount*.42})`;
+      fogMaskCtx.lineWidth=Math.max(28,Math.min(W,H)*.09);
+      fogMaskCtx.strokeRect(0,0,W,H);
+      fogMaskCtx.restore();
+      fogVisualDirty=true;
     }
 
     function createFogGrid() {
@@ -1499,8 +1573,8 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       fogCtx.restore();
 
       const phase = phases[state.currentPhase] || phases[0];
-      const fogOpacity = Math.max(.20, Math.min(.62, phase.fog ?? .40));
-      fogCtx.fillStyle = `rgba(224,234,238,${fogOpacity})`;
+      const fogOpacity = Math.max(.18, Math.min(.48, (phase.fog ?? .40)*.86));
+      fogCtx.fillStyle = `rgba(190,205,213,${fogOpacity})`;
       fogCtx.fillRect(0, 0, W, H);
 
       // Textura larga e discreta: quebra a uniformidade sem formar círculos visíveis.
@@ -1516,17 +1590,19 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         fogCtx.fill();
       }
       fogCtx.globalAlpha=1;
-      captureFogBase();
+      captureFogTexture();
+      renderFog(true);
       state.fogProgress = 0; updateProgress(true);
     }
 
-    function clearFogStamp(x, y, brush, radius) {
+    function clearFogStamp(x, y, brush, radius, motionX=0, motionY=0) {
       const stamp=getBrushStamp(brush,radius);
-      fogCtx.save();
-      fogCtx.globalCompositeOperation = "destination-out";
-      fogCtx.drawImage(stamp.canvas,x-stamp.cssSize/2,y-stamp.cssSize/2,stamp.cssSize,stamp.cssSize);
-      fogCtx.restore();
-      glassDropsSystem.wipe(x, y, radius * .82);
+      fogMaskCtx.save();
+      fogMaskCtx.globalCompositeOperation = "destination-out";
+      fogMaskCtx.drawImage(stamp.canvas,x-stamp.cssSize/2,y-stamp.cssSize/2,stamp.cssSize,stamp.cssSize);
+      fogMaskCtx.restore();
+      fogVisualDirty=true;
+      glassDropsSystem.interact(x, y, radius * .82, motionX, motionY);
       markFogGrid(x, y, radius * .72);
     }
 
@@ -1556,6 +1632,24 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       return stamp;
     }
 
+    function clearFogTrailByDrop(fromX,fromY,toX,toY,dropRadius) {
+      if(!state.started || state.paused || !fogMaskCanvas.width) return;
+      const trailWidth=Math.max(2.2,Math.min(11,dropRadius*.78));
+      fogMaskCtx.save();
+      fogMaskCtx.globalCompositeOperation="destination-out";
+      fogMaskCtx.globalAlpha=.70;
+      fogMaskCtx.strokeStyle="#000";
+      fogMaskCtx.lineWidth=trailWidth;
+      fogMaskCtx.lineCap="round";
+      fogMaskCtx.beginPath();
+      fogMaskCtx.moveTo(fromX,fromY);
+      fogMaskCtx.lineTo(toX,toY);
+      fogMaskCtx.stroke();
+      fogMaskCtx.restore();
+      fogVisualDirty=true;
+      if(dropRadius>=6.5 && markFogGrid(toX,toY,Math.min(11,dropRadius*.72))) updateProgress();
+    }
+
     function clearFogLine(fromX, fromY, toX, toY, brush) {
       if (!state.hasInteracted) {
         state.hasInteracted = true;
@@ -1572,9 +1666,12 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
           fromX + (toX - fromX) * amount,
           fromY + (toY - fromY) * amount,
           brush,
-          radius
+          radius,
+          toX-fromX,
+          toY-fromY
         );
       }
+      renderFog();
       const now = performance.now();
       state.cleanStreak = now - state.lastWipe < 350 ? state.cleanStreak + 1 : 1;
       state.lastWipe = now;
@@ -1582,6 +1679,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     }
 
     function markFogGrid(x, y, radius) {
+      let marked=0;
       const gx = Math.floor((x / W) * GRID_X); const gy = Math.floor((y / H) * GRID_Y);
       const rx = Math.ceil((radius / W) * GRID_X) + 1; const ry = Math.ceil((radius / H) * GRID_Y) + 1;
       for (let yy = gy - ry; yy <= gy + ry; yy++) {
@@ -1592,9 +1690,11 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
           if (fogGrid[index] === 0 && Math.hypot(px - x, py - y) <= radius) {
             fogGrid[index] = 1;
             fogClearedCells++;
+            marked++;
           }
         }
       }
+      return marked;
     }
 
     function updateProgress() {
@@ -1948,25 +2048,31 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
           snowDrive:.90, finalRain:.82
         })[phase.rainStyle || "steady"] || 1;
         const climateDensity = climate ? climate.density : 1;
+        // Rajadas largas evitam uma cortina perfeitamente uniforme.
+        const gustDensity=.86+.14*(.5+.5*Math.sin(state.elapsed*.72+Math.sin(state.elapsed*.17)));
         const activeRainCount = Math.max(8, Math.min(rainParticles.length,
-          Math.round((8 + zenIntensity * (rainParticles.length - 8)) * styleDensity * climateDensity)
+          Math.round((8 + zenIntensity * (rainParticles.length - 8)) * styleDensity * climateDensity * gustDensity)
         ));
-        for(let i=0;i<activeRainCount;i++){
-          const p = rainParticles[i];
-          const baseVy = p.vy;
-          const baseLen = p.len;
-          const baseWidth = p.width;
-          if(climate){
-            p.vy = baseVy * climate.speed;
-            p.len = baseLen * climate.length;
-            p.width = baseWidth * climate.width;
-          }
-          p.update(dt);
-          p.draw();
-          if(climate){
-            p.vy = baseVy;
-            p.len = baseLen;
-            p.width = baseWidth;
+        // Desenha de trás para frente para a profundidade continuar legível.
+        for(let depthLayer=0;depthLayer<3;depthLayer++){
+          for(let i=0;i<activeRainCount;i++){
+            const p = rainParticles[i];
+            if(p.layer!==depthLayer) continue;
+            const baseVy = p.vy;
+            const baseLen = p.len;
+            const baseWidth = p.width;
+            if(climate){
+              p.vy = baseVy * climate.speed;
+              p.len = baseLen * climate.length;
+              p.width = baseWidth * climate.width;
+            }
+            p.update(dt);
+            p.draw();
+            if(climate){
+              p.vy = baseVy;
+              p.len = baseLen;
+              p.width = baseWidth;
+            }
           }
         }
         for(let i=activeRainCount;i<rainParticles.length;i++){ if(rainParticles[i].y > H + 80) rainParticles[i].reset(); }
@@ -1980,13 +2086,9 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
           // Quando desativada, o botão compacto "mist" reaparece para controle manual.
           if(state.zenAutoFog){
             // Fórmula baseada no tempo para manter a mesma velocidade em 30 ou 60 FPS.
-            const fogReturnAlpha=1-Math.exp(-dt*(.12+state.rainIntensity*.08));
-            const cellReturnChance=1-Math.exp(-dt*(.18+state.rainIntensity*.12));
-            fogCtx.save();
-            fogCtx.globalCompositeOperation="destination-over";
-            fogCtx.globalAlpha=fogReturnAlpha;
-            fogCtx.drawImage(fogBaseCanvas,0,0,fogBaseCanvas.width,fogBaseCanvas.height,0,0,W,H);
-            fogCtx.restore();
+            const fogReturnAlpha=1-Math.exp(-dt*(.16+state.rainIntensity*.08));
+            const cellReturnChance=1-Math.exp(-dt*(.16+state.rainIntensity*.08));
+            refillFogMask(fogReturnAlpha);
             for(let i=0;i<fogGrid.length;i++){
               if(fogGrid[i]===1 && Math.random()<cellReturnChance){
                 fogGrid[i]=0;
@@ -1996,6 +2098,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
           }
           updateProgress();
         }
+        renderFog();
       }
       queueNextFrame();
     }
