@@ -791,7 +791,7 @@ const phases = [
 
     function saveGame() {
       const payload = {
-        version: 7,
+        version: 8,
         points: state.points, stars: state.stars, highestPhase: state.highestPhase,
         currentPhase: state.resumePhase ?? state.currentPhase,
         brush1: state.brush1, brush2: state.brush2, unlockedBrushes,
@@ -1511,25 +1511,10 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       fogMaskCtx.save();
       fogMaskCtx.globalCompositeOperation="source-over";
       const amount=Math.max(0,Math.min(1,alpha));
-      // Retorno-base muito suave em toda a área.
-      fogMaskCtx.fillStyle=`rgba(255,255,255,${amount*.58})`;
+      // Regeneração clássica do primeiro arquivo: a névoa retorna de maneira
+      // contínua e uniforme, sem círculos, massas móveis ou bordas adiantadas.
+      fogMaskCtx.fillStyle=`rgba(255,255,255,${amount})`;
       fogMaskCtx.fillRect(0,0,W,H);
-
-      // Uma massa larga de condensação deriva lentamente pela janela. O raio
-      // grande impede círculos visíveis e quebra o retorno uniforme.
-      const driftX=W*(.50+Math.sin(state.elapsed*.115)*.24);
-      const driftY=H*(.48+Math.cos(state.elapsed*.087)*.20);
-      const driftRadius=Math.max(W,H)*.88;
-      const drift=fogMaskCtx.createRadialGradient(driftX,driftY,0,driftX,driftY,driftRadius);
-      drift.addColorStop(0,`rgba(255,255,255,${amount*.78})`);
-      drift.addColorStop(1,"rgba(255,255,255,0)");
-      fogMaskCtx.fillStyle=drift;
-      fogMaskCtx.fillRect(0,0,W,H);
-
-      // Vidro condensa um pouco antes nas bordas frias.
-      fogMaskCtx.strokeStyle=`rgba(255,255,255,${amount*.42})`;
-      fogMaskCtx.lineWidth=Math.max(28,Math.min(W,H)*.09);
-      fogMaskCtx.strokeRect(0,0,W,H);
       fogMaskCtx.restore();
       fogVisualDirty=true;
     }
@@ -2059,14 +2044,15 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
           // A regeneração automática é o padrão do Zen, como no jogo original.
           // Quando desativada, o botão compacto "mist" reaparece para controle manual.
           if(state.zenAutoFog){
-            // Fórmula baseada no tempo para manter a mesma velocidade em 30 ou 60 FPS.
-            const fogReturnAlpha=1-Math.exp(-dt*(.16+state.rainIntensity*.08));
-            const cellReturnChance=1-Math.exp(-dt*(.16+state.rainIntensity*.08));
+            // Mesma intensidade, cadência e retorno uniforme da primeira versão.
+            const fogReturnAlpha=.006+state.rainIntensity*.004;
             refillFogMask(fogReturnAlpha);
-            for(let i=0;i<fogGrid.length;i++){
-              if(fogGrid[i]===1 && Math.random()<cellReturnChance){
-                fogGrid[i]=0;
-                fogClearedCells=Math.max(0,fogClearedCells-1);
+            if(Math.random()<.22){
+              for(let i=0;i<fogGrid.length;i++){
+                if(fogGrid[i]===1 && Math.random()<.018){
+                  fogGrid[i]=0;
+                  fogClearedCells=Math.max(0,fogClearedCells-1);
+                }
               }
             }
           }
