@@ -791,7 +791,7 @@ const phases = [
 
     function saveGame() {
       const payload = {
-        version: 6,
+        version: 7,
         points: state.points, stars: state.stars, highestPhase: state.highestPhase,
         currentPhase: state.resumePhase ?? state.currentPhase,
         brush1: state.brush1, brush2: state.brush2, unlockedBrushes,
@@ -1219,9 +1219,9 @@ const phases = [
 
     const rainParticles = Array.from({ length: lowPowerDevice ? 120 : 180 }, () => new Particle());
     // ============================================================
-    // GOTAS NO VIDRO — V7 FÍSICA SUAVE
-    // Pequenas gotas são recolhidas pelo toque. Gotas maiores recebem impulso,
-    // fundem-se e escorrem, abrindo trilhas discretas na condensação.
+    // GOTAS NO VIDRO — V8 DETALHE SUTIL
+    // O toque apenas remove. Poucas gotas escorrem naturalmente e só elas
+    // incorporam gotas abaixo, ficando maiores e um pouco mais rápidas.
     // ============================================================
 
     class GlassDrop {
@@ -1243,19 +1243,14 @@ const phases = [
         this.highlight=.06+Math.random()*.09;
         this.vx=0;
         this.vy=0;
-        this.dripping=this.r>5 && Math.random()<.075;
+        this.dripping=this.r>3.2 && Math.random()<.025;
         if(this.dripping){
           this.vx=(Math.random()-.5)*2.4;
           this.vy=7+Math.random()*13;
         }
         this.alive=true;
-        this.hitCount=0;
         this.respawnAt=0;
         this.spawnProgress=initial?1:0;
-        this.lastInteractAt=-9999;
-        this.trailAccumulator=0;
-        this.trailX=this.x;
-        this.trailY=this.y;
       }
 
       scheduleRespawn(delay=3000) {
@@ -1271,7 +1266,7 @@ const phases = [
         this.spawnProgress=Math.min(1,this.spawnProgress+dt*3.35);
         if(!this.dripping && Math.abs(this.vx)<.2 && Math.abs(this.vy)<.2) return;
 
-        this.vy=Math.min(185,this.vy+(24+this.r*2.2)*dt);
+        this.vy=Math.min(145,this.vy+(18+this.r*1.45)*dt);
         this.x+=this.vx*dt;
         this.y+=this.vy*dt;
         this.vx*=Math.exp(-dt*.72);
@@ -1346,6 +1341,26 @@ const phases = [
         this.H=window.innerHeight;
       }
 
+      findOpenPosition(radius,ignoreDrop=null) {
+        let best={x:radius+4+Math.random()*Math.max(1,this.W-radius*2-8),y:58+Math.random()*Math.max(1,this.H-128)};
+        let bestClearance=-Infinity;
+        for(let attempt=0;attempt<48;attempt++){
+          const candidate={
+            x:radius+4+Math.random()*Math.max(1,this.W-radius*2-8),
+            y:58+Math.random()*Math.max(1,this.H-128)
+          };
+          let minimum=Infinity;
+          for(const other of this.drops){
+            if(other===ignoreDrop || !other.alive) continue;
+            const required=(radius+other.r)*1.35+2;
+            minimum=Math.min(minimum,Math.hypot(candidate.x-other.x,candidate.y-other.y)-required);
+          }
+          if(minimum>=0) return candidate;
+          if(minimum>bestClearance){ bestClearance=minimum; best=candidate; }
+        }
+        return best;
+      }
+
       configureDrop(drop,initial=true) {
         const cfg=GLASS_DROP_PHASES[state.currentPhase]||GLASS_DROP_PHASES[0];
         drop.reset(initial);
@@ -1353,14 +1368,13 @@ const phases = [
         drop.r=roll<.70
           ? cfg.min+Math.random()*(cfg.max-cfg.min)*.55
           : cfg.min+Math.random()*(cfg.max-cfg.min);
-        drop.x=Math.random()*this.W;
-        drop.y=Math.random()*this.H;
+        const position=this.findOpenPosition(drop.r,drop);
+        drop.x=position.x;
+        drop.y=position.y;
         drop.vx=0;
         drop.vy=0;
-        drop.dripping=drop.r>5 && Math.random()<.075;
+        drop.dripping=drop.r>3.2 && Math.random()<.025;
         if(drop.dripping) drop.vy=7+Math.random()*13;
-        drop.trailX=drop.x;
-        drop.trailY=drop.y;
         return drop;
       }
 
@@ -1378,18 +1392,16 @@ const phases = [
       update(dt) {
         for(const drop of this.drops){
           if(!drop.alive) continue;
-          const oldX=drop.x;
-          const oldY=drop.y;
-          drop.update(dt);
-          if(!drop.alive || !drop.dripping || drop.r<4) continue;
-          const moved=Math.hypot(drop.x-oldX,drop.y-oldY);
-          drop.trailAccumulator+=moved;
-          if(drop.trailAccumulator>=2.5){
-            clearFogTrailByDrop(drop.trailX,drop.trailY,drop.x,drop.y,drop.r);
-            drop.trailAccumulator=0;
-            drop.trailX=drop.x;
-            drop.trailY=drop.y;
+          // De vez em quando uma gota média começa a descer sozinha.
+          if(!drop.dripping && drop.spawnProgress>=1 && drop.r>3.2){
+            const startChance=dt*(.0012+getEffectiveRainIntensity()*.0018);
+            if(Math.random()<startChance){
+              drop.dripping=true;
+              drop.vx=(Math.random()-.5)*2.2;
+              drop.vy=6+Math.random()*10;
+            }
           }
+          drop.update(dt);
         }
 
         // A fusão roda oito vezes por segundo para manter o custo baixo.
@@ -1399,28 +1411,29 @@ const phases = [
 
         for(let i=0;i<this.drops.length;i++){
           const a=this.drops[i];
-          if(!a.alive || a.r<2.8) continue;
-          for(let j=i+1;j<this.drops.length;j++){
+          if(!a.alive || !a.dripping) continue;
+          for(let j=0;j<this.drops.length;j++){
+            if(j===i) continue;
             const b=this.drops[j];
-            if(!b.alive || b.r<1.9) continue;
+            if(!b.alive) continue;
             const dx=b.x-a.x;
             const dy=b.y-a.y;
-            const limit=Math.max(2.4,(a.r+b.r)*.68);
-            if(dx*dx+dy*dy>=limit*limit) continue;
+            const limit=Math.max(2.4,(a.r+b.r)*.76);
+            // Só absorve uma gota realmente abaixo do caminho de queda.
+            if(dy<-.5 || dy>limit || Math.abs(dx)>limit*.72 || dx*dx+dy*dy>=limit*limit) continue;
 
             const areaA=a.r*a.r;
             const areaB=b.r*b.r;
             const area=areaA+areaB;
             a.x=(a.x*areaA+b.x*areaB)/area;
-            a.y=(a.y*areaA+b.y*areaB)/area;
+            a.y=Math.max(a.y,(a.y*areaA+b.y*areaB)/area);
             a.vx=(a.vx*areaA+b.vx*areaB)/area;
-            a.vy=Math.max(8,(a.vy*areaA+b.vy*areaB)/area);
             a.r=Math.min(13,Math.sqrt(area));
-            a.dripping=a.dripping||b.dripping||a.r>=5.2;
+            a.vy=Math.min(145,Math.max(a.vy,b.vy,8)+4+a.r*1.45);
+            a.dripping=true;
             a.spawnProgress=Math.max(a.spawnProgress,b.spawnProgress);
-            a.trailX=a.x;
-            a.trailY=a.y;
             b.scheduleRespawn(3000);
+            break;
           }
         }
       }
@@ -1429,33 +1442,14 @@ const phases = [
         for(const drop of this.drops) drop.draw(ctx);
       }
 
-      interact(x,y,radius,motionX=0,motionY=0) {
-        const now=performance.now();
-        const motion=Math.hypot(motionX,motionY);
+      wipe(x,y,radius) {
         for(const drop of this.drops){
-          if(!drop.alive || now-drop.lastInteractAt<80) continue;
+          if(!drop.alive) continue;
           const dx=drop.x-x;
           const dy=drop.y-y;
           const hit=radius+Math.max(1,drop.r*.72);
           if(dx*dx+dy*dy>=hit*hit) continue;
-
-          drop.lastInteractAt=now;
-          drop.hitCount++;
-          // As gotas pequenas são recolhidas; as maiores acompanham o gesto.
-          if(drop.r<2.75 || (drop.r<4.8 && drop.hitCount>=3)){
-            drop.scheduleRespawn(3000);
-            continue;
-          }
-
-          const fallbackLength=Math.hypot(dx,dy)||1;
-          const nx=motion>.5?motionX/motion:dx/fallbackLength;
-          const ny=motion>.5?motionY/motion:dy/fallbackLength;
-          const impulse=Math.min(235,58+motion*6.5);
-          drop.vx=Math.max(-210,Math.min(210,drop.vx+nx*impulse));
-          drop.vy=Math.max(-90,Math.min(185,drop.vy+ny*impulse+20+drop.r*1.8));
-          drop.dripping=true;
-          drop.trailX=drop.x;
-          drop.trailY=drop.y;
+          drop.scheduleRespawn(3000);
         }
       }
 
@@ -1595,14 +1589,14 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       state.fogProgress = 0; updateProgress(true);
     }
 
-    function clearFogStamp(x, y, brush, radius, motionX=0, motionY=0) {
+    function clearFogStamp(x, y, brush, radius) {
       const stamp=getBrushStamp(brush,radius);
       fogMaskCtx.save();
       fogMaskCtx.globalCompositeOperation = "destination-out";
       fogMaskCtx.drawImage(stamp.canvas,x-stamp.cssSize/2,y-stamp.cssSize/2,stamp.cssSize,stamp.cssSize);
       fogMaskCtx.restore();
       fogVisualDirty=true;
-      glassDropsSystem.interact(x, y, radius * .82, motionX, motionY);
+      glassDropsSystem.wipe(x, y, radius * .82);
       markFogGrid(x, y, radius * .72);
     }
 
@@ -1632,24 +1626,6 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       return stamp;
     }
 
-    function clearFogTrailByDrop(fromX,fromY,toX,toY,dropRadius) {
-      if(!state.started || state.paused || !fogMaskCanvas.width) return;
-      const trailWidth=Math.max(2.2,Math.min(11,dropRadius*.78));
-      fogMaskCtx.save();
-      fogMaskCtx.globalCompositeOperation="destination-out";
-      fogMaskCtx.globalAlpha=.70;
-      fogMaskCtx.strokeStyle="#000";
-      fogMaskCtx.lineWidth=trailWidth;
-      fogMaskCtx.lineCap="round";
-      fogMaskCtx.beginPath();
-      fogMaskCtx.moveTo(fromX,fromY);
-      fogMaskCtx.lineTo(toX,toY);
-      fogMaskCtx.stroke();
-      fogMaskCtx.restore();
-      fogVisualDirty=true;
-      if(dropRadius>=6.5 && markFogGrid(toX,toY,Math.min(11,dropRadius*.72))) updateProgress();
-    }
-
     function clearFogLine(fromX, fromY, toX, toY, brush) {
       if (!state.hasInteracted) {
         state.hasInteracted = true;
@@ -1666,9 +1642,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
           fromX + (toX - fromX) * amount,
           fromY + (toY - fromY) * amount,
           brush,
-          radius,
-          toX-fromX,
-          toY-fromY
+          radius
         );
       }
       renderFog();
