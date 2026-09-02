@@ -1,9 +1,12 @@
- <!DOCTYPE html>
+  <!DOCTYPE html>
     <html lang="en">
     <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#030712">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
     <title>Rainy Skyline — Atmospheric Experience</title>
 
@@ -12,8 +15,9 @@
       --primary: #38bdf8;
       --primary-glow: rgba(56, 189, 248, 0.4);
       --bg-dark: #030712;
-      --panel-bg: rgba(15, 23, 42, 0.78);
+      --panel-bg: rgba(10, 18, 34, 0.92);
       --panel-border: rgba(255, 255, 255, 0.12);
+      color-scheme: dark;
     }
 
     * {
@@ -22,6 +26,8 @@
       user-select: none;
       -webkit-user-select: none;
     }
+
+    button:focus-visible, [role="button"]:focus-visible { outline: 2px solid #7dd3fc; outline-offset: 3px; }
 
     html, body {
       margin: 0;
@@ -32,6 +38,8 @@
       color: #f8fafc;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       touch-action: none;
+      overscroll-behavior: none;
+      -webkit-overflow-scrolling: auto;
     }
 
     #adScreen {
@@ -126,32 +134,37 @@
     }
 
     #instruction {
-      text-align: center; color: rgba(255, 255, 255, 0.72);
-      font-size: 11px; letter-spacing: 4px; text-transform: uppercase;
+      width: fit-content; max-width: calc(100vw - 40px); margin: 0 auto 12px;
+      padding: 9px 14px; border-radius: 18px; border: 1px solid rgba(255,255,255,.11);
+      background: rgba(3, 10, 22, .58); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      text-align: center; color: rgba(255, 255, 255, 0.9);
+      font-size: 12px; letter-spacing: 2.2px; line-height: 1.35; text-transform: uppercase;
       animation: pulse 2s infinite ease-in-out; text-shadow: 0 2px 8px rgba(0,0,0,0.8);
       transition: opacity 0.5s ease, visibility 0.5s ease;
     }
     #instruction.hidden-text { opacity: 0; visibility: hidden; }
 
-    .progress-wrap { width: min(380px, 70vw); margin: 0 auto 18px; text-align: center; opacity: .8; }
-    .progress-label { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 7px; color: rgba(255,255,255,.6); }
-    .progress-bar { width: 100%; height: 4px; border-radius: 10px; background: rgba(255,255,255,.1); overflow: hidden; }
+    .progress-wrap { width: min(360px, 78vw); margin: 0 auto 12px; padding: 9px 12px 11px; text-align: center; opacity: .94; border-radius: 15px; background: rgba(3,10,22,.42); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+    .progress-label { font-size: 10px; letter-spacing: 1.8px; text-transform: uppercase; margin-bottom: 8px; color: rgba(255,255,255,.78); }
+    .progress-bar { width: 100%; height: 6px; border-radius: 10px; background: rgba(255,255,255,.16); overflow: hidden; }
     #progressFill { height: 100%; width: 0%; border-radius: inherit; background: linear-gradient(90deg, #38bdf8, #7dd3fc, #ffffff); box-shadow: 0 0 12px rgba(56,189,248,.7); transition: width .2s ease; }
 
     @keyframes pulse { 0%, 100% { opacity: .4; } 50% { opacity: .9; } }
 
     .screen {
       position: absolute; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center;
-      padding: 20px; background: rgba(3,7,18,.7); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-      transition: opacity .4s ease, visibility .4s ease;
+      padding: calc(20px + env(safe-area-inset-top)) calc(20px + env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) calc(20px + env(safe-area-inset-left));
+      background: rgba(3,7,18,.86); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      transition: opacity .22s ease, visibility .22s ease;
     }
     .screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
 
     .menu-card {
-      width: min(450px, 100%); max-height: calc(100vh - 40px); overflow-y: auto;
+      width: min(450px, 100%); max-height: calc(100vh - 40px); max-height: calc(100dvh - 40px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow-y: auto;
       background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 28px;
       padding: 32px 24px; box-shadow: 0 20px 50px rgba(0,0,0,.6), inset 0 1px rgba(255,255,255,.04);
       backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); text-align: center;
+      touch-action: pan-y; overscroll-behavior: contain;
     }
     .menu-card::-webkit-scrollbar { width: 0; }
 
@@ -174,7 +187,7 @@
     .btn-primary { background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border-color: rgba(56,189,248,.4); box-shadow: 0 8px 20px var(--primary-glow); }
     .btn-zen { background: linear-gradient(135deg, #10b981 0%, #047857 100%); border-color: rgba(16, 185, 129, 0.4); box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3); }
 
-    .phase-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; max-height: 330px; overflow-y: auto; }
+    .phase-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; max-height: 330px; overflow-y: auto; touch-action:pan-y; overscroll-behavior:contain; }
     .phase-item { border: 1px solid var(--panel-border); border-radius: 16px; padding: 14px; background: rgba(255,255,255,.035); text-align: left; cursor: pointer; transition: .2s ease; }
     .phase-item:hover { background: rgba(255,255,255,.08); }
     .phase-item.active { border-color: var(--primary); background: rgba(56,189,248,.1); box-shadow: 0 0 20px rgba(56,189,248,.08); }
@@ -184,15 +197,19 @@
     .phase-mini-feeling { font-size: 10px; color: var(--primary); margin-top: 5px; }
 
     .coin-big { font-size: 13px; color: var(--primary); margin: 10px 0 20px; }
-    .store-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; max-height: 350px; overflow-y: auto; }
+    .store-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; max-height: 350px; overflow-y: auto; touch-action:pan-y; overscroll-behavior:contain; }
     .store-item { border: 1px solid var(--panel-border); border-radius: 16px; padding: 13px; background: rgba(255,255,255,.03); cursor: pointer; text-align: left; transition: all .2s ease; }
-    .store-preview { height: 48px; border-radius: 12px; margin-bottom: 10px; background: radial-gradient(circle at 25% 25%, rgba(255,255,255,.9) 0 3px, transparent 4px), linear-gradient(120deg, rgba(255,255,255,.12), rgba(56,189,248,.08)); position: relative; overflow: hidden; }
+    .store-item.active { border-color: rgba(56,189,248,.72); background: rgba(56,189,248,.10); box-shadow: 0 0 20px rgba(56,189,248,.08); }
+    .store-preview { height: 52px; border-radius: 12px; margin-bottom: 10px; background: linear-gradient(120deg, rgba(255,255,255,.11), rgba(56,189,248,.05)); position: relative; overflow: hidden; }
+    .store-preview::before { content:""; position:absolute; left:13%; top:50%; width:64%; height:var(--preview-width, 18px); transform:translateY(-50%) rotate(-8deg); border-radius:999px; background:linear-gradient(90deg, rgba(255,255,255,.18), rgba(186,230,253,.84), rgba(255,255,255,.12)); filter:blur(var(--preview-blur, 2px)); box-shadow:0 0 14px rgba(125,211,252,.26); }
+    .store-preview::after { content:""; position:absolute; right:12%; top:50%; width:var(--preview-dot, 20px); height:var(--preview-dot, 20px); transform:translateY(-50%); border-radius:50%; border:1px solid rgba(255,255,255,.65); background:rgba(186,230,253,.22); box-shadow:0 0 12px rgba(125,211,252,.28); }
     .store-item-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
     .store-item-desc { font-size: 10px; line-height: 1.4; color: rgba(255,255,255,.45); }
     .store-item-cost { font-size: 11px; color: var(--primary); margin-top: 8px; }
 
     .finger-slots { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
-    .finger-slot { border: 1px solid var(--panel-border); background: rgba(255,255,255,.035); border-radius: 16px; padding: 14px; }
+    .finger-slot { border: 1px solid var(--panel-border); background: rgba(255,255,255,.035); color:#fff; border-radius: 16px; padding: 14px; font:inherit; cursor:pointer; }
+    .finger-slot.selected { border-color: var(--primary); background: rgba(56,189,248,.12); box-shadow: 0 0 18px rgba(56,189,248,.10); }
     .slot-label { color: rgba(255,255,255,.4); font-size: 9px; letter-spacing: 2px; text-transform: uppercase; }
     .slot-name { font-size: 12px; margin-top: 5px; }
     .combine-info { padding: 12px; border-radius: 14px; background: rgba(56,189,248,.06); border: 1px solid rgba(56,189,248,.12); color: rgba(255,255,255,.65); font-size: 11px; margin-bottom: 15px; }
@@ -201,7 +218,7 @@
     .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,.06); text-align: left; }
     .toggle-text strong { display: block; font-size: 13px; }
     .toggle-text span { display: block; margin-top: 3px; font-size: 10px; color: rgba(255,255,255,.4); }
-    .toggle { width: 48px; height: 27px; border-radius: 30px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.1); position: relative; cursor: pointer; flex-shrink: 0; }
+    .toggle { appearance:none; -webkit-appearance:none; padding:0; width: 48px; height: 27px; border-radius: 30px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.1); position: relative; cursor: pointer; flex-shrink: 0; }
     .toggle::after { content: ""; position: absolute; top: 3px; left: 3px; width: 19px; height: 19px; border-radius: 50%; background: white; transition: .2s ease; }
     .toggle.on { background: rgba(56,189,248,.45); border-color: rgba(56,189,248,.7); }
     .toggle.on::after { transform: translateX(21px); box-shadow: 0 0 10px rgba(56,189,248,.8); }
@@ -212,6 +229,23 @@
     .reward-title { font-family: Georgia, serif; font-size: 30px; font-weight: 400; margin: 0; }
     .reward-coins { font-size: 28px; color: var(--primary); margin: 15px 0; font-weight: 700; text-shadow: 0 0 20px rgba(56,189,248,.45); }
     .reward-description { color: rgba(255,255,255,.55); font-size: 12px; line-height: 1.5; margin-bottom: 24px; }
+    .reward-breakdown { margin: 16px 0 20px; padding: 12px 14px; border-radius: 16px; background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.08); }
+    .reward-line { display:flex; justify-content:space-between; gap:18px; padding:5px 0; font-size:12px; color:rgba(255,255,255,.66); }
+    .reward-line.total { margin-top:5px; padding-top:10px; border-top:1px solid rgba(255,255,255,.08); color:#fff; font-weight:700; }
+    .loading-mark { width:34px; height:34px; margin:0 auto 16px; border-radius:50%; border:2px solid rgba(255,255,255,.12); border-top-color:var(--primary); animation:spin .8s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
+    }
+
+    @media (max-height: 700px) {
+      .menu-card { padding:24px 20px; border-radius:22px; }
+      .menu-title { font-size:32px; }
+      .menu-subtitle { margin-bottom:22px; }
+      .btn-stack { gap:9px; }
+      .btn { min-height:46px; }
+    }
 
 
     /* V2 atmospheric polish */
@@ -219,7 +253,7 @@
     #cleanSpark{position:absolute;inset:0;z-index:10;pointer-events:none;}
     #zenScoreBadge{position:absolute;left:50%;top:calc(20px + env(safe-area-inset-top));transform:translateX(-50%);z-index:21;padding:7px 14px;border-radius:20px;background:rgba(15,23,42,.48);border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(12px);font-size:10px;letter-spacing:2px;opacity:0;transition:.4s ease;}
     #zenScoreBadge.show{opacity:1;}
-    #toast{position:absolute;left:50%;bottom:18%;transform:translate(-50%,10px);z-index:40;padding:10px 15px;border-radius:18px;background:rgba(4,10,20,.72);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(14px);font-size:11px;letter-spacing:1px;opacity:0;pointer-events:none;transition:.25s ease;white-space:nowrap;}
+    #toast{position:absolute;left:50%;bottom:18%;transform:translate(-50%,10px);z-index:240;padding:10px 15px;border-radius:18px;background:rgba(4,10,20,.88);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(14px);font-size:12px;letter-spacing:.5px;opacity:0;pointer-events:none;transition:.25s ease;white-space:nowrap;}
     #toast.show{opacity:1;transform:translate(-50%,0);}
     </style>
     </head>
@@ -227,8 +261,8 @@
 
     <div id="adScreen" class="screen hidden">
       <div style="text-align: center;">
-        <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px;" data-i18n="ad_loading">Ad Loading...</div>
-        <div style="font-size: 12px; color: #888;">(AdMob Placeholder)</div>
+        <div class="loading-mark"></div>
+        <div style="font-size: 15px; font-weight: 600;" data-i18n="ad_loading">Preparing a short break…</div>
       </div>
     </div>
 
@@ -248,12 +282,12 @@
       <div id="hud" class="hidden">
         <div class="hud-header">
           <div class="hud-left">
-            <button id="pauseBtn" class="hud-btn">Ⅱ</button>
+            <button id="pauseBtn" class="hud-btn" type="button" data-i18n-aria="pause_title" aria-label="Pause">Ⅱ</button>
             <div class="phase-badge"><span data-i18n="phase_hud">PHASE</span> <span id="phaseDisplay">1</span>/20</div>
           </div>
           <div class="hud-right">
             <div class="currency-badge" id="currencyHud"><span>🌧️</span><span id="pointsDisplay">0</span></div>
-            <button id="zenMistBtn" class="hud-btn" style="display:none;width:auto;min-width:0;height:34px;padding:0 14px;border-radius:20px;font-size:18px;font-weight:600;letter-spacing:1px;text-transform:lowercase;display:flex;flex-direction:row;gap:5px;align-items:center;justify-content:center;background:rgba(18,27,45,.88);border:1px solid rgba(255,255,255,.12);box-shadow:0 10px 28px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.05);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#63b8ee;">💨 <span style="font-size:20px;font-weight:600;letter-spacing:1px;">mist</span></button>
+            <button id="zenMistBtn" class="hud-btn" type="button" style="display:none;width:auto;min-width:0;height:38px;padding:0 14px;border-radius:20px;font-size:16px;font-weight:600;letter-spacing:.5px;text-transform:none;flex-direction:row;gap:6px;align-items:center;justify-content:center;background:rgba(18,27,45,.88);border:1px solid rgba(255,255,255,.12);box-shadow:0 10px 28px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.05);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#63b8ee;">💨 <span data-i18n="mist_action">MIST</span></button>
           </div>
         </div>
         <div>
@@ -264,6 +298,14 @@
           </div>
         </div>
       </div>
+
+      <section id="loadingScreen" class="screen hidden" aria-live="polite">
+        <div style="text-align:center;">
+          <div class="loading-mark"></div>
+          <div style="font-family:Georgia,serif;font-size:22px;margin-bottom:7px;">Rainy Skyline</div>
+          <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,.58);text-transform:uppercase;" data-i18n="loading_phase">Preparing the weather…</div>
+        </div>
+      </section>
 
       <!-- MENU PRINCIPAL -->
       <section id="mainMenu" class="screen hidden">
@@ -279,7 +321,7 @@
             <button id="continueBtn" class="btn btn-primary" data-i18n="btn_continue">CONTINUE PHASE</button>
             <button id="zenBtn" class="btn btn-zen" data-i18n="btn_zen">ZEN MODE (INFINITE)</button>
             <button id="phasesBtn" class="btn" data-i18n="btn_phases">PHASES & MEMORIES</button>
-            <button id="storeBtn" class="btn" data-i18n="btn_store">FINGER STORE</button>
+            <button id="storeBtn" class="btn" data-i18n="btn_store">WIPE STYLES</button>
             <button id="settingsBtn" class="btn" data-i18n="btn_settings">SETTINGS</button>
           </div>
         </div>
@@ -298,12 +340,12 @@
       <!-- LOJA -->
       <section id="storeScreen" class="screen hidden">
         <div class="menu-card">
-          <h2 style="margin:0;font-size:24px;" data-i18n="store_title">Finger Store</h2>
-          <p style="color:rgba(255,255,255,.5);font-size:12px;margin-top:4px;" data-i18n="store_desc">Build your own way to wipe.</p>
+          <h2 style="margin:0;font-size:24px;" data-i18n="store_title">Wipe Styles</h2>
+          <p style="color:rgba(255,255,255,.5);font-size:12px;margin-top:4px;" data-i18n="store_desc">Choose how each touch clears the glass.</p>
           <div class="coin-big">🌧️ <span id="storeCoins">0</span> <span data-i18n="store_coins">coins</span></div>
           <div class="finger-slots">
-            <div class="finger-slot"><div class="slot-label" data-i18n="store_finger1">Finger 1</div><div class="slot-name" id="slot1Name">Soft</div></div>
-            <div class="finger-slot"><div class="slot-label" data-i18n="store_finger2">Finger 2</div><div class="slot-name" id="slot2Name">Soft</div></div>
+            <button type="button" id="fingerSlot1" class="finger-slot selected"><div class="slot-label" data-i18n="store_finger1">Touch 1</div><div class="slot-name" id="slot1Name">Soft</div></button>
+            <button type="button" id="fingerSlot2" class="finger-slot"><div class="slot-label" data-i18n="store_finger2">Touch 2</div><div class="slot-name" id="slot2Name">Soft</div></button>
           </div>
           <div class="combine-info" data-i18n="store_info">You can use two fingers at once. Combine them to create your perfect wiping style!</div>
           <div id="storeGrid" class="store-grid"></div>
@@ -327,7 +369,7 @@
               <input id="rainSlider" type="range" min="10" max="100" step="10" value="70">
             </div>
             
-            <div class="setting-row" style="margin-top:22px;"><span data-i18n="set_vol">Ambience Volume</span><span id="ambVal">50%</span></div>
+            <div class="setting-row" style="margin-top:22px;"><span data-i18n="set_vol">Ambient Volume</span><span id="ambVal">50%</span></div>
             <input id="ambSlider" type="range" min="0" max="100" value="50">
 
             <div class="setting-row" style="margin-top:22px;"><span data-i18n="set_rain_sound">Rain Sound</span><span id="rainSoundVal">100%</span></div>
@@ -335,8 +377,20 @@
 
             <div style="margin-top:25px;">
               <div class="toggle-row">
+                <div class="toggle-text"><strong data-i18n="set_snd1">SFX</strong><span data-i18n="set_snd1_desc">Noise and drops</span></div>
+                <button type="button" id="gameSoundToggle" class="toggle on" role="switch" aria-checked="true"></button>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-text"><strong data-i18n="set_snd2">Music / Atmosphere</strong><span data-i18n="set_snd2_desc">Background layers</span></div>
+                <button type="button" id="musicSoundToggle" class="toggle on" role="switch" aria-checked="true"></button>
+              </div>
+              <div class="toggle-row">
                 <div class="toggle-text"><strong data-i18n="set_snd3">Vibration</strong><span data-i18n="set_snd3_desc">Haptic feedback on thunder</span></div>
-                <div id="vibrationToggle" class="toggle on"></div>
+                <button type="button" id="vibrationToggle" class="toggle on" role="switch" aria-checked="true"></button>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-text"><strong data-i18n="set_flashes">Lightning flashes</strong><span data-i18n="set_flashes_desc">Visual flashes during storms</span></div>
+                <button type="button" id="flashesToggle" class="toggle on" role="switch" aria-checked="true"></button>
               </div>
             </div>
           </div>
@@ -355,7 +409,7 @@
                 <strong id="zenFogSettingTitle">Regenerar névoa automaticamente</strong>
                 <span id="zenFogSettingDesc">A névoa retorna lentamente no Modo Zen.</span>
               </div>
-              <div id="zenFogToggle" class="toggle on"></div>
+              <button type="button" id="zenFogToggle" class="toggle on" role="switch" aria-checked="true"></button>
             </div>
           </div>
           <div class="btn-stack">
@@ -372,7 +426,12 @@
           <div class="reward-icon">✦</div>
           <h2 class="reward-title" data-i18n="reward_title">Phase Complete</h2>
           <div id="rewardPhaseName" class="phase-feeling">The First Rain</div>
-          <div class="reward-coins">+100 🌧️</div>
+          <div id="rewardCoins" class="reward-coins">+100 🌧️</div>
+          <div class="reward-breakdown">
+            <div class="reward-line"><span data-i18n="reward_base">Phase reward</span><span id="rewardBase">+100</span></div>
+            <div id="rewardBonusLine" class="reward-line"><span data-i18n="reward_first_bonus">New memory bonus</span><span id="rewardBonus">+50</span></div>
+            <div class="reward-line total"><span data-i18n="reward_total">Total</span><span id="rewardTotal">+150 🌧️</span></div>
+          </div>
           <p class="reward-description" data-i18n="reward_desc">You finished this memory. The next feeling awaits.</p>
           <div class="btn-stack">
             <button id="nextPhaseBtn" class="btn btn-primary" data-i18n="btn_next">NEXT PHASE</button>
@@ -416,35 +475,43 @@
       stars: 0,
       phaseStartedAt: 0,
       zenAutoFog: true,
-      zenMistCooldown: 0
+      zenMistCooldown: 0,
+      lightningEnabled: true,
+      selectedBrushSlot: 1,
+      completedPhases: [],
+      completedSinceAd: 0,
+      lastAdAt: 0,
+      resumePhase: null
     };
 
     const i18n = {
       en: {
         zen_auto_fog: "Auto-regenerate fog",
         zen_auto_fog_desc: "Fog slowly returns in Zen Mode.",
-        ad_loading: "Ad Loading...",
+        ad_loading: "Preparing a short break…",
+        loading_phase: "Preparing the weather…",
+        mist_action: "NEW MIST",
         phase_hud: "PHASE",
         wipe_instruction: "SWIPE TO WIPE THE FOG",
         defog_window: "Defog the window",
         btn_continue: "CONTINUE PHASE",
         btn_zen: "ZEN MODE (INFINITE)",
         btn_phases: "PHASES & MEMORIES",
-        btn_store: "FINGER STORE",
+        btn_store: "WIPE STYLES",
         btn_settings: "SETTINGS",
         phases_title: "Phases & Memories",
         phases_desc: "Every weather holds a feeling.",
         btn_back: "BACK",
-        store_title: "Finger Store",
-        store_desc: "Build your own way to wipe.",
+        store_title: "Wipe Styles",
+        store_desc: "Choose how each touch clears the glass.",
         store_coins: "coins",
-        store_finger1: "Finger 1",
-        store_finger2: "Finger 2",
-        store_info: "You can use two fingers at once. Combine them to create your perfect wiping style!",
+        store_finger1: "Touch 1",
+        store_finger2: "Touch 2",
+        store_info: "Select a touch slot, then choose its wiping style. Both can be used at the same time.",
         settings_title: "Settings",
         set_lang: "Language",
         set_rain: "Rain Intensity",
-        set_vol: "Ambience Volume",
+        set_vol: "Ambient Volume",
         set_rain_sound: "Rain Sound",
         set_snd1: "SFX",
         set_snd1_desc: "Noise and drops",
@@ -452,6 +519,8 @@
         set_snd2_desc: "Background layers",
         set_snd3: "Vibration",
         set_snd3_desc: "Haptic feedback on thunder",
+        set_flashes: "Lightning flashes",
+        set_flashes_desc: "Visual flashes during storms",
         btn_save: "SAVE & BACK",
         pause_title: "Paused",
         pause_desc: "The weather is waiting for you.",
@@ -459,6 +528,9 @@
         btn_mainmenu: "MAIN MENU",
         reward_title: "Phase Complete",
         reward_desc: "You finished this memory. The next feeling awaits.",
+        reward_base: "Phase reward",
+        reward_first_bonus: "New memory bonus",
+        reward_total: "Total",
         btn_next: "NEXT PHASE",
         zen_progress_label: "Infinite Peace",
         phase_locked: "🔒 Locked",
@@ -468,33 +540,40 @@
         zen_score: "ZEN · ",
         star: "STAR",
         perfect: "PERFECT WIPE",
-        audio_ready: "Tap to enable atmosphere"
+        audio_ready: "Tap to enable atmosphere",
+        owned: "OWNED",
+        equipped: "EQUIPPED",
+        buy: "BUY",
+        purchased: "Style unlocked",
+        not_enough: "Not enough raindrops"
       },
       es: {
         zen_auto_fog: "Regenerar niebla automáticamente",
         zen_auto_fog_desc: "La niebla vuelve lentamente en el Modo Zen.",
-        ad_loading: "Cargando anuncio...",
+        ad_loading: "Preparando una breve pausa…",
+        loading_phase: "Preparando el clima…",
+        mist_action: "NUEVA NIEBLA",
         phase_hud: "FASE",
         wipe_instruction: "DESLIZA PARA LIMPIAR LA NIEBLA",
         defog_window: "Desempaña la ventana",
         btn_continue: "CONTINUAR FASE",
         btn_zen: "MODO ZEN (INFINITO)",
         btn_phases: "FASES Y MEMORIAS",
-        btn_store: "TIENDA DE DEDOS",
+        btn_store: "ESTILOS DE LIMPIEZA",
         btn_settings: "AJUSTES",
         phases_title: "Fases y Memorias",
         phases_desc: "Cada clima guarda un sentimiento.",
         btn_back: "VOLVER",
-        store_title: "Tienda de Dedos",
-        store_desc: "Construye tu forma de limpiar.",
+        store_title: "Estilos de Limpieza",
+        store_desc: "Elige cómo cada toque limpia el cristal.",
         store_coins: "monedas",
-        store_finger1: "Dedo 1",
-        store_finger2: "Dedo 2",
-        store_info: "Puedes usar dos dedos al mismo tiempo. Combínalos para crear tu estilo perfecto.",
+        store_finger1: "Toque 1",
+        store_finger2: "Toque 2",
+        store_info: "Selecciona un toque y elige su estilo. Puedes usar ambos al mismo tiempo.",
         settings_title: "Ajustes",
         set_lang: "Idioma",
         set_rain: "Intensidad de la lluvia",
-        set_vol: "Volumen de ambiente",
+        set_vol: "Volumen del ambiente",
         set_rain_sound: "Sonido de la lluvia",
         set_snd1: "Efectos de sonido",
         set_snd1_desc: "Ruido y gotas",
@@ -502,6 +581,8 @@
         set_snd2_desc: "Capas de fondo",
         set_snd3: "Vibración",
         set_snd3_desc: "Respuesta háptica con truenos",
+        set_flashes: "Destellos de relámpago",
+        set_flashes_desc: "Destellos visuales durante tormentas",
         btn_save: "GUARDAR Y VOLVER",
         pause_title: "Pausa",
         pause_desc: "El clima te está esperando.",
@@ -509,6 +590,9 @@
         btn_mainmenu: "MENÚ PRINCIPAL",
         reward_title: "Fase completada",
         reward_desc: "Terminaste este recuerdo. El próximo clima te espera.",
+        reward_base: "Recompensa de fase",
+        reward_first_bonus: "Bono por nuevo recuerdo",
+        reward_total: "Total",
         btn_next: "SIGUIENTE FASE",
         zen_progress_label: "Paz infinita",
         phase_locked: "🔒 Bloqueada",
@@ -518,33 +602,40 @@
         zen_score: "ZEN · ",
         star: "ESTRELLA",
         perfect: "LIMPIEZA PERFECTA",
-        audio_ready: "Toca para activar la atmósfera"
+        audio_ready: "Toca para activar la atmósfera",
+        owned: "ADQUIRIDO",
+        equipped: "EQUIPADO",
+        buy: "COMPRAR",
+        purchased: "Estilo desbloqueado",
+        not_enough: "No tienes suficientes gotas"
       },
       pt: {
         zen_auto_fog: "Regenerar névoa automaticamente",
         zen_auto_fog_desc: "A névoa retorna lentamente no Modo Zen.",
-        ad_loading: "Carregando Anúncio...",
+        ad_loading: "Preparando uma breve pausa…",
+        loading_phase: "Preparando o clima…",
+        mist_action: "NOVA NÉVOA",
         phase_hud: "FASE",
         wipe_instruction: "PASSE O DEDO PARA LIMPAR",
         defog_window: "Desembace a janela",
         btn_continue: "CONTINUAR FASE",
         btn_zen: "MODO ZEN (INFINITO)",
         btn_phases: "FASES & MEMÓRIAS",
-        btn_store: "LOJA DE DEDOS",
+        btn_store: "ESTILOS DE LIMPEZA",
         btn_settings: "AJUSTES",
         phases_title: "Fases & Memórias",
         phases_desc: "Cada clima guarda um sentimento.",
         btn_back: "VOLTAR",
-        store_title: "Loja de Dedos",
-        store_desc: "Monte seu jeito de limpar.",
+        store_title: "Estilos de Limpeza",
+        store_desc: "Escolha como cada toque limpa o vidro.",
         store_coins: "moedas",
-        store_finger1: "Dedo 1",
-        store_finger2: "Dedo 2",
-        store_info: "Você pode usar dois dedos ao mesmo tempo. Combine-os para criar sua combinação perfeita!",
+        store_finger1: "Toque 1",
+        store_finger2: "Toque 2",
+        store_info: "Selecione um toque e escolha o estilo dele. Os dois podem ser usados ao mesmo tempo.",
         settings_title: "Ajustes",
         set_lang: "Idioma",
         set_rain: "Força da Chuva",
-        set_vol: "Volume da Ambiência",
+        set_vol: "Volume do Ambiente",
         set_rain_sound: "Som da chuva",
         set_snd1: "Efeitos Sonoros",
         set_snd1_desc: "Ruído e gotas",
@@ -552,6 +643,8 @@
         set_snd2_desc: "Camadas de fundo",
         set_snd3: "Vibração",
         set_snd3_desc: "Feedback em trovões",
+        set_flashes: "Clarões de relâmpago",
+        set_flashes_desc: "Clarões visuais durante tempestades",
         btn_save: "SALVAR E VOLTAR",
         pause_title: "Pausa",
         pause_desc: "O clima continua esperando por você.",
@@ -559,6 +652,9 @@
         btn_mainmenu: "MENU PRINCIPAL",
         reward_title: "Fase Concluída",
         reward_desc: "Você terminou esta memória. O próximo clima te espera.",
+        reward_base: "Recompensa da fase",
+        reward_first_bonus: "Bônus de nova memória",
+        reward_total: "Total",
         btn_next: "PRÓXIMA FASE",
         zen_progress_label: "Paz Infinita",
         phase_locked: "🔒 Bloqueada",
@@ -568,18 +664,58 @@
         zen_score: "ZEN · ",
         star: "ESTRELA",
         perfect: "LIMPEZA PERFEITA",
-        audio_ready: "Toque para ativar a atmosfera"
+        audio_ready: "Toque para ativar a atmosfera",
+        owned: "ADQUIRIDO",
+        equipped: "EQUIPADO",
+        buy: "COMPRAR",
+        purchased: "Estilo desbloqueado",
+        not_enough: "Gotas insuficientes"
       }
     };
 
     function t(key) {
-      return i18n[state.lang][key] || key;
+      return i18n[state.lang]?.[key] ?? i18n.en[key] ?? key;
+    }
+
+    function localize(value) {
+      if (value == null) return "";
+      if (typeof value === "string") return value;
+      return value[state.lang] ?? value.en ?? value.pt ?? value.es ?? "";
+    }
+
+    function validateLocalization() {
+      const baseKeys=Object.keys(i18n.en);
+      const uiKeys=[...document.querySelectorAll('[data-i18n]')].map(element=>element.getAttribute('data-i18n'));
+      const unknown=[...new Set(uiKeys.filter(key=>!(key in i18n.en)))];
+      if(unknown.length) console.warn("Chaves de interface sem tradução:",unknown);
+      for(const lang of ["pt","es"]){
+        const missing=baseKeys.filter(key => !(key in i18n[lang]));
+        if(missing.length) console.warn(`Traduções ausentes em ${lang}:`,missing);
+      }
+      phases.forEach((phase,index)=>{
+        for(const field of ["name","feeling","story"]){
+          for(const lang of ["en","pt","es"]){
+            if(!phase[field]?.[lang]) console.warn(`Fase ${index+1}: ${field}.${lang} ausente`);
+          }
+        }
+      });
+      Object.entries(brushes).forEach(([key,brush])=>{
+        for(const field of ["name","desc"]){
+          for(const lang of ["en","pt","es"]){
+            if(!brush[field]?.[lang]) console.warn(`Estilo ${key}: ${field}.${lang} ausente`);
+          }
+        }
+      });
     }
 
     function updateTranslations() {
       document.querySelectorAll('[data-i18n]').forEach(el => {
         el.textContent = t(el.getAttribute('data-i18n'));
       });
+      document.querySelectorAll('[data-i18n-aria]').forEach(el => {
+        el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria')));
+      });
+      document.documentElement.lang = state.lang === 'pt' ? 'pt-BR' : state.lang;
       document.getElementById('langToggleBtn').textContent = state.lang === 'en' ? 'English' : state.lang === 'es' ? 'Español' : 'Português';
       if(state.isZen) document.getElementById('progressLabelText').textContent = t('zen_progress_label');
       document.getElementById("zenFogSettingTitle").textContent = t("zen_auto_fog");
@@ -593,101 +729,113 @@
     // Configuração exclusiva das gotas do vidro por fase.
 // Mais chuva = mais gotas e, em algumas fases, gotas maiores.
 const GLASS_DROP_PHASES = [
-  { count: 70,  min: 1.8, max: 4.0 }, // 1
-  { count: 82,  min: 1.8, max: 4.5 }, // 2
-  { count: 95,  min: 1.8, max: 5.0 }, // 3
-  { count: 110, min: 1.8, max: 5.8 }, // 4
-  { count: 75,  min: 1.8, max: 4.2 }, // 5
-  { count: 125, min: 1.8, max: 6.2 }, // 6
-  { count: 65,  min: 1.8, max: 4.0 }, // 7
-  { count: 90,  min: 1.8, max: 5.0 }, // 8
-  { count: 115, min: 1.8, max: 5.8 }, // 9
-  { count: 130, min: 2.0, max: 6.5 }, // 10
-  { count: 72,  min: 1.8, max: 4.0 }, // 11
-  { count: 85,  min: 1.8, max: 4.5 }, // 12
-  { count: 105, min: 1.8, max: 5.4 }, // 13
-  { count: 120, min: 1.8, max: 6.0 }, // 14
-  { count: 68,  min: 1.8, max: 4.0 }, // 15
-  { count: 100, min: 1.8, max: 5.2 }, // 16
-  { count: 135, min: 2.0, max: 6.8 }, // 17
-  { count: 112, min: 1.8, max: 5.8 }, // 18
-  { count: 78,  min: 1.8, max: 4.3 }, // 19
-  { count: 145, min: 2.0, max: 7.0 }  // 20
+  { count: 55,  min: 1.6, max: 4.0 }, // 1 · chuva leve
+  { count: 72,  min: 1.7, max: 4.6 }, // 2
+  { count: 96,  min: 1.8, max: 5.4 }, // 3
+  { count: 108, min: 1.8, max: 5.8 }, // 4
+  { count: 48,  min: 1.6, max: 4.0 }, // 5 · ambiente íntimo
+  { count: 132, min: 2.0, max: 6.6 }, // 6 · tempestade
+  { count: 42,  min: 1.5, max: 3.8 }, // 7 · chuva diminuindo
+  { count: 70,  min: 1.7, max: 4.8 }, // 8
+  { count: 34,  min: 1.5, max: 3.5 }, // 9 · silêncio
+  { count: 28,  min: 1.5, max: 3.4 }, // 10 · céu abrindo
+  { count: 82,  min: 1.8, max: 5.0 }, // 11 · carro
+  { count: 30,  min: 1.4, max: 3.2 }, // 12 · neve
+  { count: 116, min: 1.9, max: 6.0 }, // 13 · rodovia
+  { count: 36,  min: 1.5, max: 3.6 }, // 14 · geada
+  { count: 62,  min: 1.7, max: 4.5 }, // 15 · verão
+  { count: 46,  min: 1.5, max: 4.0 }, // 16 · nevasca
+  { count: 64,  min: 1.7, max: 4.6 }, // 17 · túnel
+  { count: 54,  min: 1.6, max: 4.2 }, // 18 · gotas douradas
+  { count: 38,  min: 1.5, max: 3.8 }, // 19 · carro com neve
+  { count: 24,  min: 1.4, max: 3.2 }  // 20 · encerramento
 ];
 
 const phases = [
-      { name: {en:"First Rain", pt:"Primeira Chuva"}, feeling: {en:"Serenity", pt:"Serenidade"}, story: {en:"Quiet city rain.", pt:"Chuva quieta."}, hue: 215, sky: ["#030712", "#0f2740"], lights: ["#38bdf8", "#7dd3fc", "#fef3c7"], rain: 0.72, thunder: 0, type: "rain", rainStyle: "light" },
-      { name: {en:"Distant Lights", pt:"Luzes Distantes"}, feeling: {en:"Nostalgia", pt:"Nostalgia"}, story: {en:"Windows across the street.", pt:"Janelas do outro lado da rua."}, hue: 235, sky: ["#080817", "#202044"], lights: ["#fbbf24", "#f472b6", "#818cf8"], rain: 0.76, thunder: 1, type: "rain", rainStyle: "steady" },
-      { name: {en:"After Midnight", pt:"Depois da Meia-Noite"}, feeling: {en:"Loneliness", pt:"Solidão"}, story: {en:"The city sleeps.", pt:"A cidade dormiu."}, hue: 225, sky: ["#020617", "#111827"], lights: ["#22d3ee", "#60a5fa", "#a5b4fc"], rain: 0.84, thunder: 2, type: "rain", rainStyle: "heavy" },
-      { name: {en:"Neon Splash", pt:"Neon"}, feeling: {en:"Contemplation", pt:"Contemplação"}, story: {en:"Liquid reflections.", pt:"Reflexos líquidos."}, hue: 285, sky: ["#10051c", "#321344"], lights: ["#f43f5e", "#a855f7", "#06b6d4"], rain: 0.88, thunder: 3, type: "rain", rainStyle: "neon" },
-      { name: {en:"The Window", pt:"A Janela"}, feeling: {en:"Intimacy", pt:"Intimidade"}, story: {en:"Protected behind glass.", pt:"Protegido atrás do vidro."}, hue: 195, sky: ["#03151b", "#12323c"], lights: ["#67e8f9", "#fde68a", "#f0f9ff"], rain: 0.68, thunder: 4, type: "rain", rainStyle: "soft" },
-      { name: {en:"Storm", pt:"Tempestade"}, feeling: {en:"Tension", pt:"Tensão"}, story: {en:"Heavy winds and flashes.", pt:"Ventos fortes e flashes."}, hue: 210, sky: ["#02040a", "#16202d"], lights: ["#e0f2fe", "#93c5fd", "#f8fafc"], rain: 1, thunder: 5, type: "rain", rainStyle: "storm" },
-      { name: {en:"Horizon", pt:"Horizonte"}, feeling: {en:"Hope", pt:"Esperança"}, story: {en:"A tiny strip of light.", pt:"Uma pequena faixa de luz."}, hue: 205, sky: ["#07111c", "#24485d"], lights: ["#fde68a", "#fbbf24", "#bae6fd"], rain: 0.65, thunder: 6, type: "rain", rainStyle: "breeze" },
-      { name: {en:"Memories", pt:"Memórias"}, feeling: {en:"Longing", pt:"Saudade"}, story: {en:"Drops carrying past moments.", pt:"Gotas carregando o passado."}, hue: 260, sky: ["#090613", "#2b183b"], lights: ["#c4b5fd", "#f9a8d4", "#fef3c7"], rain: 0.78, thunder: 7, type: "rain", rainStyle: "memory" },
-      { name: {en:"Silence", pt:"Silêncio"}, feeling: {en:"Peace", pt:"Paz"}, story: {en:"No cars, just water.", pt:"Sem carros, só água."}, hue: 175, sky: ["#020d0d", "#123638"], lights: ["#5eead4", "#99f6e4", "#fef9c3"], rain: 0.55, thunder: 8, type: "rain", rainStyle: "drizzle" },
-      { name: {en:"Clearing Sky", pt:"O Céu Clareia"}, feeling: {en:"Rebirth", pt:"Renascimento"}, story: {en:"Storm is leaving.", pt:"A tempestade está indo embora."}, hue: 35, sky: ["#17100a", "#513b20"], lights: ["#fde68a", "#fb923c", "#fef3c7"], rain: 0.48, thunder: 9, type: "rain", rainStyle: "clearing" },
-      
-      // NOVAS 10 FASES (Carro, Neve, Sol)
-      { name: {en:"Moving Car", pt:"Carro em Movimento"}, feeling: {en:"Journey", pt:"Jornada"}, story: {en:"Watching lines blur past.", pt:"Vendo as luzes borradas passando."}, hue: 200, sky: ["#0a0a0a", "#1a1a1a"], lights: ["#ff0000", "#ffaa00"], rain: 0.8, thunder: 1, type: "car", rainStyle: "carRain" },
-      { name: {en:"Snowfall", pt:"Nevasca"}, feeling: {en:"Cold", pt:"Frio"}, story: {en:"Soft white silence.", pt:"Silêncio branco e suave."}, hue: 200, sky: ["#2d3748", "#4a5568"], lights: ["#e2e8f0", "#cbd5e0"], rain: 0.4, thunder: 0, type: "snow", rainStyle: "snowSoft" },
-      { name: {en:"Highway Rain", pt:"Chuva na Rodovia"}, feeling: {en:"Speed", pt:"Velocidade"}, story: {en:"Fast drops hitting the windshield.", pt:"Gotas rápidas batendo no para-brisa."}, hue: 220, sky: ["#050510", "#151530"], lights: ["#fff", "#ff0000", "#00ffff"], rain: 0.9, thunder: 2, type: "car", rainStyle: "highwayRain" },
-      { name: {en:"Morning Frost", pt:"Geada Matinal"}, feeling: {en:"Crisp", pt:"Cristalino"}, story: {en:"Ice melting on the glass.", pt:"Gelo derretendo no vidro."}, hue: 190, sky: ["#4a5568", "#a0aec0"], lights: ["#fff", "#e2e8f0"], rain: 0.3, thunder: 0, type: "snow", rainStyle: "snowLight" },
-      { name: {en:"Summer Sun Shower", pt:"Chuva de Verão"}, feeling: {en:"Warmth", pt:"Calor"}, story: {en:"Rain while the sun shines.", pt:"Chuva enquanto o sol brilha."}, hue: 50, sky: ["#ecc94b", "#f6e05e"], lights: ["#fff"], rain: 0.5, thunder: 0, type: "rain", rainStyle: "sunShower" },
-      { name: {en:"Midnight Blizzard", pt:"Nevasca à Meia-Noite"}, feeling: {en:"Isolation", pt:"Isolamento"}, story: {en:"Fierce wind and blinding snow.", pt:"Vento feroz e neve cegante."}, hue: 230, sky: ["#000", "#111"], lights: ["#718096", "#a0aec0"], rain: 0.8, thunder: 3, type: "snow", rainStyle: "blizzard" },
-      { name: {en:"City Tunnel", pt:"Túnel da Cidade"}, feeling: {en:"Echo", pt:"Eco"}, story: {en:"Orange lights rushing by.", pt:"Luzes laranjas passando rápido."}, hue: 30, sky: ["#1a1005", "#3a2010"], lights: ["#f6ad55", "#ed8936"], rain: 0.5, thunder: 0, type: "car", rainStyle: "tunnelRain" },
-      { name: {en:"Golden Hour Drops", pt:"Gotas Douradas"}, feeling: {en:"Beautiful", pt:"Beleza"}, story: {en:"Sunsets reflecting in the water.", pt:"Pôr do sol refletindo na água."}, hue: 20, sky: ["#c53030", "#ed8936"], lights: ["#fefcbf", "#fbd38d"], rain: 0.6, thunder: 1, type: "rain", rainStyle: "goldenRain" },
-      { name: {en:"Snowy Drive", pt:"Passeio na Neve"}, feeling: {en:"Cozy", pt:"Aconchego"}, story: {en:"Warm inside, frozen outside.", pt:"Quente por dentro, congelado por fora."}, hue: 210, sky: ["#1a202c", "#2d3748"], lights: ["#e2e8f0", "#ff0000"], rain: 0.6, thunder: 0, type: "car_snow", rainStyle: "snowDrive" },
-      { name: {en:"The Last Wipe", pt:"A Última Limpeza"}, feeling: {en:"Closure", pt:"Despedida"}, story: {en:"The glass is finally clear.", pt:"O vidro finalmente está limpo."}, hue: 200, sky: ["#2b6cb0", "#4299e1"], lights: ["#fff", "#bee3f8"], rain: 0.2, thunder: 0, type: "rain", rainStyle: "finalRain" }
+      { name:{en:"First Rain",pt:"Primeira Chuva",es:"Primera Lluvia"}, feeling:{en:"Serenity",pt:"Serenidade",es:"Serenidad"}, story:{en:"Quiet rain settles over the city.",pt:"Uma chuva tranquila cobre a cidade.",es:"Una lluvia tranquila cubre la ciudad."}, hue:215, sky:["#030712","#0f2740"], lights:["#38bdf8","#7dd3fc","#fef3c7"], rain:.42, thunder:0, type:"rain", rainStyle:"light", fog:.40, target:.76 },
+      { name:{en:"Distant Lights",pt:"Luzes Distantes",es:"Luces Distantes"}, feeling:{en:"Nostalgia",pt:"Nostalgia",es:"Nostalgia"}, story:{en:"Warm windows glow across the night.",pt:"Janelas quentes brilham do outro lado da noite.",es:"Ventanas cálidas brillan al otro lado de la noche."}, hue:235, sky:["#080817","#202044"], lights:["#fbbf24","#f472b6","#818cf8"], rain:.58, thunder:0, type:"rain", rainStyle:"steady", fog:.44, target:.78 },
+      { name:{en:"After Midnight",pt:"Depois da Meia-Noite",es:"Después de Medianoche"}, feeling:{en:"Solitude",pt:"Solidão",es:"Soledad"}, story:{en:"The city sleeps beneath heavier rain.",pt:"A cidade dorme sob uma chuva mais forte.",es:"La ciudad duerme bajo una lluvia más fuerte."}, hue:225, sky:["#020617","#111827"], lights:["#22d3ee","#60a5fa","#a5b4fc"], rain:.78, thunder:.12, type:"rain", rainStyle:"heavy", fog:.50, target:.78 },
+      { name:{en:"Neon Splash",pt:"Neon",es:"Neón"}, feeling:{en:"Contemplation",pt:"Contemplação",es:"Contemplación"}, story:{en:"Color drifts through the falling rain.",pt:"As cores atravessam a chuva que cai.",es:"Los colores atraviesan la lluvia que cae."}, hue:285, sky:["#10051c","#321344"], lights:["#f43f5e","#a855f7","#06b6d4"], rain:.88, thunder:.18, type:"rain", rainStyle:"neon", fog:.46, target:.80 },
+      { name:{en:"The Window",pt:"A Janela",es:"La Ventana"}, feeling:{en:"Intimacy",pt:"Intimidade",es:"Intimidad"}, story:{en:"A quiet shelter behind the glass.",pt:"Um abrigo tranquilo atrás do vidro.",es:"Un refugio tranquilo detrás del cristal."}, hue:195, sky:["#03151b","#12323c"], lights:["#67e8f9","#fde68a","#f0f9ff"], rain:.36, thunder:0, type:"rain", rainStyle:"soft", fog:.36, target:.75 },
+      { name:{en:"Storm",pt:"Tempestade",es:"Tormenta"}, feeling:{en:"Tension",pt:"Tensão",es:"Tensión"}, story:{en:"Wind, thunder and rain fill the sky.",pt:"Vento, trovões e chuva tomam o céu.",es:"Viento, truenos y lluvia llenan el cielo."}, hue:210, sky:["#02040a","#16202d"], lights:["#e0f2fe","#93c5fd","#f8fafc"], rain:1, thunder:1, type:"rain", rainStyle:"storm", fog:.55, target:.80 },
+      { name:{en:"Horizon",pt:"Horizonte",es:"Horizonte"}, feeling:{en:"Hope",pt:"Esperança",es:"Esperanza"}, story:{en:"A thin line of morning light appears.",pt:"Uma faixa de luz da manhã começa a surgir.",es:"Una franja de luz matinal comienza a aparecer."}, hue:205, sky:["#07111c","#24485d"], lights:["#fde68a","#fbbf24","#bae6fd"], rain:.30, thunder:0, type:"rain", rainStyle:"breeze", fog:.34, target:.74 },
+      { name:{en:"Memories",pt:"Memórias",es:"Recuerdos"}, feeling:{en:"Longing",pt:"Saudade",es:"Añoranza"}, story:{en:"Each drop carries something remembered.",pt:"Cada gota carrega uma lembrança.",es:"Cada gota lleva consigo un recuerdo."}, hue:260, sky:["#090613","#2b183b"], lights:["#c4b5fd","#f9a8d4","#fef3c7"], rain:.54, thunder:.05, type:"rain", rainStyle:"memory", fog:.43, target:.78 },
+      { name:{en:"Silence",pt:"Silêncio",es:"Silencio"}, feeling:{en:"Peace",pt:"Paz",es:"Paz"}, story:{en:"Almost no traffic, only soft water.",pt:"Quase nenhum trânsito, apenas chuva suave.",es:"Casi no hay tráfico, solo lluvia suave."}, hue:175, sky:["#020d0d","#123638"], lights:["#5eead4","#99f6e4","#fef9c3"], rain:.20, thunder:0, type:"rain", rainStyle:"drizzle", fog:.30, target:.73 },
+      { name:{en:"Clearing Sky",pt:"O Céu Clareia",es:"El Cielo se Abre"}, feeling:{en:"Renewal",pt:"Renovação",es:"Renovación"}, story:{en:"The last clouds slowly drift away.",pt:"As últimas nuvens se afastam devagar.",es:"Las últimas nubes se alejan lentamente."}, hue:35, sky:["#17100a","#513b20"], lights:["#fde68a","#fb923c","#fef3c7"], rain:.16, thunder:0, type:"rain", rainStyle:"clearing", fog:.28, target:.72 },
+      { name:{en:"Moving Car",pt:"Carro em Movimento",es:"Coche en Marcha"}, feeling:{en:"Journey",pt:"Jornada",es:"Viaje"}, story:{en:"The wet road glides past the side window.",pt:"A estrada molhada passa pela janela lateral.",es:"La carretera mojada pasa junto a la ventanilla."}, hue:200, sky:["#0a0a0a","#1a1a1a"], lights:["#ef4444","#f59e0b"], rain:.66, thunder:.06, type:"car", rainStyle:"carRain", fog:.42, target:.78 },
+      { name:{en:"Snowfall",pt:"Queda de Neve",es:"Nevada"}, feeling:{en:"Stillness",pt:"Quietude",es:"Quietud"}, story:{en:"Snow softens every sound outside.",pt:"A neve suaviza todos os sons lá fora.",es:"La nieve suaviza todos los sonidos afuera."}, hue:200, sky:["#2d3748","#4a5568"], lights:["#e2e8f0","#cbd5e0"], rain:.34, thunder:0, type:"snow", rainStyle:"snowSoft", fog:.38, target:.75 },
+      { name:{en:"Highway Rain",pt:"Chuva na Rodovia",es:"Lluvia en la Autopista"}, feeling:{en:"Speed",pt:"Velocidade",es:"Velocidad"}, story:{en:"Fast drops race across the side glass.",pt:"Gotas rápidas correm pelo vidro lateral.",es:"Gotas rápidas corren por la ventanilla."}, hue:220, sky:["#050510","#151530"], lights:["#ffffff","#ef4444","#22d3ee"], rain:.92, thunder:.30, type:"car", rainStyle:"highwayRain", fog:.51, target:.80 },
+      { name:{en:"Morning Frost",pt:"Geada Matinal",es:"Escarcha Matinal"}, feeling:{en:"Clarity",pt:"Claridade",es:"Claridad"}, story:{en:"The first warmth melts the frozen glass.",pt:"O primeiro calor derrete o vidro congelado.",es:"El primer calor derrite el cristal helado."}, hue:190, sky:["#4a5568","#a0aec0"], lights:["#ffffff","#e2e8f0"], rain:.24, thunder:0, type:"snow", rainStyle:"snowLight", fog:.47, target:.78 },
+      { name:{en:"Summer Sun Shower",pt:"Chuva de Verão",es:"Lluvia de Verano"}, feeling:{en:"Warmth",pt:"Calor",es:"Calidez"}, story:{en:"Warm rain glows beneath the sun.",pt:"A chuva morna brilha sob o sol.",es:"La lluvia cálida brilla bajo el sol."}, hue:50, sky:["#ecc94b","#f6e05e"], lights:["#ffffff"], rain:.46, thunder:.10, type:"rain", rainStyle:"sunShower", fog:.30, target:.74 },
+      { name:{en:"Midnight Blizzard",pt:"Nevasca à Meia-Noite",es:"Ventisca de Medianoche"}, feeling:{en:"Isolation",pt:"Isolamento",es:"Aislamiento"}, story:{en:"A fierce wind hides the sleeping world.",pt:"Um vento feroz esconde o mundo adormecido.",es:"Un viento feroz oculta el mundo dormido."}, hue:230, sky:["#000000","#111827"], lights:["#718096","#a0aec0"], rain:.86, thunder:.18, type:"snow", rainStyle:"blizzard", fog:.58, target:.81 },
+      { name:{en:"City Tunnel",pt:"Túnel da Cidade",es:"Túnel de la Ciudad"}, feeling:{en:"Echo",pt:"Eco",es:"Eco"}, story:{en:"Amber lights rush past in a steady rhythm.",pt:"Luzes âmbar passam em um ritmo constante.",es:"Luces ámbar pasan con un ritmo constante."}, hue:30, sky:["#1a1005","#3a2010"], lights:["#f6ad55","#ed8936"], rain:.48, thunder:0, type:"car", rainStyle:"tunnelRain", fog:.40, target:.77 },
+      { name:{en:"Golden Hour Drops",pt:"Gotas Douradas",es:"Gotas Doradas"}, feeling:{en:"Beauty",pt:"Beleza",es:"Belleza"}, story:{en:"Sunset light glows through every drop.",pt:"A luz do pôr do sol atravessa cada gota.",es:"La luz del atardecer atraviesa cada gota."}, hue:20, sky:["#c53030","#ed8936"], lights:["#fefcbf","#fbd38d"], rain:.38, thunder:0, type:"rain", rainStyle:"goldenRain", fog:.31, target:.74 },
+      { name:{en:"Snowy Drive",pt:"Passeio na Neve",es:"Viaje Nevado"}, feeling:{en:"Comfort",pt:"Aconchego",es:"Abrigo"}, story:{en:"Warm inside, frozen and quiet outside.",pt:"Quente por dentro, frio e silencioso lá fora.",es:"Calidez adentro, frío y silencio afuera."}, hue:210, sky:["#1a202c","#2d3748"], lights:["#e2e8f0","#ef4444"], rain:.52, thunder:0, type:"car_snow", rainStyle:"snowDrive", fog:.45, target:.78 },
+      { name:{en:"The Last Wipe",pt:"A Última Limpeza",es:"La Última Limpieza"}, feeling:{en:"Closure",pt:"Despedida",es:"Despedida"}, story:{en:"The glass clears and the journey rests.",pt:"O vidro clareia e a jornada descansa.",es:"El cristal se aclara y el viaje descansa."}, hue:200, sky:["#2b6cb0","#4299e1"], lights:["#ffffff","#bee3f8"], rain:.12, thunder:0, type:"rain", rainStyle:"finalRain", fog:.25, target:.70 }
     ];
 
     const brushes = {
-      soft: { name: {en:"Soft", pt:"Suave"}, cost: 0, radius: 38, blur: 0.9, vignette: 0.45, desc: {en:"Large area, smooth.", pt:"Grande área, suave."} },
-      precise: { name: {en:"Precise", pt:"Preciso"}, cost: 100, radius: 22, blur: 0.35, vignette: 0.18, desc: {en:"Fine details.", pt:"Detalhes finos."} },
-      broad: { name: {en:"Broad", pt:"Largo"}, cost: 200, radius: 65, blur: 0.8, vignette: 0.55, desc: {en:"Quick large wipes.", pt:"Limpeza rápida."} },
-      sharp: { name: {en:"Sharp", pt:"Nítido"}, cost: 300, radius: 17, blur: 0.12, vignette: 0.08, desc: {en:"Sharp edges.", pt:"Bordas definidas."} },
-      dream: { name: {en:"Dream", pt:"Sonho"}, cost: 500, radius: 80, blur: 1.4, vignette: 0.72, desc: {en:"Diffuse and huge.", pt:"Gigante e difuso."} },
-      feather: { name: {en:"Feather", pt:"Pluma"}, cost: 650, radius: 48, blur: 1.15, vignette: 0.30, desc: {en:"Very soft and light.", pt:"Muito suave e leve."} },
-      needle: { name: {en:"Needle", pt:"Agulha"}, cost: 800, radius: 11, blur: 0.05, vignette: 0.04, desc: {en:"Tiny and precise.", pt:"Muito fino e preciso."} },
-      velvet: { name: {en:"Velvet", pt:"Veludo"}, cost: 950, radius: 55, blur: 0.62, vignette: 0.42, desc: {en:"Balanced and smooth.", pt:"Equilibrado e suave."} },
-      mist: { name: {en:"Mist", pt:"Névoa"}, cost: 1100, radius: 72, blur: 1.25, vignette: 0.85, desc: {en:"Wide and atmospheric.", pt:"Amplo e atmosférico."} },
-      crystal: { name: {en:"Crystal", pt:"Cristal"}, cost: 1300, radius: 28, blur: 0.18, vignette: 0.12, desc: {en:"Clean and crisp.", pt:"Limpo e definido."} },
-      giant: { name: {en:"Giant", pt:"Gigante"}, cost: 1600, radius: 92, blur: 0.75, vignette: 0.68, desc: {en:"Huge wiping area.", pt:"Área enorme de limpeza."} },
-      focus: { name: {en:"Focus", pt:"Foco"}, cost: 1900, radius: 34, blur: 0.28, vignette: 0.22, desc: {en:"Controlled clarity.", pt:"Nitidez controlada."} }
+      soft: { name:{en:"Soft",pt:"Suave",es:"Suave"}, cost:0, radius:34, blur:.95, vignette:.35, desc:{en:"Gentle and balanced.",pt:"Suave e equilibrado.",es:"Suave y equilibrado."} },
+      precise: { name:{en:"Precise",pt:"Preciso",es:"Preciso"}, cost:100, radius:23, blur:.42, vignette:.18, desc:{en:"For small details.",pt:"Para pequenos detalhes.",es:"Para pequeños detalles."} },
+      broad: { name:{en:"Broad",pt:"Largo",es:"Amplio"}, cost:200, radius:56, blur:.88, vignette:.42, desc:{en:"Wide, flowing strokes.",pt:"Traços largos e fluidos.",es:"Trazos amplios y fluidos."} },
+      sharp: { name:{en:"Sharp",pt:"Nítido",es:"Nítido"}, cost:300, radius:19, blur:.24, vignette:.10, desc:{en:"A crisp, controlled edge.",pt:"Borda nítida e controlada.",es:"Borde nítido y controlado."} },
+      dream: { name:{en:"Dream",pt:"Sonho",es:"Sueño"}, cost:500, radius:66, blur:1.28, vignette:.58, desc:{en:"Wide and dreamlike.",pt:"Amplo e sonhador.",es:"Amplio y etéreo."} },
+      feather: { name:{en:"Feather",pt:"Pluma",es:"Pluma"}, cost:650, radius:46, blur:1.18, vignette:.30, desc:{en:"Light, soft clearing.",pt:"Limpeza leve e suave.",es:"Limpieza ligera y suave."} },
+      needle: { name:{en:"Needle",pt:"Agulha",es:"Aguja"}, cost:800, radius:13, blur:.16, vignette:.05, desc:{en:"Small and very precise.",pt:"Pequeno e muito preciso.",es:"Pequeño y muy preciso."} },
+      velvet: { name:{en:"Velvet",pt:"Veludo",es:"Terciopelo"}, cost:950, radius:50, blur:.70, vignette:.38, desc:{en:"Smooth, steady control.",pt:"Controle suave e constante.",es:"Control suave y constante."} },
+      mist: { name:{en:"Mist",pt:"Névoa",es:"Niebla"}, cost:1100, radius:62, blur:1.30, vignette:.62, desc:{en:"Diffuse and atmospheric.",pt:"Difuso e atmosférico.",es:"Difuso y atmosférico."} },
+      crystal: { name:{en:"Crystal",pt:"Cristal",es:"Cristal"}, cost:1300, radius:29, blur:.26, vignette:.12, desc:{en:"Clean and clearly defined.",pt:"Limpo e bem definido.",es:"Limpio y bien definido."} },
+      giant: { name:{en:"Giant",pt:"Gigante",es:"Gigante"}, cost:1600, radius:78, blur:.92, vignette:.48, desc:{en:"The widest clearing style.",pt:"O estilo de limpeza mais amplo.",es:"El estilo de limpieza más amplio."} },
+      focus: { name:{en:"Focus",pt:"Foco",es:"Enfoque"}, cost:1900, radius:36, blur:.34, vignette:.20, desc:{en:"Precise, balanced clarity.",pt:"Nitidez precisa e equilibrada.",es:"Claridad precisa y equilibrada."} }
     };
 
     let unlockedBrushes = { soft: true };
 
     function saveGame() {
-      localStorage.setItem("rainySkylineSave", JSON.stringify({
-        points: state.points, stars: state.stars, highestPhase: state.highestPhase, currentPhase: state.currentPhase,
+      const payload = {
+        version: 3,
+        points: state.points, stars: state.stars, highestPhase: state.highestPhase,
+        currentPhase: state.resumePhase ?? state.currentPhase,
         brush1: state.brush1, brush2: state.brush2, unlockedBrushes,
         rainIntensity: state.rainIntensity, ambVolume: state.ambVolume, rainVolume: state.rainVolume,
         gameSound: state.gameSound, musicSound: state.musicSound, vibration: state.vibration,
-        lang: state.lang, zenAutoFog: state.zenAutoFog
-      }));
+        lang: state.lang, zenAutoFog: state.zenAutoFog, lightningEnabled: state.lightningEnabled,
+        completedPhases: state.completedPhases, completedSinceAd: state.completedSinceAd,
+        lastAdAt: state.lastAdAt
+      };
+      try { localStorage.setItem("rainySkylineSave", JSON.stringify(payload)); }
+      catch (error) { console.warn("Não foi possível salvar o progresso.", error); }
     }
 
     function loadGame() {
       try {
         const data = JSON.parse(localStorage.getItem("rainySkylineSave"));
         if (!data) return;
-        state.points = Number(data.points) || 0; state.stars = Number(data.stars) || 0;
+        state.points = Math.max(0, Number(data.points) || 0); state.stars = Math.max(0, Number(data.stars) || 0);
         state.highestPhase = Math.max(0, Math.min(19, Number(data.highestPhase) || 0));
-        state.currentPhase = Math.max(0, Math.min(19, Number(data.currentPhase) || 0));
+        state.currentPhase = Math.max(0, Math.min(state.highestPhase, Number(data.currentPhase) || 0));
         // Valida os dedos salvos para evitar quebrar o jogo se uma versão anterior
         // tiver deixado um identificador de brush que não existe mais.
         state.brush1 = (data.brush1 && brushes[data.brush1]) ? data.brush1 : "soft";
         state.brush2 = (data.brush2 && brushes[data.brush2]) ? data.brush2 : "soft";
-        unlockedBrushes = data.unlockedBrushes || { soft: true };
+        unlockedBrushes = Object.fromEntries(
+          Object.entries(data.unlockedBrushes || {}).filter(([key, value]) => brushes[key] && value === true)
+        );
         unlockedBrushes.soft = true;
-        if(typeof data.rainIntensity === "number") state.rainIntensity = data.rainIntensity;
-        if(typeof data.ambVolume === "number") state.ambVolume = data.ambVolume;
+        if(typeof data.rainIntensity === "number") state.rainIntensity = Math.max(.1, Math.min(1, data.rainIntensity));
+        if(typeof data.ambVolume === "number") state.ambVolume = Math.max(0, Math.min(1, data.ambVolume));
         if(typeof data.rainVolume === "number") state.rainVolume = Math.max(0, Math.min(1, data.rainVolume));
         state.gameSound = data.gameSound !== false;
         state.musicSound = data.musicSound !== false;
         state.vibration = data.vibration !== false;
-        if(data.lang) state.lang = data.lang;
-         state.zenAutoFog = data.zenAutoFog !== false;
+        if(["en","es","pt"].includes(data.lang)) state.lang = data.lang;
+        state.zenAutoFog = data.zenAutoFog !== false;
+        state.lightningEnabled = data.lightningEnabled !== false;
+        state.completedPhases = Array.isArray(data.completedPhases)
+          ? [...new Set(data.completedPhases.map(Number).filter(i => Number.isInteger(i) && i >= 0 && i < phases.length))]
+          : Array.from({length: state.highestPhase}, (_, i) => i);
+        state.completedSinceAd = Math.max(0, Number(data.completedSinceAd) || 0);
+        state.lastAdAt = Math.max(0, Number(data.lastAdAt) || 0);
       } catch (error) { console.warn("Save inválido."); }
     }
 
@@ -701,29 +849,124 @@ const phases = [
     const fogCtx = fogCanvas.getContext("2d");
 
     let W = window.innerWidth; let H = window.innerHeight;
-    // Otimização de Performance: DPR travado em 1 para poupar GPU em celulares fracos
-    let DPR = 1;
+    const lowPowerDevice = (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) ||
+      (navigator.deviceMemory && navigator.deviceMemory <= 4);
+    // Mantém boa nitidez sem multiplicar demais o custo dos quatro canvases.
+    let DPR = Math.min(window.devicePixelRatio || 1, lowPowerDevice ? 1 : 1.5);
+    let backgroundDirty = true;
+    let lastRenderedFrame = 0;
+    let lastBackgroundFrame = 0;
+    let currentBackgroundImage = null;
+    let currentBackgroundIndex = -1;
+    const backgroundCache = new Map();
+    const backgroundFailures = new Set();
+
+    // Guarde os PNGs originais como masters. No jogo, prefira phase-01.webp etc.
+    // Também aceitamos PNG automaticamente, para facilitar a integração dos fundos em criação.
+    function backgroundCandidates(index) {
+      const custom = window.RAINY_SKYLINE_BACKGROUNDS?.[index];
+      if (Array.isArray(custom)) return custom;
+      if (typeof custom === "string") return [custom];
+      const number = String(index + 1).padStart(2, "0");
+      return [`assets/backgrounds/phase-${number}.webp`, `assets/backgrounds/phase-${number}.png`];
+    }
+
+    function loadImage(src) {
+      if (backgroundCache.has(src)) return Promise.resolve(backgroundCache.get(src));
+      if (backgroundFailures.has(src)) return Promise.reject(new Error("background unavailable"));
+      return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.decoding = "async";
+        const timeout=setTimeout(()=>{
+          image.src="";
+          backgroundFailures.add(src);
+          reject(new Error("background timeout"));
+        },3500);
+        image.onload = () => { clearTimeout(timeout); backgroundCache.set(src, image); resolve(image); };
+        image.onerror = () => { clearTimeout(timeout); backgroundFailures.add(src); reject(new Error("background unavailable")); };
+        image.src = src;
+      });
+    }
+
+    function trimBackgroundCache(index) {
+      const keep=new Set([...backgroundCandidates(index),...backgroundCandidates(index+1)]);
+      for(const key of backgroundCache.keys()) if(!keep.has(key)) backgroundCache.delete(key);
+    }
+
+    async function ensurePhaseBackground(index) {
+      for (const src of backgroundCandidates(index)) {
+        try {
+          const image = await loadImage(src);
+          currentBackgroundImage = image;
+          currentBackgroundIndex = index;
+          backgroundDirty = true;
+          trimBackgroundCache(index);
+          return image;
+        } catch (_) { /* Usa o cenário gerado quando o arquivo ainda não existe. */ }
+      }
+      currentBackgroundImage = null;
+      currentBackgroundIndex = index;
+      backgroundDirty = true;
+      return null;
+    }
+
+    function preloadBackground(index) {
+      if (index < 0 || index >= phases.length) return;
+      const src = backgroundCandidates(index)[0];
+      loadImage(src).catch(() => {});
+    }
 
     function setupCanvas(canvas, ctx) {
-      canvas.width = W * DPR; canvas.height = H * DPR;
+      canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
       canvas.style.width = W + "px"; canvas.style.height = H + "px";
       ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     }
 
     function resize() {
-      W = window.innerWidth; H = window.innerHeight;
+      const preserveFog = state.started && fogCanvas.width > 0 && fogCanvas.height > 0;
+      let fogSnapshot=null, previousGrid=null, previousGridX=0, previousGridY=0;
+      if(preserveFog){
+        fogSnapshot=document.createElement("canvas");
+        fogSnapshot.width=fogCanvas.width;
+        fogSnapshot.height=fogCanvas.height;
+        fogSnapshot.getContext("2d").drawImage(fogCanvas,0,0);
+        previousGrid=fogGrid.slice();
+        previousGridX=GRID_X;
+        previousGridY=GRID_Y;
+        state.activePointers.clear();
+        state.pointerBrushes.clear();
+      }
+      W = Math.max(320, document.documentElement.clientWidth || window.innerWidth);
+      H = Math.max(480, document.documentElement.clientHeight || window.innerHeight);
+      if(typeof brushStampCache !== "undefined") brushStampCache.clear();
       setupCanvas(bgCanvas, bgCtx); setupCanvas(rainCanvas, rainCtx);
       setupCanvas(glassCanvas, glassCtx); setupCanvas(fogCanvas, fogCtx);
       if (typeof glassDropsSystem !== "undefined") glassDropsSystem.resize();
-      initFog(); generateCity(); drawCityBackground();
+      generateCity(); drawCityBackground();
+      if(preserveFog && fogSnapshot && previousGrid?.length){
+        fogCtx.drawImage(fogSnapshot,0,0,fogSnapshot.width,fogSnapshot.height,0,0,W,H);
+        createFogGrid();
+        for(let y=0;y<GRID_Y;y++){
+          for(let x=0;x<GRID_X;x++){
+            const index=y*GRID_X+x;
+            if(fogGrid[index]!==0) continue;
+            const oldX=Math.min(previousGridX-1,Math.floor((x+.5)/GRID_X*previousGridX));
+            const oldY=Math.min(previousGridY-1,Math.floor((y+.5)/GRID_Y*previousGridY));
+            if(previousGrid[oldY*previousGridX+oldX]===1){ fogGrid[index]=1; fogClearedCells++; }
+          }
+        }
+        updateProgress(true);
+      } else initFog();
     }
-    window.addEventListener("resize", resize);
+    let resizeTimer=null;
+    window.addEventListener("resize",()=>{ clearTimeout(resizeTimer); resizeTimer=setTimeout(resize,120); });
 
     let buildings = []; let bokeh = [];
     let streetLights = []; let traffic = [];
 
     function generateCity() {
       buildings = []; bokeh = []; streetLights = []; traffic = [];
+      backgroundDirty = true;
       const phase = phases[state.currentPhase];
       let x = -40;
       while (x < W + 100) {
@@ -740,6 +983,19 @@ const phases = [
     function drawCityBackground() {
       const phase = phases[state.currentPhase];
       bgCtx.clearRect(0, 0, W, H);
+
+      if (currentBackgroundImage && currentBackgroundIndex === state.currentPhase) {
+        const image = currentBackgroundImage;
+        const scale = Math.max(W / image.naturalWidth, H / image.naturalHeight);
+        const dw = image.naturalWidth * scale;
+        const dh = image.naturalHeight * scale;
+        bgCtx.drawImage(image, (W - dw) / 2, (H - dh) / 2, dw, dh);
+        // Leve uniformização para manter o HUD legível sem alterar a arte.
+        bgCtx.fillStyle = phase.type === "snow" ? "rgba(3,7,18,.035)" : "rgba(3,7,18,.075)";
+        bgCtx.fillRect(0, 0, W, H);
+        backgroundDirty = false;
+        return;
+      }
       
       const sky = bgCtx.createLinearGradient(0, 0, 0, H);
       sky.addColorStop(0, phase.sky[0]); sky.addColorStop(.55, phase.sky[1]); sky.addColorStop(1, "#020308");
@@ -799,6 +1055,12 @@ const phases = [
       const ground = bgCtx.createLinearGradient(0, H * .76, 0, H);
       ground.addColorStop(0, "rgba(0,0,0,0)"); ground.addColorStop(1, "rgba(0,0,0,.55)");
       bgCtx.fillStyle = ground; bgCtx.fillRect(0, H * .7, W, H * .3);
+      backgroundDirty = false;
+    }
+
+    function getEffectiveRainIntensity() {
+      const phase = phases[state.currentPhase] || phases[0];
+      return state.isZen ? Math.max(.1, Math.min(1, state.rainIntensity)) : phase.rain;
     }
 
     class Particle {
@@ -864,7 +1126,7 @@ const phases = [
 
       update(dt) {
         const phase = phases[state.currentPhase] || phases[0];
-        const intensity = 0.44 + state.rainIntensity * 0.82;
+        const intensity = 0.44 + getEffectiveRainIntensity() * 0.82;
         this.age += dt;
 
         // Velocidade depende da intensidade, do tipo da fase e da profundidade.
@@ -883,7 +1145,7 @@ const phases = [
 
         // Respingos somente no primeiro plano e perto da linha de contato com a água/chão.
         if (!this.isSnow && this.z > 0.58 && this.y > this._ground && this.lastSplashY !== this._ground) {
-          if (Math.random() < (0.012 + state.rainIntensity * 0.020) * (0.55 + this.z)) {
+          if (Math.random() < (0.012 + getEffectiveRainIntensity() * 0.020) * (0.55 + this.z)) {
             this.splash = 0.11 + this.z * 0.14;
             this.splashSize = 1.7 + this.z * 3.2;
             this.lastSplashY = this._ground;
@@ -905,7 +1167,7 @@ const phases = [
         }
 
         const depthAlpha = 0.42 + this.z * 0.62;
-        const a = Math.min(0.30, this.alpha * (0.56 + state.rainIntensity * 0.48) * depthAlpha);
+        const a = Math.min(0.30, this.alpha * (0.56 + getEffectiveRainIntensity() * 0.48) * depthAlpha);
         const dx = this.wind * (0.22 + this.z * 0.34);
         const dy = this.len;
 
@@ -920,7 +1182,7 @@ const phases = [
       }
     }
 
-    const rainParticles = Array.from({ length: 180 }, () => new Particle());
+    const rainParticles = Array.from({ length: lowPowerDevice ? 120 : 180 }, () => new Particle());
     // ============================================================
     // GOTAS NO VIDRO — V6
     // Referência visual: gotículas reais em vidro, sem aparência
@@ -957,12 +1219,13 @@ const phases = [
     // Poucas gotas escorrem.
     this.dripping = this.r > 4 && Math.random() < 0.11;
     if (this.dripping) {
-      this.vy = 0.012 + Math.random() * 0.018;
-      this.vx = (Math.random() - 0.5) * 0.003;
+      this.vy = 0.10 + Math.random() * 0.22;
+      this.vx = (Math.random() - 0.5) * 0.018;
     }
 
     this.alive = true;
     this.hitCount = 0;
+    this.respawnAt = 0;
   }
 
   update(dt) {
@@ -970,7 +1233,7 @@ const phases = [
 
     this.y += this.vy * dt * 60;
     this.x += this.vx * dt * 60;
-    this.vy += 0.000035 * dt * 60;
+    this.vy = Math.min(1.15, this.vy + 0.0008 * dt * 60);
 
     if (this.y > H + 30) {
       this.reset();
@@ -1061,6 +1324,7 @@ class GlassDrops {
     this.phaseDropMax = cfg.max;
 
     this.drops = [];
+    this.mergeAccumulator = 0;
     this.resize();
     this.create();
   }
@@ -1108,23 +1372,15 @@ class GlassDrops {
       d.alive = true;
       this.drops.push(d);
     }
-    return;
-
-    //    // Nova distribuição instantânea ao começar cada fase.
-    for (const d of this.drops) {
-      d.reset(true);
-      d.x = Math.random() * this.W;
-      d.y = Math.random() * this.H;
-      const cfg = GLASS_DROP_PHASES[state.currentPhase] || GLASS_DROP_PHASES[0];
-      const sizeRoll = Math.random();
-      if (sizeRoll < 0.70) d.r = cfg.min + Math.random() * (cfg.max - cfg.min) * 0.55;
-      else d.r = cfg.min + Math.random() * (cfg.max - cfg.min);
-      d.alive = true;
-    }
   }
 
   update(dt) {
     for (const d of this.drops) d.update(dt);
+
+    // A fusão é cara; 8 vezes por segundo é visualmente suficiente e poupa bateria.
+    this.mergeAccumulator += dt;
+    if (this.mergeAccumulator < 0.125) return;
+    this.mergeAccumulator = 0;
 
     // Fusão apenas entre gotas médias/grandes.
     for (let i = 0; i < this.drops.length; i++) {
@@ -1146,10 +1402,11 @@ class GlassDrops {
             (a.r > 5 && Math.random() < 0.10);
 
           if (a.dripping && a.vy === 0) {
-            a.vy = 0.012 + Math.random() * 0.018;
+            a.vy = 0.10 + Math.random() * 0.22;
           }
 
           b.alive = false;
+          b.respawnAt = performance.now() + 2400 + Math.random() * 4200;
         }
       }
     }
@@ -1172,17 +1429,21 @@ class GlassDrops {
 
         if (d.r < 2.5 || d.hitCount >= 2 || Math.random() > 0.16) {
           d.alive = false;
+          d.respawnAt = performance.now() + 2200 + Math.random() * 4800;
         }
       }
     }
   }
 
   replenish() {
+    const now = performance.now();
     for (const d of this.drops) {
-      if (!d.alive) {
+      if (!d.alive && now >= d.respawnAt) {
         d.reset(false);
         d.x = Math.random() * this.W;
-        d.y = Math.random() * this.H;
+        d.y = -12 - Math.random() * 30;
+        d.dripping = true;
+        d.vy = 0.12 + Math.random() * 0.24;
         d.alive = true;
       }
     }
@@ -1190,54 +1451,128 @@ class GlassDrops {
 }
 
 const glassDropsSystem = new GlassDrops(glassCanvas);
-    const GRID_X = 28;
-    const GRID_Y = 17;
+    let GRID_X = 18;
+    let GRID_Y = 32;
     let fogGrid = [];
-    function createFogGrid() { fogGrid = Array.from({ length: GRID_X * GRID_Y }, () => 0); }
+    let fogClearedCells = 0;
+    let fogPlayableCells = 1;
+    let lastProgressPaint = 0;
+    const brushStampCache = new Map();
+
+    function createFogGrid() {
+      GRID_X = Math.max(14, Math.ceil(W / 26));
+      GRID_Y = Math.max(22, Math.ceil(H / 26));
+      fogGrid = Array.from({ length: GRID_X * GRID_Y }, () => -1);
+      fogClearedCells = 0;
+      fogPlayableCells = 0;
+      // HUD e barra inferior não entram no cálculo, evitando exigir cantos inacessíveis.
+      const safeTop = Math.min(96, H * .11);
+      const safeBottom = H - Math.min(118, H * .13);
+      for (let y = 0; y < GRID_Y; y++) {
+        const py = (y + .5) / GRID_Y * H;
+        if (py < safeTop || py > safeBottom) continue;
+        for (let x = 0; x < GRID_X; x++) {
+          fogGrid[y * GRID_X + x] = 0;
+          fogPlayableCells++;
+        }
+      }
+    }
 
     function initFog() {
       createFogGrid();
       fogCtx.globalCompositeOperation = "source-over";
       fogCtx.clearRect(0, 0, W, H);
-      // Neblina clara e uniforme, sem gradiente radial:
-      // isso elimina o halo/círculo central.
-      fogCtx.fillStyle = "rgba(245,249,252,.56)";
+
+      // Uma cópia desfocada da paisagem mantém o cenário visível sob a condensação.
+      // Ao limpar, aparece a versão nítida — não uma mancha escura parecida com tinta.
+      fogCtx.save();
+      fogCtx.filter = "blur(10px) saturate(.82)";
+      fogCtx.globalAlpha = .76;
+      fogCtx.drawImage(bgCanvas, 0, 0, bgCanvas.width, bgCanvas.height, -12, -12, W + 24, H + 24);
+      fogCtx.restore();
+
+      const phase = phases[state.currentPhase] || phases[0];
+      const fogOpacity = Math.max(.20, Math.min(.62, phase.fog ?? .40));
+      fogCtx.fillStyle = `rgba(224,234,238,${fogOpacity})`;
       fogCtx.fillRect(0, 0, W, H);
 
-      // Pequenas variações difusas e irregulares, sem círculos definidos.
-      fogCtx.globalAlpha = .06;
-      for(let i=0;i<55;i++){
+      // Textura larga e discreta: quebra a uniformidade sem formar círculos visíveis.
+      fogCtx.globalAlpha = .035;
+      for(let i=0;i<34;i++){
         const x = Math.random()*W;
         const y = Math.random()*H;
-        const rw = 70 + Math.random()*150;
-        const rh = 35 + Math.random()*90;
-        fogCtx.fillStyle = "rgba(255,255,255,.10)";
+        const rw = 90 + Math.random()*190;
+        const rh = 50 + Math.random()*130;
+        fogCtx.fillStyle = "rgba(255,255,255,.18)";
         fogCtx.beginPath();
         fogCtx.ellipse(x,y,rw,rh,Math.random()*Math.PI,0,Math.PI*2);
         fogCtx.fill();
       }
       fogCtx.globalAlpha=1;
-      state.fogProgress = 0; updateProgress();
+      state.fogProgress = 0; updateProgress(true);
     }
 
-    function clearFog(x, y, brush) {
-      if (!state.hasInteracted) { state.hasInteracted = true; document.getElementById("instruction").classList.add("hidden-text"); }
-      const radius = brush.radius; const softness = Math.max(.02, Math.min(1.4, brush.blur));
-      const vignette = Math.max(0, Math.min(1, brush.vignette == null ? .45 : brush.vignette));
-      const now=performance.now(); state.cleanStreak = (now-state.lastWipe<350)?state.cleanStreak+1:1; state.lastWipe=now;
-      fogCtx.save(); fogCtx.globalCompositeOperation = "destination-out";
-      const inner = radius * Math.max(.05, .45 - softness * .15);
-      const gradient = fogCtx.createRadialGradient(x, y, inner, x, y, radius);
+    function clearFogStamp(x, y, brush, radius) {
+      const stamp=getBrushStamp(brush,radius);
+      fogCtx.save();
+      fogCtx.globalCompositeOperation = "destination-out";
+      fogCtx.drawImage(stamp.canvas,x-stamp.cssSize/2,y-stamp.cssSize/2,stamp.cssSize,stamp.cssSize);
+      fogCtx.restore();
+      glassDropsSystem.wipe(x, y, radius * .82);
+      markFogGrid(x, y, radius * .72);
+    }
+
+    function getBrushStamp(brush, radius) {
+      const softness = Math.max(.08, Math.min(1.4, brush.blur));
+      const vignette = Math.max(0, Math.min(1, brush.vignette ?? .35));
+      const key=`${radius.toFixed(2)}:${softness}:${vignette}:${DPR}`;
+      if(brushStampCache.has(key)) return brushStampCache.get(key);
+      const padding=3;
+      const cssSize=Math.ceil(radius*2+padding*2);
+      const canvas=document.createElement("canvas");
+      canvas.width=Math.ceil(cssSize*DPR);
+      canvas.height=Math.ceil(cssSize*DPR);
+      const context=canvas.getContext("2d");
+      context.setTransform(DPR,0,0,DPR,0,0);
+      const center=cssSize/2;
+      const inner = radius * Math.max(.16, .34 - softness * .08);
+      const gradient = context.createRadialGradient(center, center, inner, center, center, radius);
       gradient.addColorStop(0, "rgba(0,0,0,1)");
-      gradient.addColorStop(Math.max(.5, 1 - vignette * .45), "rgba(0,0,0," + (0.72 - vignette * .32) + ")");
+      gradient.addColorStop(Math.max(.46, .64 - softness * .08), "rgba(0,0,0,.94)");
+      gradient.addColorStop(Math.min(.91, .78 + vignette * .08), `rgba(0,0,0,${.24 + softness * .10})`);
       gradient.addColorStop(1, "rgba(0,0,0,0)");
-      fogCtx.fillStyle = gradient; fogCtx.beginPath(); fogCtx.arc(x, y, radius, 0, Math.PI * 2); fogCtx.fill(); fogCtx.restore();
-      glassDropsSystem.wipe(x, y, radius);
-      glassCtx.save(); glassCtx.globalAlpha=.18; glassCtx.strokeStyle="rgba(210,240,255,.8)"; glassCtx.lineWidth=1; glassCtx.beginPath(); glassCtx.arc(x,y,radius*.9,0,Math.PI*2); glassCtx.stroke(); glassCtx.restore();
-      markFogGrid(x, y, radius);
-      if(state.cleanStreak>55 && Math.random()<.00035) showToast(t('perfect'));
+      context.fillStyle=gradient;
+      context.fillRect(0,0,cssSize,cssSize);
+      const stamp={canvas,cssSize};
+      brushStampCache.set(key,stamp);
+      return stamp;
+    }
+
+    function clearFogLine(fromX, fromY, toX, toY, brush) {
+      if (!state.hasInteracted) {
+        state.hasInteracted = true;
+        document.getElementById("instruction").classList.add("hidden-text");
+      }
+      const scale = Math.max(.82, Math.min(1.18, Math.min(W, H) / 390));
+      const radius = brush.radius * scale;
+      const distance = Math.hypot(toX - fromX, toY - fromY);
+      const spacing = Math.max(4, radius * .22);
+      const steps = Math.max(1, Math.ceil(distance / spacing));
+      for (let i = 1; i <= steps; i++) {
+        const amount = i / steps;
+        clearFogStamp(
+          fromX + (toX - fromX) * amount,
+          fromY + (toY - fromY) * amount,
+          brush,
+          radius
+        );
+      }
+      const now = performance.now();
+      state.cleanStreak = now - state.lastWipe < 350 ? state.cleanStreak + 1 : 1;
+      state.lastWipe = now;
       updateProgress();
     }
+
     function markFogGrid(x, y, radius) {
       const gx = Math.floor((x / W) * GRID_X); const gy = Math.floor((y / H) * GRID_Y);
       const rx = Math.ceil((radius / W) * GRID_X) + 1; const ry = Math.ceil((radius / H) * GRID_Y) + 1;
@@ -1245,17 +1580,26 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         for (let xx = gx - rx; xx <= gx + rx; xx++) {
           if (xx < 0 || yy < 0 || xx >= GRID_X || yy >= GRID_Y) continue;
           const px = (xx + .5) / GRID_X * W; const py = (yy + .5) / GRID_Y * H;
-          if (Math.hypot(px - x, py - y) <= radius) fogGrid[yy * GRID_X + xx] = true;
+          const index = yy * GRID_X + xx;
+          if (fogGrid[index] === 0 && Math.hypot(px - x, py - y) <= radius) {
+            fogGrid[index] = 1;
+            fogClearedCells++;
+          }
         }
       }
     }
 
-    function updateProgress() {
-      let cleared = fogGrid.filter(v => v).length;
-      state.fogProgress = cleared / fogGrid.length;
-      document.getElementById("progressFill").style.width = Math.min(100, state.fogProgress * 100) + "%";
+    function updateProgress(force = false) {
+      const now = performance.now();
+      state.fogProgress = fogClearedCells / Math.max(1, fogPlayableCells);
+      const target = phases[state.currentPhase]?.target ?? .78;
+      const visibleProgress = state.isZen ? state.fogProgress : state.fogProgress / target;
+      if (force || now - lastProgressPaint > 32) {
+        document.getElementById("progressFill").style.width = Math.min(100, visibleProgress * 100) + "%";
+        lastProgressPaint = now;
+      }
 
-      if (state.fogProgress >= .995 && state.started && !state.paused && !state.isZen) completePhase();
+      if (state.fogProgress >= target && state.started && !state.paused && !state.isZen) completePhase();
     }
 
     function getPointerBrushKey(pointerId) {
@@ -1273,98 +1617,209 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     }
     function handlePointerDown(e) {
       if(!state.started || state.paused) return;
+      e.preventDefault();
       initAudio();
       fogCanvas.setPointerCapture?.(e.pointerId);
       const key = getPointerBrushKey(e.pointerId);
-      state.activePointers.set(e.pointerId, {x: e.clientX, y: e.clientY});
-      clearFog(e.clientX, e.clientY, brushes[key]);
+      state.activePointers.set(e.pointerId, {x:e.clientX, y:e.clientY, key});
+      clearFogLine(e.clientX, e.clientY, e.clientX, e.clientY, brushes[key]);
     }
     function handlePointerMove(e) {
       if(!state.started || state.paused || !state.activePointers.has(e.pointerId)) return;
-      state.activePointers.set(e.pointerId, {x: e.clientX, y: e.clientY});
-      const key = state.pointerBrushes.get(e.pointerId) || state.brush1;
-      clearFog(e.clientX, e.clientY, brushes[key]);
+      e.preventDefault();
+      const pointer = state.activePointers.get(e.pointerId);
+      const brush = brushes[pointer.key] || brushes.soft;
+      const coalesced = e.getCoalescedEvents ? e.getCoalescedEvents() : null;
+      const events = coalesced?.length ? coalesced : [e];
+      let fromX = pointer.x;
+      let fromY = pointer.y;
+      for (const sample of events) {
+        clearFogLine(fromX, fromY, sample.clientX, sample.clientY, brush);
+        fromX = sample.clientX;
+        fromY = sample.clientY;
+      }
+      pointer.x = fromX;
+      pointer.y = fromY;
     }
     function handlePointerUp(e) {
+      if (state.activePointers.has(e.pointerId)) e.preventDefault();
       state.activePointers.delete(e.pointerId);
       state.pointerBrushes.delete(e.pointerId);
     }
     fogCanvas.addEventListener("pointerdown", handlePointerDown); fogCanvas.addEventListener("pointermove", handlePointerMove); fogCanvas.addEventListener("pointerup", handlePointerUp); fogCanvas.addEventListener("pointercancel", handlePointerUp);
 
-    let audioCtx = null, masterGain = null, rainGain = null, droneGain = null, windNode = null, thunderTimer = null;
+    let audioCtx = null, masterGain = null, rainGain = null, droneGain = null;
+    let rainFilter = null, droneOsc = null, thunderTimer = null;
     function initAudio(){
-      if(audioCtx){ if(audioCtx.state==='suspended') audioCtx.resume(); return; }
+      if(audioCtx){ if(audioCtx.state==='suspended') audioCtx.resume().catch(()=>{}); return; }
       try{
         audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-        masterGain=audioCtx.createGain(); masterGain.gain.value=1; masterGain.connect(audioCtx.destination);
-        rainGain=audioCtx.createGain(); rainGain.gain.value=(.025+.045*state.rainIntensity)*state.rainVolume; rainGain.connect(masterGain);
-        droneGain=audioCtx.createGain(); droneGain.gain.value=.018*state.ambVolume; droneGain.connect(masterGain);
-        const buffer=audioCtx.createBuffer(1,audioCtx.sampleRate*2,audioCtx.sampleRate), data=buffer.getChannelData(0);
-        for(let i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*.35;
+        masterGain=audioCtx.createGain(); masterGain.gain.value=.82; masterGain.connect(audioCtx.destination);
+        rainGain=audioCtx.createGain(); rainGain.gain.value=0; rainGain.connect(masterGain);
+        droneGain=audioCtx.createGain(); droneGain.gain.value=0; droneGain.connect(masterGain);
+        const buffer=audioCtx.createBuffer(1,audioCtx.sampleRate*4,audioCtx.sampleRate), data=buffer.getChannelData(0);
+        let brown=0;
+        for(let i=0;i<data.length;i++){
+          const white=Math.random()*2-1;
+          brown=(brown+white*.028)/1.025;
+          data[i]=(white*.20+brown*.55)*.48;
+        }
         const src=audioCtx.createBufferSource(); src.buffer=buffer; src.loop=true;
-        const filter=audioCtx.createBiquadFilter(); filter.type='lowpass'; filter.frequency.value=2600;
-        src.connect(filter); filter.connect(rainGain); src.start();
-        const osc=audioCtx.createOscillator(); osc.type='sine'; osc.frequency.value=72; osc.connect(droneGain); osc.start();
+        rainFilter=audioCtx.createBiquadFilter(); rainFilter.type='lowpass'; rainFilter.frequency.value=2500; rainFilter.Q.value=.35;
+        src.connect(rainFilter); rainFilter.connect(rainGain); src.start();
+        droneOsc=audioCtx.createOscillator(); droneOsc.type='sine'; droneOsc.frequency.value=68; droneOsc.connect(droneGain); droneOsc.start();
+        updateAudio();
       }catch(e){ audioCtx=null; }
     }
-    function updateAudio(){ if(!masterGain)return; masterGain.gain.setTargetAtTime(1,audioCtx.currentTime,.08); if(droneGain) droneGain.gain.setTargetAtTime(.018*state.ambVolume,audioCtx.currentTime,.08); if(rainGain) rainGain.gain.setTargetAtTime((.025+.045*state.rainIntensity)*state.rainVolume,audioCtx.currentTime,.12); }
+    function updateAudio(){
+      if(!masterGain || !audioCtx) return;
+      const phase=phases[state.currentPhase] || phases[0];
+      const intensity=getEffectiveRainIntensity();
+      const isSnow=phase.type==='snow' || phase.type==='car_snow';
+      masterGain.gain.setTargetAtTime(state.paused ? .28 : .82,audioCtx.currentTime,.18);
+      const profile=({
+        light:{gain:.78,tone:.82},steady:{gain:1,tone:1},heavy:{gain:1.10,tone:1.08},neon:{gain:.96,tone:1.16},
+        soft:{gain:.68,tone:.72},storm:{gain:1.18,tone:1.28},breeze:{gain:.58,tone:.78},memory:{gain:.80,tone:.90},
+        drizzle:{gain:.50,tone:.62},clearing:{gain:.44,tone:.70},carRain:{gain:.92,tone:1.22},snowSoft:{gain:.42,tone:.58},
+        highwayRain:{gain:1.14,tone:1.34},snowLight:{gain:.36,tone:.52},sunShower:{gain:.68,tone:1.08},blizzard:{gain:.72,tone:.74},
+        tunnelRain:{gain:.82,tone:.92},goldenRain:{gain:.62,tone:.92},snowDrive:{gain:.50,tone:.68},finalRain:{gain:.38,tone:.64}
+      })[phase.rainStyle] || {gain:1,tone:1};
+      const targetRain=(isSnow ? .035+.055*intensity : .075+.115*intensity)*profile.gain*state.rainVolume;
+      rainGain.gain.setTargetAtTime(targetRain,audioCtx.currentTime,.16);
+      droneGain.gain.setTargetAtTime(state.musicSound ? .027*state.ambVolume : 0,audioCtx.currentTime,.20);
+      rainFilter.frequency.setTargetAtTime((isSnow ? 1050 : 1750+intensity*1850)*profile.tone,audioCtx.currentTime,.25);
+      droneOsc.frequency.setTargetAtTime(62+(phase.hue%40)*.22,audioCtx.currentTime,.5);
+    }
     function blip(freq,dur,vol){ if(!audioCtx||!state.gameSound)return; const o=audioCtx.createOscillator(),g=audioCtx.createGain(); o.frequency.value=freq; o.type='sine'; g.gain.setValueAtTime(0,audioCtx.currentTime);g.gain.linearRampToValueAtTime(vol,audioCtx.currentTime+.01);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+dur);o.connect(g);g.connect(masterGain);o.start();o.stop(audioCtx.currentTime+dur+.02);}
-    function playThunder(v){ initAudio(); if(state.gameSound&&audioCtx){ const o=audioCtx.createOscillator(),g=audioCtx.createGain(),f=audioCtx.createBiquadFilter(); o.type='sawtooth';o.frequency.setValueAtTime(55,audioCtx.currentTime);o.frequency.exponentialRampToValueAtTime(25,audioCtx.currentTime+.7);f.type='lowpass';f.frequency.value=180;g.gain.setValueAtTime(.001,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.16*state.ambVolume,audioCtx.currentTime+.03);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.8);o.connect(f);f.connect(g);g.connect(masterGain);o.start();o.stop(audioCtx.currentTime+.85); } if(state.vibration&&navigator.vibrate)navigator.vibrate([25,35,45]); lightning(); }
-    function startThunderSchedule(){ if(thunderTimer)clearTimeout(thunderTimer); const p=phases[state.currentPhase]; if(!p.thunder)return; thunderTimer=setTimeout(()=>{if(state.started&&!state.paused)playThunder(p.thunder);startThunderSchedule();},7000+Math.random()*14000); }
-    function lightning(){ const f=document.getElementById('lightningFlash'); f.style.opacity=.12+Math.random()*.32; setTimeout(()=>f.style.opacity=0,70); if(Math.random()<.35)setTimeout(()=>{f.style.opacity=.06;setTimeout(()=>f.style.opacity=0,45)},100); }
+    function playThunder(v){ initAudio(); if(state.gameSound&&audioCtx){ const o=audioCtx.createOscillator(),g=audioCtx.createGain(),f=audioCtx.createBiquadFilter(); o.type='sawtooth';o.frequency.setValueAtTime(58,audioCtx.currentTime);o.frequency.exponentialRampToValueAtTime(24,audioCtx.currentTime+.9);f.type='lowpass';f.frequency.value=190;g.gain.setValueAtTime(.001,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime((.08+.12*v)*state.ambVolume,audioCtx.currentTime+.04);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+1.05);o.connect(f);f.connect(g);g.connect(masterGain);o.start();o.stop(audioCtx.currentTime+1.1); } if(state.vibration){ if(typeof window.RainySkylineHaptics?.thunder==='function') window.RainySkylineHaptics.thunder(v); else if(navigator.vibrate) navigator.vibrate([22,40,38]); } lightning(); }
+    function startThunderSchedule(){
+      if(thunderTimer) clearTimeout(thunderTimer);
+      const intensity=phases[state.currentPhase]?.thunder || 0;
+      if(!intensity) return;
+      const minDelay=9000+(1-intensity)*19000;
+      thunderTimer=setTimeout(()=>{
+        if(state.started&&!state.paused&&!document.hidden) playThunder(intensity);
+        startThunderSchedule();
+      },minDelay+Math.random()*(12000+(1-intensity)*17000));
+    }
+    function lightning(){
+      if(!state.lightningEnabled || window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) return;
+      const f=document.getElementById('lightningFlash');
+      f.style.opacity=.10+Math.random()*.22;
+      setTimeout(()=>f.style.opacity=0,65);
+      if(Math.random()<.28)setTimeout(()=>{f.style.opacity=.055;setTimeout(()=>f.style.opacity=0,42)},105);
+    }
     function showToast(text){const el=document.getElementById('toast');el.textContent=text;el.classList.add('show');clearTimeout(showToast.t);showToast.t=setTimeout(()=>el.classList.remove('show'),900);}
 
     function showAd(callback) {
+      const bridge = window.RainySkylineAds;
+      if (!bridge || typeof bridge.showInterstitial !== "function") {
+        callback?.(false);
+        return;
+      }
       const ad = document.getElementById("adScreen");
       ad.classList.remove("hidden");
-      setTimeout(() => { ad.classList.add("hidden"); if(callback) callback(); }, 2000); // AD Placeholder time
+      let finished=false;
+      const finish=(shown=true)=>{
+        if(finished) return;
+        finished=true;
+        clearTimeout(timeout);
+        ad.classList.add("hidden");
+        callback?.(shown);
+      };
+      const timeout=setTimeout(()=>finish(false),2200);
+      try {
+        const result=bridge.showInterstitial(finish);
+        if(result && typeof result.then === "function") result.then(()=>finish(true)).catch(()=>finish(false));
+      } catch (_) { finish(false); }
+    }
+
+    function maybeShowCompletionAd(callback) {
+      const oldEnough = Date.now() - state.lastAdAt > 180000;
+      const eligible = state.currentPhase >= 3 && state.completedSinceAd >= 3 && oldEnough;
+      if (!eligible) { callback?.(); return; }
+      showAd((shown) => {
+        if(shown){
+          state.completedSinceAd = 0;
+          state.lastAdAt = Date.now();
+          saveGame();
+        }
+        callback?.();
+      });
     }
 
     function completePhase() {
       state.started = false;
-      const elapsed=(performance.now()-state.phaseStartedAt)/1000;
-      const bonus=elapsed<35?50:elapsed<60?25:0;
-      const star=state.fogProgress>.88?2:1;
-      state.points += 100+bonus; state.stars += star;
+      state.paused = false;
+      if(masterGain&&audioCtx) masterGain.gain.setTargetAtTime(.24,audioCtx.currentTime,.4);
+      if(thunderTimer) clearTimeout(thunderTimer);
+      const completedIndex=state.currentPhase;
+      const firstClear=!state.completedPhases.includes(completedIndex);
+      const base=100;
+      const bonus=firstClear?50:0;
+      const total=base+bonus;
+      state.points += total;
+      if(firstClear){ state.completedPhases.push(completedIndex); state.stars += 1; }
+      state.completedSinceAd += 1;
       if (state.currentPhase < phases.length - 1) state.highestPhase = Math.max(state.highestPhase, state.currentPhase + 1);
-      saveGame(); // AUTOSAVE
-      document.getElementById("rewardPhaseName").textContent = phases[state.currentPhase].name[state.lang] + "  ·  " + star + " ★" + (bonus?"  +"+bonus:"");
-      
-      showAd(() => {
-        document.getElementById("hud").classList.add("hidden");
-        document.getElementById("rewardScreen").classList.remove("hidden");
-        updateCoins();
-      });
+      state.resumePhase=Math.min(completedIndex+1,phases.length-1);
+      saveGame();
+      document.getElementById("rewardPhaseName").textContent = `${localize(phases[completedIndex].name)} · ${localize(phases[completedIndex].feeling)}`;
+      document.getElementById("rewardBase").textContent = `+${base}`;
+      document.getElementById("rewardBonus").textContent = `+${bonus}`;
+      document.getElementById("rewardBonusLine").style.display = bonus ? "flex" : "none";
+      document.getElementById("rewardCoins").textContent = `+${total} 🌧️`;
+      document.getElementById("rewardTotal").textContent = `+${total} 🌧️`;
+      document.getElementById("hud").classList.add("hidden");
+      document.getElementById("rewardScreen").classList.remove("hidden");
+      updateCoins();
+      blip(620,.34,.035);
+      preloadBackground(completedIndex+1);
     }
 
-    function startPhase(idx, zen = false) {
-  if (typeof glassDropsSystem !== 'undefined') glassDropsSystem.resetForPhase();
+    let startRequestId=0;
+    async function startPhase(idx, zen = false) {
       if (idx > state.highestPhase && !zen) return;
-      state.currentPhase = idx; state.started = true; state.paused = false; state.isZen = zen; saveGame();
-      state.hasInteracted = false; state.activePointers.clear(); state.pointerBrushes.clear(); state.elapsed=0; state.cleanStreak=0; state.zenScore=0; state.phaseStartedAt=performance.now();
-      generateCity(); drawCityBackground(); initFog(); updatePhaseUI();
+      const requestId=++startRequestId;
+      state.currentPhase = idx; state.resumePhase=null; state.started = false; state.paused = true; state.isZen = zen;
+      document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+      document.getElementById("hud").classList.add("hidden");
+      document.getElementById("loadingScreen").classList.remove("hidden");
+      await ensurePhaseBackground(idx);
+      if(requestId!==startRequestId) return;
+      state.started = true; state.paused = false; saveGame();
+      state.hasInteracted = false; state.activePointers.clear(); state.pointerBrushes.clear(); state.elapsed=0; state.cleanStreak=0; state.zenScore=0; state.lastTime=performance.now(); state.phaseStartedAt=performance.now();
+      generateCity(); drawCityBackground();
+      rainParticles.forEach(p=>p.reset(true));
+      glassDropsSystem.resetForPhase();
+      initFog(); updatePhaseUI();
       document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
       document.getElementById("hud").classList.remove("hidden");
       document.getElementById("instruction").classList.remove("hidden-text");
       document.getElementById('progressLabelText').textContent = zen ? t('zen_progress_label') : t('defog_window');
+      const glow=document.getElementById('weatherGlow');
+      glow.style.background=`radial-gradient(circle at 50% 25%, hsla(${phases[idx].hue},80%,65%,.16), transparent 58%)`;
+      glow.style.opacity=zen? .30 : .20;
       initAudio(); updateAudio(); startThunderSchedule();
+      preloadBackground(idx+1);
     }
 
     function updatePhaseUI() {
       const p = phases[state.currentPhase];
       document.getElementById("phaseDisplay").textContent = state.currentPhase + 1;
-      document.getElementById("menuPhaseName").textContent = p.name[state.lang];
-      document.getElementById("menuPhaseFeeling").textContent = p.feeling[state.lang];
-      document.getElementById("menuPhaseStory").textContent = p.story[state.lang];
+      document.getElementById("menuPhaseName").textContent = localize(p.name);
+      document.getElementById("menuPhaseFeeling").textContent = localize(p.feeling);
+      document.getElementById("menuPhaseStory").textContent = localize(p.story);
       updateCoins();
       const zen = state.isZen;
       document.getElementById("phaseDisplay").parentElement.style.display = zen ? "none" : "";
       document.getElementById("currencyHud").style.display = zen ? "none" : "";
       document.getElementById("zenMistBtn").style.display = (zen && !state.zenAutoFog) ? "flex" : "none";
       document.getElementById("zenFogSetting").style.display = zen ? "block" : "none";
-      document.getElementById("zenFogToggle").classList.toggle("on", state.zenAutoFog);
+      syncToggle("zenFogToggle",state.zenAutoFog);
     }
     function updateCoins() { document.getElementById("pointsDisplay").textContent = state.points; document.getElementById("storeCoins").textContent = state.points; }
+    function syncToggle(id,on){ const element=document.getElementById(id); element.classList.toggle("on",!!on); element.setAttribute("aria-checked",String(!!on)); }
 
     function renderPhases() {
       const list = document.getElementById("phaseList"); list.innerHTML = "";
@@ -1372,8 +1827,8 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         const unlocked = i <= state.highestPhase;
         const div = document.createElement("div");
         div.className = "phase-item " + (i === state.currentPhase ? "active " : "") + (!unlocked ? "locked" : "");
-        div.innerHTML = `<div class="phase-number">${t('phase_hud')} ${i + 1}</div><div class="phase-name">${unlocked ? p.name[state.lang] : t('phase_locked')}</div><div class="phase-mini-feeling">${unlocked ? p.feeling[state.lang] : t('phase_req')}</div>`;
-        if (unlocked) div.onclick = () => startPhase(i);
+        div.innerHTML = `<div class="phase-number">${t('phase_hud')} ${i + 1}</div><div class="phase-name">${unlocked ? localize(p.name) : t('phase_locked')}</div><div class="phase-mini-feeling">${unlocked ? localize(p.feeling) : t('phase_req')}</div>`;
+        if (unlocked) div.onclick = () => { initAudio(); startPhase(i); };
         list.appendChild(div);
       });
     }
@@ -1382,13 +1837,27 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       const grid = document.getElementById("storeGrid"); grid.innerHTML = "";
       Object.keys(brushes).forEach(k => {
         const b = brushes[k]; const unlocked = unlockedBrushes[k]; const div = document.createElement("div");
-        div.className = "store-item " + (state.brush1 === k || state.brush2 === k ? "active" : "");
-        div.innerHTML = `<div class="store-preview"></div><div class="store-item-title">${b.name[state.lang]}</div><div class="store-item-desc">${b.desc[state.lang]}</div><div class="store-item-cost">${unlocked ? t('equip') : b.cost + " 🌧️"}</div>`;
+        const equipped = state.brush1 === k || state.brush2 === k;
+        div.className = "store-item " + (equipped ? "active" : "");
+        div.setAttribute("role","button");
+        div.tabIndex=0;
+        const previewWidth=Math.max(8,Math.min(29,b.radius*.36));
+        const previewDot=Math.max(12,Math.min(29,b.radius*.38));
+        const previewBlur=Math.max(.2,Math.min(4,b.blur*2.2));
+        const action=unlocked ? (equipped ? t('equipped') : t('equip')) : `${t('buy')} · ${b.cost} 🌧️`;
+        div.innerHTML = `<div class="store-preview" style="--preview-width:${previewWidth}px;--preview-dot:${previewDot}px;--preview-blur:${previewBlur}px"></div><div class="store-item-title">${localize(b.name)}</div><div class="store-item-desc">${localize(b.desc)}</div><div class="store-item-cost">${action}</div>`;
         div.onclick = () => {
-          if (!unlocked) { if(state.points >= b.cost) { state.points -= b.cost; unlockedBrushes[k] = true; saveGame(); updateCoins(); renderStore(); } return; }
-          if (state.brush1 === k) state.brush2 = k; else state.brush1 = k;
-          saveGame(); renderStore(); updateFingerSlots();
+          if (!unlockedBrushes[k]) {
+            if(state.points < b.cost){ showToast(t('not_enough')); return; }
+            state.points -= b.cost;
+            unlockedBrushes[k] = true;
+            showToast(t('purchased'));
+          }
+          if(state.selectedBrushSlot===1) state.brush1=k;
+          else state.brush2=k;
+          saveGame(); updateCoins(); renderStore();
         };
+        div.onkeydown = event => { if(event.key==='Enter'||event.key===' '){ event.preventDefault(); div.click(); } };
         grid.appendChild(div);
       });
       updateFingerSlots();
@@ -1397,8 +1866,10 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     function updateFingerSlots() {
       if (!brushes[state.brush1]) state.brush1 = "soft";
       if (!brushes[state.brush2]) state.brush2 = "soft";
-      document.getElementById("slot1Name").textContent = brushes[state.brush1].name[state.lang];
-      document.getElementById("slot2Name").textContent = brushes[state.brush2].name[state.lang];
+      document.getElementById("slot1Name").textContent = localize(brushes[state.brush1].name);
+      document.getElementById("slot2Name").textContent = localize(brushes[state.brush2].name);
+      document.getElementById("fingerSlot1").classList.toggle("selected",state.selectedBrushSlot===1);
+      document.getElementById("fingerSlot2").classList.toggle("selected",state.selectedBrushSlot===2);
     }
 
     /* ZEN — escala climática: cada nível muda densidade, velocidade,
@@ -1420,20 +1891,51 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       return ZEN_CLIMATE[level] || ZEN_CLIMATE[70];
     }
 
+    function returnToMainMenu(advanceToNext = false) {
+      if(thunderTimer) clearTimeout(thunderTimer);
+      state.started=false;
+      state.paused=false;
+      state.isZen=false;
+      if(masterGain&&audioCtx) masterGain.gain.setTargetAtTime(.20,audioCtx.currentTime,.35);
+      state.activePointers.clear();
+      state.pointerBrushes.clear();
+      if(advanceToNext && state.currentPhase < phases.length-1){
+        state.currentPhase=Math.min(state.resumePhase ?? state.currentPhase+1,state.highestPhase);
+      }
+      state.resumePhase=null;
+      updatePhaseUI();
+      saveGame();
+      document.querySelectorAll('.screen').forEach(screen=>screen.classList.add('hidden'));
+      document.getElementById("hud").classList.add("hidden");
+      document.getElementById("mainMenu").classList.remove("hidden");
+      preloadBackground(state.currentPhase);
+    }
+
+    function queueNextFrame() {
+      const delay=document.hidden ? 500 : (state.started && !state.paused ? 0 : 180);
+      if(delay) setTimeout(()=>requestAnimationFrame(loop),delay);
+      else requestAnimationFrame(loop);
+    }
+
     function loop(time) {
+      if(lowPowerDevice && time-lastRenderedFrame<32){ queueNextFrame(); return; }
+      lastRenderedFrame=time;
       const dt = Math.min((time - state.lastTime) / 1000, 0.1); state.lastTime = time;
       if (state.started && !state.paused) {
         state.elapsed += dt; updateAudio();
-        if(phases[state.currentPhase].type === 'car' || phases[state.currentPhase].type === 'car_snow') {
+        const phase = phases[state.currentPhase];
+        const movingPhase = phase.type === 'car' || phase.type === 'car_snow';
+        if(movingPhase) {
           state.carOffset += dt * 300;
         }
-        // O cenário permanece imóvel; apenas os reflexos já existentes recebem uma ondulação vertical mínima.
-        drawCityBackground();
+        // Fundos fotográficos e fases estáticas não são redesenhados a cada quadro.
+        if(backgroundDirty || (movingPhase && !currentBackgroundImage && time-lastBackgroundFrame>32)) {
+          drawCityBackground();
+          lastBackgroundFrame=time;
+        }
         rainCtx.clearRect(0, 0, W, H); glassCtx.clearRect(0, 0, W, H);
-        const phase = phases[state.currentPhase];
-        const zenIntensity = state.isZen ? Math.max(0.10, Math.min(1, state.rainIntensity)) : state.rainIntensity;
+        const zenIntensity = getEffectiveRainIntensity();
         const climate = state.isZen ? getZenClimate() : null;
-        const zenSnow = !!(climate && climate.snow > 0);
         const styleDensity = ({
           light:.68, steady:1.00, heavy:1.24, neon:1.08, soft:.78,
           storm:1.42, breeze:.70, memory:.92, drizzle:.56, clearing:.44,
@@ -1456,14 +1958,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
             p.width = baseWidth * climate.width;
           }
           p.update(dt);
-          if(zenSnow && Math.random() < climate.snow){
-            const oldSnow = p.isSnow;
-            p.isSnow = true;
-            p.draw();
-            p.isSnow = oldSnow;
-          } else {
-            p.draw();
-          }
+          p.draw();
           if(climate){
             p.vy = baseVy;
             p.len = baseLen;
@@ -1471,21 +1966,20 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
           }
         }
         for(let i=activeRainCount;i<rainParticles.length;i++){ if(rainParticles[i].y > H + 80) rainParticles[i].reset(); }
+        rsDrawZenWeather(dt);
         glassDropsSystem.update(dt);
         glassDropsSystem.draw(glassCtx);
         glassDropsSystem.replenish();
         
         if(state.isZen){
           if(state.zenAutoFog){
-            // ACcompleted regeneration:
-            // subtle continuous condensation + occasional local return.
             fogCtx.globalCompositeOperation="source-over";
-            fogCtx.fillStyle=`rgba(210,225,232,${0.006+state.rainIntensity*.004})`;
+            fogCtx.fillStyle=`rgba(224,234,238,${dt*(.024+state.rainIntensity*.028)})`;
             fogCtx.fillRect(0,0,W,H);
-
-            if(Math.random()<.22){
-              for(let i=0;i<fogGrid.length;i++){
-                if(fogGrid[i] && Math.random()<.018) fogGrid[i]=false;
+            for(let i=0;i<fogGrid.length;i++){
+              if(fogGrid[i]===1 && Math.random()<dt*(.008+state.rainIntensity*.012)){
+                fogGrid[i]=0;
+                fogClearedCells=Math.max(0,fogClearedCells-1);
               }
             }
           }
@@ -1493,7 +1987,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
           updateProgress();
         }
       }
-      requestAnimationFrame(loop);
+      queueNextFrame();
     }
 
     // Event Listeners
@@ -1503,13 +1997,16 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     document.getElementById("closePhasesBtn").onclick = () => document.getElementById("phasesScreen").classList.add("hidden");
     document.getElementById("storeBtn").onclick = () => { renderStore(); document.getElementById("storeScreen").classList.remove("hidden"); };
     document.getElementById("closeStoreBtn").onclick = () => document.getElementById("storeScreen").classList.add("hidden");
+    document.getElementById("fingerSlot1").onclick = () => { state.selectedBrushSlot=1; updateFingerSlots(); };
+    document.getElementById("fingerSlot2").onclick = () => { state.selectedBrushSlot=2; updateFingerSlots(); };
     document.getElementById("pauseBtn").onclick = () => {
       state.paused = true;
+      if(masterGain&&audioCtx) masterGain.gain.setTargetAtTime(.28,audioCtx.currentTime,.18);
       document.getElementById("zenFogSetting").style.display = state.isZen ? "block" : "none";
-      document.getElementById("zenFogToggle").classList.toggle("on", state.zenAutoFog);
+      syncToggle("zenFogToggle",state.zenAutoFog);
       document.getElementById("pauseScreen").classList.remove("hidden");
     };
-    document.getElementById("resumeBtn").onclick = () => { state.paused = false; document.getElementById("pauseScreen").classList.add("hidden"); };
+    document.getElementById("resumeBtn").onclick = () => { state.paused = false; if(masterGain&&audioCtx) masterGain.gain.setTargetAtTime(.82,audioCtx.currentTime,.18); document.getElementById("pauseScreen").classList.add("hidden"); };
 
     document.getElementById("zenMistBtn").onclick = () => {
       if(!state.isZen || state.zenAutoFog) return;
@@ -1521,8 +2018,9 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     document.getElementById("zenFogToggle").onclick = () => {
       if(!state.isZen) return;
       state.zenAutoFog = !state.zenAutoFog;
-      document.getElementById("zenFogToggle").classList.toggle("on", state.zenAutoFog);
+      syncToggle("zenFogToggle",state.zenAutoFog);
       updatePhaseUI();
+      saveGame();
     };
     let settingsContext = "main";
     function openSettings(context){
@@ -1537,7 +2035,10 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       document.getElementById("ambVal").textContent = Math.round(state.ambVolume * 100) + "%";
       document.getElementById("rainSoundSlider").value = Math.round(state.rainVolume * 100);
       document.getElementById("rainSoundVal").textContent = Math.round(state.rainVolume * 100) + "%";
-      document.getElementById("vibrationToggle").classList.toggle("on", state.vibration);
+      syncToggle("vibrationToggle",state.vibration);
+      syncToggle("flashesToggle",state.lightningEnabled);
+      syncToggle("gameSoundToggle",state.gameSound);
+      syncToggle("musicSoundToggle",state.musicSound);
       if(!fromMain) document.getElementById("pauseScreen").classList.add("hidden");
       document.getElementById("settingsScreen").classList.remove("hidden");
     }
@@ -1548,9 +2049,12 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       document.getElementById("settingsScreen").classList.add("hidden");
       if(settingsContext !== "main") document.getElementById("pauseScreen").classList.remove("hidden");
     };
-    document.getElementById("exitMenuBtn").onclick = () => showAd(() => { state.started = false; state.paused = false; initFog(); document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden')); document.getElementById("mainMenu").classList.remove("hidden"); });
-    document.getElementById("nextPhaseBtn").onclick = () => { if(state.currentPhase < phases.length - 1) startPhase(state.currentPhase + 1); else document.getElementById("exitMenuBtn").click(); };
-    document.getElementById("rewardMenuBtn").onclick = () => document.getElementById("exitMenuBtn").click();
+    document.getElementById("exitMenuBtn").onclick = () => returnToMainMenu(false);
+    document.getElementById("nextPhaseBtn").onclick = () => {
+      if(state.currentPhase < phases.length - 1) startPhase(state.resumePhase ?? state.currentPhase + 1);
+      else maybeShowCompletionAd(() => returnToMainMenu(false));
+    };
+    document.getElementById("rewardMenuBtn").onclick = () => maybeShowCompletionAd(() => returnToMainMenu(true));
 
     document.getElementById("langToggleBtn").onclick = () => {
       state.lang = state.lang === 'en' ? 'es' : state.lang === 'es' ? 'pt' : 'en';
@@ -1562,16 +2066,35 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     document.getElementById('rainSlider').addEventListener('input',e=>{state.rainIntensity=Number(e.target.value)/100;document.getElementById('rainVal').textContent=Math.round(state.rainIntensity*100)+'%';updateAudio();saveGame();});
     document.getElementById('ambSlider').addEventListener('input',e=>{state.ambVolume=Number(e.target.value)/100;document.getElementById('ambVal').textContent=Math.round(state.ambVolume*100)+'%';updateAudio();saveGame();});
     document.getElementById('rainSoundSlider').addEventListener('input',e=>{state.rainVolume=Number(e.target.value)/100;document.getElementById('rainSoundVal').textContent=Math.round(state.rainVolume*100)+'%';updateAudio();saveGame();});
-    document.getElementById('vibrationToggle').onclick=()=>{state.vibration=!state.vibration;document.getElementById('vibrationToggle').classList.toggle('on',state.vibration);saveGame();};
+    document.getElementById('vibrationToggle').onclick=()=>{state.vibration=!state.vibration;syncToggle("vibrationToggle",state.vibration);saveGame();};
+    document.getElementById('flashesToggle').onclick=()=>{state.lightningEnabled=!state.lightningEnabled;syncToggle("flashesToggle",state.lightningEnabled);saveGame();};
+    document.getElementById('gameSoundToggle').onclick=()=>{state.gameSound=!state.gameSound;syncToggle("gameSoundToggle",state.gameSound);saveGame();};
+    document.getElementById('musicSoundToggle').onclick=()=>{state.musicSound=!state.musicSound;syncToggle("musicSoundToggle",state.musicSound);updateAudio();saveGame();};
+
+    document.addEventListener("visibilitychange",()=>{
+      state.lastTime=performance.now();
+      if(document.hidden){
+        saveGame();
+        if(audioCtx?.state==='running') audioCtx.suspend().catch(()=>{});
+      } else if(state.started && !state.paused && audioCtx?.state==='suspended') {
+        audioCtx.resume().catch(()=>{});
+      }
+    });
+    window.addEventListener("pagehide",saveGame);
 
     // Init (Splash removed)
     window.onload = () => {
-      loadGame(); updateTranslations();
+      loadGame(); validateLocalization(); updateTranslations();
       document.getElementById("rainSlider").value=Math.round(state.rainIntensity*100/10)*10; document.getElementById("rainVal").textContent=Math.round(state.rainIntensity*100/10)*10+"%";
       document.getElementById("ambSlider").value=Math.round(state.ambVolume*100); document.getElementById("ambVal").textContent=Math.round(state.ambVolume*100)+"%";
       document.getElementById("rainSoundSlider").value=Math.round(state.rainVolume*100); document.getElementById("rainSoundVal").textContent=Math.round(state.rainVolume*100)+"%";
-      document.getElementById("vibrationToggle").classList.toggle("on",state.vibration); resize();
+      syncToggle("vibrationToggle",state.vibration);
+      syncToggle("flashesToggle",state.lightningEnabled);
+      syncToggle("gameSoundToggle",state.gameSound);
+      syncToggle("musicSoundToggle",state.musicSound);
+      resize();
       document.getElementById('mainMenu').classList.remove('hidden');
+      preloadBackground(state.currentPhase);
       requestAnimationFrame(loop);
     };
     </script>
@@ -1603,25 +2126,19 @@ let rsZenSnow=[];
 function rsEnsureZenSnow(){
   if(rsZenSnow.length<160) rsZenSnow=Array.from({length:160},()=>({x:Math.random()*W,y:Math.random()*H,v:35+Math.random()*80,r:.7+Math.random()*2}));
 }
-function rsDrawZenWeather(){
+function rsDrawZenWeather(dt=1/60){
   if(!state.isZen || !state.started || state.paused || state.rainIntensity<1) return;
   rsEnsureZenSnow();
   const amount=Math.min(1,(state.rainIntensity-0.85)/.15);
   rainCtx.save();
   rainCtx.fillStyle='rgba(255,255,255,.72)';
   for(let i=0;i<Math.floor(rsZenSnow.length*amount);i++){
-    const s=rsZenSnow[i]; s.y += s.v*.016; s.x += Math.sin((performance.now()+i*70)*.001)*.12;
+    const s=rsZenSnow[i]; s.y += s.v*dt; s.x += Math.sin((performance.now()+i*70)*.001)*7.2*dt;
     if(s.y>H+8){s.y=-8;s.x=Math.random()*W;}
     rainCtx.beginPath(); rainCtx.arc(s.x,s.y,s.r,0,Math.PI*2); rainCtx.fill();
   }
   rainCtx.restore();
 }
-
-const rsLoopBeforeFinal=loop;
-loop=function(time){
-  rsLoopBeforeFinal(time);
-  rsDrawZenWeather();
-};
 
 </script>
     </body>
