@@ -1,4 +1,4 @@
-    <!DOCTYPE html>
+<!DOCTYPE html>
     <html lang="en">
     <head>
     <meta charset="UTF-8">
@@ -791,7 +791,7 @@ const phases = [
 
     function saveGame() {
       const payload = {
-        version: 8,
+        version: 9,
         points: state.points, stars: state.stars, highestPhase: state.highestPhase,
         currentPhase: state.resumePhase ?? state.currentPhase,
         brush1: state.brush1, brush2: state.brush2, unlockedBrushes,
@@ -922,12 +922,12 @@ const phases = [
 
     function resize() {
       const preserveFog = state.started && fogCanvas.width > 0 && fogCanvas.height > 0;
-      let fogMaskSnapshot=null, previousGrid=null, previousGridX=0, previousGridY=0;
-      if(preserveFog && typeof fogMaskCanvas !== "undefined" && fogMaskCanvas.width){
-        fogMaskSnapshot=document.createElement("canvas");
-        fogMaskSnapshot.width=fogMaskCanvas.width;
-        fogMaskSnapshot.height=fogMaskCanvas.height;
-        fogMaskSnapshot.getContext("2d").drawImage(fogMaskCanvas,0,0);
+      let fogSnapshot=null, previousGrid=null, previousGridX=0, previousGridY=0;
+      if(preserveFog){
+        fogSnapshot=document.createElement("canvas");
+        fogSnapshot.width=fogCanvas.width;
+        fogSnapshot.height=fogCanvas.height;
+        fogSnapshot.getContext("2d").drawImage(fogCanvas,0,0);
         previousGrid=fogGrid.slice();
         previousGridX=GRID_X;
         previousGridY=GRID_Y;
@@ -941,13 +941,8 @@ const phases = [
       setupCanvas(glassCanvas, glassCtx); setupCanvas(fogCanvas, fogCtx);
       if (typeof glassDropsSystem !== "undefined") glassDropsSystem.resize();
       generateCity(); drawCityBackground();
-      if(preserveFog && fogMaskSnapshot && previousGrid?.length){
-        initFog();
-        fogMaskCtx.save();
-        fogMaskCtx.setTransform(1,0,0,1,0,0);
-        fogMaskCtx.clearRect(0,0,fogMaskCanvas.width,fogMaskCanvas.height);
-        fogMaskCtx.drawImage(fogMaskSnapshot,0,0,fogMaskSnapshot.width,fogMaskSnapshot.height,0,0,fogMaskCanvas.width,fogMaskCanvas.height);
-        fogMaskCtx.restore();
+      if(preserveFog && fogSnapshot && previousGrid?.length){
+        fogCtx.drawImage(fogSnapshot,0,0,fogSnapshot.width,fogSnapshot.height,0,0,W,H);
         createFogGrid();
         for(let y=0;y<GRID_Y;y++){
           for(let x=0;x<GRID_X;x++){
@@ -958,8 +953,6 @@ const phases = [
             if(previousGrid[oldY*previousGridX+oldX]===1){ fogGrid[index]=1; fogClearedCells++; }
           }
         }
-        fogVisualDirty=true;
-        renderFog(true);
         updateProgress(true);
       } else initFog();
     }
@@ -1467,57 +1460,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     let fogGrid = [];
     let fogClearedCells = 0;
     let fogPlayableCells = 1;
-    // A textura visual e a máscara de cobertura vivem separadas. Assim o Zen
-    // recupera apenas a máscara, sem repintar o mesmo canvas ou criar halos.
-    const fogTextureCanvas = document.createElement("canvas");
-    const fogTextureCtx = fogTextureCanvas.getContext("2d");
-    const fogMaskCanvas = document.createElement("canvas");
-    const fogMaskCtx = fogMaskCanvas.getContext("2d");
-    let fogVisualDirty = true;
     const brushStampCache = new Map();
-
-    function captureFogTexture() {
-      fogTextureCanvas.width = fogCanvas.width;
-      fogTextureCanvas.height = fogCanvas.height;
-      fogTextureCtx.setTransform(1,0,0,1,0,0);
-      fogTextureCtx.clearRect(0,0,fogTextureCanvas.width,fogTextureCanvas.height);
-      fogTextureCtx.drawImage(fogCanvas,0,0);
-
-      fogMaskCanvas.width = fogCanvas.width;
-      fogMaskCanvas.height = fogCanvas.height;
-      fogMaskCtx.setTransform(DPR,0,0,DPR,0,0);
-      fogMaskCtx.globalCompositeOperation="source-over";
-      fogMaskCtx.fillStyle="#fff";
-      fogMaskCtx.fillRect(0,0,W,H);
-      fogVisualDirty=true;
-    }
-
-    function renderFog(force=false) {
-      if(!force && !fogVisualDirty) return;
-      if(!fogTextureCanvas.width || !fogMaskCanvas.width) return;
-      fogCtx.save();
-      fogCtx.setTransform(1,0,0,1,0,0);
-      fogCtx.globalCompositeOperation="source-over";
-      fogCtx.globalAlpha=1;
-      fogCtx.clearRect(0,0,fogCanvas.width,fogCanvas.height);
-      fogCtx.drawImage(fogTextureCanvas,0,0);
-      fogCtx.globalCompositeOperation="destination-in";
-      fogCtx.drawImage(fogMaskCanvas,0,0);
-      fogCtx.restore();
-      fogVisualDirty=false;
-    }
-
-    function refillFogMask(alpha) {
-      fogMaskCtx.save();
-      fogMaskCtx.globalCompositeOperation="source-over";
-      const amount=Math.max(0,Math.min(1,alpha));
-      // Regeneração clássica do primeiro arquivo: a névoa retorna de maneira
-      // contínua e uniforme, sem círculos, massas móveis ou bordas adiantadas.
-      fogMaskCtx.fillStyle=`rgba(255,255,255,${amount})`;
-      fogMaskCtx.fillRect(0,0,W,H);
-      fogMaskCtx.restore();
-      fogVisualDirty=true;
-    }
 
     function createFogGrid() {
       GRID_X = Math.max(14, Math.ceil(W / 26));
@@ -1569,18 +1512,15 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         fogCtx.fill();
       }
       fogCtx.globalAlpha=1;
-      captureFogTexture();
-      renderFog(true);
       state.fogProgress = 0; updateProgress(true);
     }
 
     function clearFogStamp(x, y, brush, radius) {
       const stamp=getBrushStamp(brush,radius);
-      fogMaskCtx.save();
-      fogMaskCtx.globalCompositeOperation = "destination-out";
-      fogMaskCtx.drawImage(stamp.canvas,x-stamp.cssSize/2,y-stamp.cssSize/2,stamp.cssSize,stamp.cssSize);
-      fogMaskCtx.restore();
-      fogVisualDirty=true;
+      fogCtx.save();
+      fogCtx.globalCompositeOperation = "destination-out";
+      fogCtx.drawImage(stamp.canvas,x-stamp.cssSize/2,y-stamp.cssSize/2,stamp.cssSize,stamp.cssSize);
+      fogCtx.restore();
       glassDropsSystem.wipe(x, y, radius * .82);
       markFogGrid(x, y, radius * .72);
     }
@@ -1630,7 +1570,6 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
           radius
         );
       }
-      renderFog();
       const now = performance.now();
       state.cleanStreak = now - state.lastWipe < 350 ? state.cleanStreak + 1 : 1;
       state.lastWipe = now;
@@ -2044,9 +1983,11 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
           // A regeneração automática é o padrão do Zen, como no jogo original.
           // Quando desativada, o botão compacto "mist" reaparece para controle manual.
           if(state.zenAutoFog){
-            // Mesma intensidade, cadência e retorno uniforme da primeira versão.
-            const fogReturnAlpha=.006+state.rainIntensity*.004;
-            refillFogMask(fogReturnAlpha);
+            // Regeneração realmente idêntica à primeira versão: a camada volta
+            // diretamente no mesmo canvas que o dedo apaga.
+            fogCtx.globalCompositeOperation="source-over";
+            fogCtx.fillStyle=`rgba(210,225,232,${0.006 + (state.rainIntensity * 0.004)})`;
+            fogCtx.fillRect(0,0,W,H);
             if(Math.random()<.22){
               for(let i=0;i<fogGrid.length;i++){
                 if(fogGrid[i]===1 && Math.random()<.018){
@@ -2058,7 +1999,6 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
           }
           updateProgress();
         }
-        renderFog();
       }
       queueNextFrame();
     }
