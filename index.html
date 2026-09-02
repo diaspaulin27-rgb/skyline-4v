@@ -1,4 +1,4 @@
-   <!DOCTYPE html>
+    <!DOCTYPE html>
     <html lang="en">
     <head>
     <meta charset="UTF-8">
@@ -70,7 +70,8 @@
 
     #bgCanvas { z-index: 1; }
     #rainCanvas { z-index: 3; }
-    #glassCanvas { z-index: 5; }
+    /* As gotas ficam sobre a condensação para já aparecerem no início da fase. */
+    #glassCanvas { z-index: 8; pointer-events: none; }
     #fogCanvas { z-index: 7; touch-action: none; }
 
     #lightningFlash {
@@ -790,7 +791,7 @@ const phases = [
 
     function saveGame() {
       const payload = {
-        version: 4,
+        version: 5,
         points: state.points, stars: state.stars, highestPhase: state.highestPhase,
         currentPhase: state.resumePhase ?? state.currentPhase,
         brush1: state.brush1, brush2: state.brush2, unlockedBrushes,
@@ -1403,7 +1404,7 @@ class GlassDrops {
           }
 
           b.alive = false;
-          b.respawnAt = performance.now() + 500 + Math.random() * 900;
+          b.respawnAt = performance.now() + 3000;
         }
       }
     }
@@ -1426,7 +1427,7 @@ class GlassDrops {
 
         if (d.r < 2.5 || d.hitCount >= 2 || Math.random() > 0.16) {
           d.alive = false;
-          d.respawnAt = performance.now() + 350 + Math.random() * 700;
+          d.respawnAt = performance.now() + 3000;
         }
       }
     }
@@ -1451,7 +1452,19 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     let fogGrid = [];
     let fogClearedCells = 0;
     let fogPlayableCells = 1;
+    // Guarda a aparência original da condensação para o Zen restaurá-la sem
+    // acumular uma camada branca opaca sobre a paisagem.
+    const fogBaseCanvas = document.createElement("canvas");
+    const fogBaseCtx = fogBaseCanvas.getContext("2d");
     const brushStampCache = new Map();
+
+    function captureFogBase() {
+      fogBaseCanvas.width = fogCanvas.width;
+      fogBaseCanvas.height = fogCanvas.height;
+      fogBaseCtx.setTransform(1,0,0,1,0,0);
+      fogBaseCtx.clearRect(0,0,fogBaseCanvas.width,fogBaseCanvas.height);
+      fogBaseCtx.drawImage(fogCanvas,0,0);
+    }
 
     function createFogGrid() {
       GRID_X = Math.max(14, Math.ceil(W / 26));
@@ -1503,6 +1516,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         fogCtx.fill();
       }
       fogCtx.globalAlpha=1;
+      captureFogBase();
       state.fogProgress = 0; updateProgress(true);
     }
 
@@ -1585,9 +1599,9 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
 
     function updateProgress() {
       state.fogProgress = fogClearedCells / Math.max(1, fogPlayableCells);
-      // Quase todo o vidro jogável precisa estar limpo. Os 4% restantes evitam
+      // Quase todo o vidro jogável precisa estar limpo. Os 2% restantes evitam
       // prender o jogador em células inacessíveis sob o HUD e nas bordas.
-      const target = .96;
+      const target = .98;
       document.getElementById("progressFill").style.width = `${Math.min(1, state.fogProgress / target) * 100}%`;
       if (state.fogProgress >= target && state.started && !state.paused && !state.isZen) completePhase();
     }
@@ -1966,11 +1980,13 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
           // Quando desativada, o botão compacto "mist" reaparece para controle manual.
           if(state.zenAutoFog){
             // Fórmula baseada no tempo para manter a mesma velocidade em 30 ou 60 FPS.
-            const fogReturnAlpha=1-Math.exp(-dt*(.36+state.rainIntensity*.24));
+            const fogReturnAlpha=1-Math.exp(-dt*(.12+state.rainIntensity*.08));
             const cellReturnChance=1-Math.exp(-dt*(.18+state.rainIntensity*.12));
-            fogCtx.globalCompositeOperation="source-over";
-            fogCtx.fillStyle=`rgba(210,225,232,${fogReturnAlpha})`;
-            fogCtx.fillRect(0,0,W,H);
+            fogCtx.save();
+            fogCtx.globalCompositeOperation="destination-over";
+            fogCtx.globalAlpha=fogReturnAlpha;
+            fogCtx.drawImage(fogBaseCanvas,0,0,fogBaseCanvas.width,fogBaseCanvas.height,0,0,W,H);
+            fogCtx.restore();
             for(let i=0;i<fogGrid.length;i++){
               if(fogGrid[i]===1 && Math.random()<cellReturnChance){
                 fogGrid[i]=0;
