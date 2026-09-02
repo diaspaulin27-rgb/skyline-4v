@@ -1,4 +1,4 @@
-  <!DOCTYPE html>
+   <!DOCTYPE html>
     <html lang="en">
     <head>
     <meta charset="UTF-8">
@@ -144,9 +144,10 @@
     }
     #instruction.hidden-text { opacity: 0; visibility: hidden; }
 
-    .progress-wrap { width: min(360px, 78vw); margin: 0 auto 12px; padding: 9px 12px 11px; text-align: center; opacity: .94; border-radius: 15px; background: rgba(3,10,22,.42); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
-    .progress-label { font-size: 10px; letter-spacing: 1.8px; text-transform: uppercase; margin-bottom: 8px; color: rgba(255,255,255,.78); }
-    .progress-bar { width: 100%; height: 6px; border-radius: 10px; background: rgba(255,255,255,.16); overflow: hidden; }
+    /* Visual clássico: texto e linha fina, sem cápsula ou painel ao redor. */
+    .progress-wrap { width: min(380px, 70vw); margin: 0 auto 18px; padding: 0; text-align: center; opacity: .82; }
+    .progress-label { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; margin: 0 0 7px; color: rgba(255,255,255,.64); text-shadow: 0 2px 8px rgba(0,0,0,.8); }
+    .progress-bar { width: 100%; height: 4px; border-radius: 10px; background: rgba(255,255,255,.10); overflow: hidden; }
     #progressFill { height: 100%; width: 0%; border-radius: inherit; background: linear-gradient(90deg, #38bdf8, #7dd3fc, #ffffff); box-shadow: 0 0 12px rgba(56,189,248,.7); transition: width .2s ease; }
 
     @keyframes pulse { 0%, 100% { opacity: .4; } 50% { opacity: .9; } }
@@ -287,14 +288,14 @@
           </div>
           <div class="hud-right">
             <div class="currency-badge" id="currencyHud"><span>🌧️</span><span id="pointsDisplay">0</span></div>
-            <button id="zenMistBtn" class="hud-btn" type="button" style="display:none;width:auto;min-width:0;height:38px;padding:0 14px;border-radius:20px;font-size:16px;font-weight:600;letter-spacing:.5px;text-transform:none;flex-direction:row;gap:6px;align-items:center;justify-content:center;background:rgba(18,27,45,.88);border:1px solid rgba(255,255,255,.12);box-shadow:0 10px 28px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.05);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#63b8ee;">💨 <span data-i18n="mist_action">MIST</span></button>
+            <button id="zenMistBtn" class="hud-btn" type="button" style="display:none;width:auto;min-width:0;height:34px;padding:0 14px;border-radius:20px;font-size:18px;font-weight:600;letter-spacing:1px;text-transform:lowercase;flex-direction:row;gap:5px;align-items:center;justify-content:center;background:rgba(18,27,45,.88);border:1px solid rgba(255,255,255,.12);box-shadow:0 10px 28px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.05);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#63b8ee;">💨 <span>mist</span></button>
           </div>
         </div>
         <div>
           <div id="instruction" data-i18n="wipe_instruction">SWIPE TO WIPE THE FOG</div>
           <div class="progress-wrap">
             <div class="progress-label" id="progressLabelText" data-i18n="defog_window">Defog the window</div>
-            <div class="progress-bar"><div id="progressFill"></div></div>
+            <div class="progress-bar" aria-hidden="true"><div id="progressFill"></div></div>
           </div>
         </div>
       </div>
@@ -406,8 +407,8 @@
           <div id="zenFogSetting" style="display:none;text-align:left;margin-bottom:18px;">
             <div class="toggle-row" style="border-top:1px solid rgba(255,255,255,.06);">
               <div class="toggle-text">
-                <strong id="zenFogSettingTitle">Regenerar névoa automaticamente</strong>
-                <span id="zenFogSettingDesc">A névoa retorna lentamente no Modo Zen.</span>
+                <strong id="zenFogSettingTitle">Auto-regenerate fog</strong>
+                <span id="zenFogSettingDesc">Fog slowly returns in Zen Mode.</span>
               </div>
               <button type="button" id="zenFogToggle" class="toggle on" role="switch" aria-checked="true"></button>
             </div>
@@ -475,7 +476,6 @@
       stars: 0,
       phaseStartedAt: 0,
       zenAutoFog: true,
-      zenMistCooldown: 0,
       lightningEnabled: true,
       selectedBrushSlot: 1,
       completedPhases: [],
@@ -490,7 +490,6 @@
         zen_auto_fog_desc: "Fog slowly returns in Zen Mode.",
         ad_loading: "Preparing a short break…",
         loading_phase: "Preparing the weather…",
-        mist_action: "NEW MIST",
         phase_hud: "PHASE",
         wipe_instruction: "SWIPE TO WIPE THE FOG",
         defog_window: "Defog the window",
@@ -552,7 +551,6 @@
         zen_auto_fog_desc: "La niebla vuelve lentamente en el Modo Zen.",
         ad_loading: "Preparando una breve pausa…",
         loading_phase: "Preparando el clima…",
-        mist_action: "NUEVA NIEBLA",
         phase_hud: "FASE",
         wipe_instruction: "DESLIZA PARA LIMPIAR LA NIEBLA",
         defog_window: "Desempaña la ventana",
@@ -614,7 +612,6 @@
         zen_auto_fog_desc: "A névoa retorna lentamente no Modo Zen.",
         ad_loading: "Preparando uma breve pausa…",
         loading_phase: "Preparando o clima…",
-        mist_action: "NOVA NÉVOA",
         phase_hud: "FASE",
         wipe_instruction: "PASSE O DEDO PARA LIMPAR",
         defog_window: "Desembace a janela",
@@ -729,26 +726,26 @@
     // Configuração exclusiva das gotas do vidro por fase.
 // Mais chuva = mais gotas e, em algumas fases, gotas maiores.
 const GLASS_DROP_PHASES = [
-  { count: 55,  min: 1.6, max: 4.0 }, // 1 · chuva leve
-  { count: 72,  min: 1.7, max: 4.6 }, // 2
-  { count: 96,  min: 1.8, max: 5.4 }, // 3
-  { count: 108, min: 1.8, max: 5.8 }, // 4
-  { count: 48,  min: 1.6, max: 4.0 }, // 5 · ambiente íntimo
-  { count: 132, min: 2.0, max: 6.6 }, // 6 · tempestade
-  { count: 42,  min: 1.5, max: 3.8 }, // 7 · chuva diminuindo
-  { count: 70,  min: 1.7, max: 4.8 }, // 8
-  { count: 34,  min: 1.5, max: 3.5 }, // 9 · silêncio
-  { count: 28,  min: 1.5, max: 3.4 }, // 10 · céu abrindo
-  { count: 82,  min: 1.8, max: 5.0 }, // 11 · carro
-  { count: 30,  min: 1.4, max: 3.2 }, // 12 · neve
-  { count: 116, min: 1.9, max: 6.0 }, // 13 · rodovia
-  { count: 36,  min: 1.5, max: 3.6 }, // 14 · geada
-  { count: 62,  min: 1.7, max: 4.5 }, // 15 · verão
-  { count: 46,  min: 1.5, max: 4.0 }, // 16 · nevasca
-  { count: 64,  min: 1.7, max: 4.6 }, // 17 · túnel
-  { count: 54,  min: 1.6, max: 4.2 }, // 18 · gotas douradas
-  { count: 38,  min: 1.5, max: 3.8 }, // 19 · carro com neve
-  { count: 24,  min: 1.4, max: 3.2 }  // 20 · encerramento
+  { count: 70,  min: 1.8, max: 4.0 }, // 1
+  { count: 82,  min: 1.8, max: 4.5 }, // 2
+  { count: 95,  min: 1.8, max: 5.0 }, // 3
+  { count: 110, min: 1.8, max: 5.8 }, // 4
+  { count: 75,  min: 1.8, max: 4.2 }, // 5
+  { count: 125, min: 1.8, max: 6.2 }, // 6
+  { count: 65,  min: 1.8, max: 4.0 }, // 7
+  { count: 90,  min: 1.8, max: 5.0 }, // 8
+  { count: 115, min: 1.8, max: 5.8 }, // 9
+  { count: 130, min: 2.0, max: 6.5 }, // 10
+  { count: 72,  min: 1.8, max: 4.0 }, // 11
+  { count: 85,  min: 1.8, max: 4.5 }, // 12
+  { count: 105, min: 1.8, max: 5.4 }, // 13
+  { count: 120, min: 1.8, max: 6.0 }, // 14
+  { count: 68,  min: 1.8, max: 4.0 }, // 15
+  { count: 100, min: 1.8, max: 5.2 }, // 16
+  { count: 135, min: 2.0, max: 6.8 }, // 17
+  { count: 112, min: 1.8, max: 5.8 }, // 18
+  { count: 78,  min: 1.8, max: 4.3 }, // 19
+  { count: 145, min: 2.0, max: 7.0 }  // 20
 ];
 
 const phases = [
@@ -793,13 +790,13 @@ const phases = [
 
     function saveGame() {
       const payload = {
-        version: 3,
+        version: 4,
         points: state.points, stars: state.stars, highestPhase: state.highestPhase,
         currentPhase: state.resumePhase ?? state.currentPhase,
         brush1: state.brush1, brush2: state.brush2, unlockedBrushes,
         rainIntensity: state.rainIntensity, ambVolume: state.ambVolume, rainVolume: state.rainVolume,
         gameSound: state.gameSound, musicSound: state.musicSound, vibration: state.vibration,
-        lang: state.lang, zenAutoFog: state.zenAutoFog, lightningEnabled: state.lightningEnabled,
+        lang: state.lang, lightningEnabled: state.lightningEnabled, zenAutoFog: state.zenAutoFog,
         completedPhases: state.completedPhases, completedSinceAd: state.completedSinceAd,
         lastAdAt: state.lastAdAt
       };
@@ -828,8 +825,8 @@ const phases = [
         state.gameSound = data.gameSound !== false;
         state.musicSound = data.musicSound !== false;
         state.vibration = data.vibration !== false;
-        if(["en","es","pt"].includes(data.lang)) state.lang = data.lang;
         state.zenAutoFog = data.zenAutoFog !== false;
+        if(["en","es","pt"].includes(data.lang)) state.lang = data.lang;
         state.lightningEnabled = data.lightningEnabled !== false;
         state.completedPhases = Array.isArray(data.completedPhases)
           ? [...new Set(data.completedPhases.map(Number).filter(i => Number.isInteger(i) && i >= 0 && i < phases.length))]
@@ -1406,7 +1403,7 @@ class GlassDrops {
           }
 
           b.alive = false;
-          b.respawnAt = performance.now() + 2400 + Math.random() * 4200;
+          b.respawnAt = performance.now() + 500 + Math.random() * 900;
         }
       }
     }
@@ -1429,7 +1426,7 @@ class GlassDrops {
 
         if (d.r < 2.5 || d.hitCount >= 2 || Math.random() > 0.16) {
           d.alive = false;
-          d.respawnAt = performance.now() + 2200 + Math.random() * 4800;
+          d.respawnAt = performance.now() + 350 + Math.random() * 700;
         }
       }
     }
@@ -1441,9 +1438,7 @@ class GlassDrops {
       if (!d.alive && now >= d.respawnAt) {
         d.reset(false);
         d.x = Math.random() * this.W;
-        d.y = -12 - Math.random() * 30;
-        d.dripping = true;
-        d.vy = 0.12 + Math.random() * 0.24;
+        d.y = Math.random() * this.H;
         d.alive = true;
       }
     }
@@ -1456,7 +1451,6 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     let fogGrid = [];
     let fogClearedCells = 0;
     let fogPlayableCells = 1;
-    let lastProgressPaint = 0;
     const brushStampCache = new Map();
 
     function createFogGrid() {
@@ -1589,16 +1583,12 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       }
     }
 
-    function updateProgress(force = false) {
-      const now = performance.now();
+    function updateProgress() {
       state.fogProgress = fogClearedCells / Math.max(1, fogPlayableCells);
-      const target = phases[state.currentPhase]?.target ?? .78;
-      const visibleProgress = state.isZen ? state.fogProgress : state.fogProgress / target;
-      if (force || now - lastProgressPaint > 32) {
-        document.getElementById("progressFill").style.width = Math.min(100, visibleProgress * 100) + "%";
-        lastProgressPaint = now;
-      }
-
+      // Quase todo o vidro jogável precisa estar limpo. Os 4% restantes evitam
+      // prender o jogador em células inacessíveis sob o HUD e nas bordas.
+      const target = .96;
+      document.getElementById("progressFill").style.width = `${Math.min(1, state.fogProgress / target) * 100}%`;
       if (state.fogProgress >= target && state.started && !state.paused && !state.isZen) completePhase();
     }
 
@@ -1814,7 +1804,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       const zen = state.isZen;
       document.getElementById("phaseDisplay").parentElement.style.display = zen ? "none" : "";
       document.getElementById("currencyHud").style.display = zen ? "none" : "";
-      document.getElementById("zenMistBtn").style.display = (zen && !state.zenAutoFog) ? "flex" : "none";
+      document.getElementById("zenMistBtn").style.display = zen && !state.zenAutoFog ? "flex" : "none";
       document.getElementById("zenFogSetting").style.display = zen ? "block" : "none";
       syncToggle("zenFogToggle",state.zenAutoFog);
     }
@@ -1972,18 +1962,22 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         glassDropsSystem.replenish();
         
         if(state.isZen){
+          // A regeneração automática é o padrão do Zen, como no jogo original.
+          // Quando desativada, o botão compacto "mist" reaparece para controle manual.
           if(state.zenAutoFog){
+            // Fórmula baseada no tempo para manter a mesma velocidade em 30 ou 60 FPS.
+            const fogReturnAlpha=1-Math.exp(-dt*(.36+state.rainIntensity*.24));
+            const cellReturnChance=1-Math.exp(-dt*(.18+state.rainIntensity*.12));
             fogCtx.globalCompositeOperation="source-over";
-            fogCtx.fillStyle=`rgba(224,234,238,${dt*(.024+state.rainIntensity*.028)})`;
+            fogCtx.fillStyle=`rgba(210,225,232,${fogReturnAlpha})`;
             fogCtx.fillRect(0,0,W,H);
             for(let i=0;i<fogGrid.length;i++){
-              if(fogGrid[i]===1 && Math.random()<dt*(.008+state.rainIntensity*.012)){
+              if(fogGrid[i]===1 && Math.random()<cellReturnChance){
                 fogGrid[i]=0;
                 fogClearedCells=Math.max(0,fogClearedCells-1);
               }
             }
           }
-
           updateProgress();
         }
       }
@@ -2008,20 +2002,6 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     };
     document.getElementById("resumeBtn").onclick = () => { state.paused = false; if(masterGain&&audioCtx) masterGain.gain.setTargetAtTime(.82,audioCtx.currentTime,.18); document.getElementById("pauseScreen").classList.add("hidden"); };
 
-    document.getElementById("zenMistBtn").onclick = () => {
-      if(!state.isZen || state.zenAutoFog) return;
-      initFog();
-      state.zenScore = 0;
-      updateProgress();
-    };
-
-    document.getElementById("zenFogToggle").onclick = () => {
-      if(!state.isZen) return;
-      state.zenAutoFog = !state.zenAutoFog;
-      syncToggle("zenFogToggle",state.zenAutoFog);
-      updatePhaseUI();
-      saveGame();
-    };
     let settingsContext = "main";
     function openSettings(context){
       settingsContext = context;
@@ -2070,6 +2050,19 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     document.getElementById('flashesToggle').onclick=()=>{state.lightningEnabled=!state.lightningEnabled;syncToggle("flashesToggle",state.lightningEnabled);saveGame();};
     document.getElementById('gameSoundToggle').onclick=()=>{state.gameSound=!state.gameSound;syncToggle("gameSoundToggle",state.gameSound);saveGame();};
     document.getElementById('musicSoundToggle').onclick=()=>{state.musicSound=!state.musicSound;syncToggle("musicSoundToggle",state.musicSound);updateAudio();saveGame();};
+    document.getElementById('zenFogToggle').onclick=()=>{
+      if(!state.isZen) return;
+      state.zenAutoFog=!state.zenAutoFog;
+      syncToggle("zenFogToggle",state.zenAutoFog);
+      updatePhaseUI();
+      saveGame();
+    };
+    document.getElementById('zenMistBtn').onclick=()=>{
+      if(!state.isZen || state.zenAutoFog) return;
+      initFog();
+      state.zenScore=0;
+      updateProgress();
+    };
 
     document.addEventListener("visibilitychange",()=>{
       state.lastTime=performance.now();
