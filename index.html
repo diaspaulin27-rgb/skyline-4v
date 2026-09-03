@@ -4,7 +4,7 @@
       Aceita Fases_01_10.zip na raiz ou imagens extraídas em
       assets/backgrounds/phase-01.webp ... phase-10.webp (PNG/JPG também).
       O ZIP precisa conter dez imagens reais e não pode estar vazio.
-      V4 — Zen estável, chuva pura em 100%, desempenho limitado e multitouch seguro.
+      V5 — névoa por máscara, Zen responsivo, gotas 0,6% e Limpeza Perfeita.
     -->
     <html lang="en">
     <head>
@@ -182,7 +182,8 @@
     .progress-wrap { width: min(380px, 70vw); margin: 0 auto 18px; padding: 0; text-align: center; opacity: .82; }
     .progress-label { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; margin: 0 0 7px; color: rgba(255,255,255,.64); text-shadow: 0 2px 8px rgba(0,0,0,.8); }
     .progress-bar { width: 100%; height: 4px; border-radius: 10px; background: rgba(255,255,255,.10); overflow: hidden; }
-    #progressFill { height: 100%; width: 0%; border-radius: inherit; background: linear-gradient(90deg, #38bdf8, #7dd3fc, #ffffff); box-shadow: 0 0 12px rgba(56,189,248,.7); transition: width .2s ease; }
+    #progressFill { height: 100%; width: 0%; border-radius: inherit; background: linear-gradient(90deg, #38bdf8, #7dd3fc, #ffffff); box-shadow: 0 0 12px rgba(56,189,248,.7); transition: width .2s ease, background .25s ease, box-shadow .25s ease; }
+    #progressFill.perfect { background: linear-gradient(90deg, #f59e0b, #fde68a, #ffffff); box-shadow: 0 0 14px rgba(253,230,138,.82); }
 
     @keyframes pulse { 0%, 100% { opacity: .4; } 50% { opacity: .9; } }
 
@@ -230,6 +231,7 @@
     .phase-number { font-size: 9px; letter-spacing: 2px; color: rgba(255,255,255,.4); }
     .phase-name { font-size: 13px; margin-top: 4px; font-weight: 600; }
     .phase-mini-feeling { font-size: 10px; color: var(--primary); margin-top: 5px; }
+    .perfect-mark { float: right; color: #fde68a; font-size: 12px; text-shadow: 0 0 10px rgba(253,230,138,.7); }
 
     .coin-big { font-size: 13px; color: var(--primary); margin: 10px 0 20px; }
     .store-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; max-height: 350px; overflow-y: auto; touch-action:pan-y; overscroll-behavior:contain; }
@@ -261,6 +263,7 @@
     input[type="range"]::-webkit-slider-thumb { appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--primary); cursor: pointer; }
 
     .reward-icon { font-size: 48px; margin-bottom: 10px; filter: drop-shadow(0 0 15px rgba(56,189,248,.5)); }
+    .reward-icon.perfect { color:#fde68a; filter:drop-shadow(0 0 18px rgba(253,230,138,.72)); }
     .reward-title { font-family: Georgia, serif; font-size: 30px; font-weight: 400; margin: 0; }
     .reward-coins { font-size: 28px; color: var(--primary); margin: 15px 0; font-weight: 700; text-shadow: 0 0 20px rgba(56,189,248,.45); }
     .reward-description { color: rgba(255,255,255,.55); font-size: 12px; line-height: 1.5; margin-bottom: 24px; }
@@ -286,8 +289,6 @@
     /* V2 atmospheric polish */
     #weatherGlow{position:absolute;inset:0;z-index:6;pointer-events:none;opacity:0;mix-blend-mode:screen;background:none;}
     #cleanSpark{position:absolute;inset:0;z-index:10;pointer-events:none;}
-    #zenScoreBadge{position:absolute;left:50%;top:calc(20px + env(safe-area-inset-top));transform:translateX(-50%);z-index:21;padding:7px 14px;border-radius:20px;background:rgba(15,23,42,.48);border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(12px);font-size:10px;letter-spacing:2px;opacity:0;transition:.4s ease;}
-    #zenScoreBadge.show{opacity:1;}
     #toast{position:absolute;left:50%;bottom:18%;transform:translate(-50%,10px);z-index:240;padding:10px 15px;border-radius:18px;background:rgba(4,10,20,.88);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(14px);font-size:12px;letter-spacing:.5px;opacity:0;pointer-events:none;transition:.25s ease;white-space:nowrap;}
     #toast.show{opacity:1;transform:translate(-50%,0);}
     </style>
@@ -312,7 +313,6 @@
       <div id="vignette"></div>
       <div id="weatherGlow"></div>
       <div id="cleanSpark"></div>
-      <div id="zenScoreBadge">ZEN · 0</div>
       <div id="toast"></div>
 
       <!-- HUD -->
@@ -467,7 +467,8 @@
           <div class="reward-breakdown">
             <div class="reward-line"><span data-i18n="reward_base">Phase reward</span><span id="rewardBase">+100</span></div>
             <div id="rewardBonusLine" class="reward-line"><span data-i18n="reward_first_bonus">New memory bonus</span><span id="rewardBonus">+50</span></div>
-            <div class="reward-line total"><span data-i18n="reward_total">Total</span><span id="rewardTotal">+150 🌧️</span></div>
+            <div id="rewardPerfectLine" class="reward-line"><span data-i18n="perfect">Perfect Wipe</span><span id="rewardPerfectBonus">+50</span></div>
+            <div class="reward-line total"><span data-i18n="reward_total">Total</span><span id="rewardTotal">+200 🌧️</span></div>
           </div>
           <p class="reward-description" data-i18n="reward_desc">You finished this memory. The next feeling awaits.</p>
           <div class="btn-stack">
@@ -514,6 +515,7 @@
       highestPhase: 0,
       points: 0,
       hasInteracted: false,
+      tutorialSeen: false,
       rainIntensity: 0.7,
       ambVolume: 0.5,
       rainVolume: 1,
@@ -528,15 +530,13 @@
       pointerBrushes: new Map(),
       carOffset: 0,
       elapsed: 0,
-      cleanStreak: 0,
-      lastWipe: 0,
-      zenScore: 0,
       stars: 0,
-      phaseStartedAt: 0,
       zenAutoFog: true,
       lightningEnabled: true,
       selectedBrushSlot: 1,
       completedPhases: [],
+      perfectPhases: [],
+      phaseCompletionPending: false,
       completedSinceAd: 0,
       lastAdAt: 0,
       resumePhase: null
@@ -595,7 +595,6 @@
         phase_req: "Complete previous",
         equip: "EQUIP",
         bonus_clean: "CLEAN BONUS",
-        zen_score: "ZEN · ",
         star: "STAR",
         perfect: "PERFECT WIPE",
         audio_ready: "Tap to enable atmosphere",
@@ -657,7 +656,6 @@
         phase_req: "Completa la anterior",
         equip: "EQUIPAR",
         bonus_clean: "BONUS DE LIMPIEZA",
-        zen_score: "ZEN · ",
         star: "ESTRELLA",
         perfect: "LIMPIEZA PERFECTA",
         audio_ready: "Toca para activar la atmósfera",
@@ -719,7 +717,6 @@
         phase_req: "Complete a anterior",
         equip: "EQUIPAR",
         bonus_clean: "BÔNUS DE LIMPEZA",
-        zen_score: "ZEN · ",
         star: "ESTRELA",
         perfect: "LIMPEZA PERFEITA",
         audio_ready: "Toque para ativar a atmosfera",
@@ -810,26 +807,26 @@ const GLASS_DROP_PHASES = [
 ];
 
 const phases = [
-      { name:{en:"First Rain",pt:"Primeira Chuva",es:"Primera Lluvia"}, feeling:{en:"Serenity",pt:"Serenidade",es:"Serenidad"}, story:{en:"Quiet rain settles over the city.",pt:"Uma chuva tranquila cobre a cidade.",es:"Una lluvia tranquila cubre la ciudad."}, hue:215, sky:["#030712","#0f2740"], lights:["#38bdf8","#7dd3fc","#fef3c7"], rain:.42, thunder:0, type:"rain", rainStyle:"light", fog:.40, target:.76 },
-      { name:{en:"Distant Lights",pt:"Luzes Distantes",es:"Luces Distantes"}, feeling:{en:"Nostalgia",pt:"Nostalgia",es:"Nostalgia"}, story:{en:"Warm windows glow across the night.",pt:"Janelas quentes brilham do outro lado da noite.",es:"Ventanas cálidas brillan al otro lado de la noche."}, hue:235, sky:["#080817","#202044"], lights:["#fbbf24","#f472b6","#818cf8"], rain:.58, thunder:0, type:"rain", rainStyle:"steady", fog:.44, target:.78 },
-      { name:{en:"After Midnight",pt:"Depois da Meia-Noite",es:"Después de Medianoche"}, feeling:{en:"Solitude",pt:"Solidão",es:"Soledad"}, story:{en:"The city sleeps beneath heavier rain.",pt:"A cidade dorme sob uma chuva mais forte.",es:"La ciudad duerme bajo una lluvia más fuerte."}, hue:225, sky:["#020617","#111827"], lights:["#22d3ee","#60a5fa","#a5b4fc"], rain:.78, thunder:.12, type:"rain", rainStyle:"heavy", fog:.50, target:.78 },
-      { name:{en:"Neon Splash",pt:"Neon",es:"Neón"}, feeling:{en:"Contemplation",pt:"Contemplação",es:"Contemplación"}, story:{en:"Color drifts through the falling rain.",pt:"As cores atravessam a chuva que cai.",es:"Los colores atraviesan la lluvia que cae."}, hue:285, sky:["#10051c","#321344"], lights:["#f43f5e","#a855f7","#06b6d4"], rain:.88, thunder:.18, type:"rain", rainStyle:"neon", fog:.46, target:.80 },
-      { name:{en:"The Window",pt:"A Janela",es:"La Ventana"}, feeling:{en:"Intimacy",pt:"Intimidade",es:"Intimidad"}, story:{en:"A quiet shelter behind the glass.",pt:"Um abrigo tranquilo atrás do vidro.",es:"Un refugio tranquilo detrás del cristal."}, hue:195, sky:["#03151b","#12323c"], lights:["#67e8f9","#fde68a","#f0f9ff"], rain:.36, thunder:0, type:"rain", rainStyle:"soft", fog:.36, target:.75 },
-      { name:{en:"Storm",pt:"Tempestade",es:"Tormenta"}, feeling:{en:"Tension",pt:"Tensão",es:"Tensión"}, story:{en:"Wind, thunder and rain fill the sky.",pt:"Vento, trovões e chuva tomam o céu.",es:"Viento, truenos y lluvia llenan el cielo."}, hue:210, sky:["#02040a","#16202d"], lights:["#e0f2fe","#93c5fd","#f8fafc"], rain:1, thunder:1, type:"rain", rainStyle:"storm", fog:.55, target:.80 },
-      { name:{en:"Horizon",pt:"Horizonte",es:"Horizonte"}, feeling:{en:"Hope",pt:"Esperança",es:"Esperanza"}, story:{en:"A thin line of morning light appears.",pt:"Uma faixa de luz da manhã começa a surgir.",es:"Una franja de luz matinal comienza a aparecer."}, hue:205, sky:["#07111c","#24485d"], lights:["#fde68a","#fbbf24","#bae6fd"], rain:.30, thunder:0, type:"rain", rainStyle:"breeze", fog:.34, target:.74 },
-      { name:{en:"Memories",pt:"Memórias",es:"Recuerdos"}, feeling:{en:"Longing",pt:"Saudade",es:"Añoranza"}, story:{en:"Each drop carries something remembered.",pt:"Cada gota carrega uma lembrança.",es:"Cada gota lleva consigo un recuerdo."}, hue:260, sky:["#090613","#2b183b"], lights:["#c4b5fd","#f9a8d4","#fef3c7"], rain:.54, thunder:.05, type:"rain", rainStyle:"memory", fog:.43, target:.78 },
-      { name:{en:"Silence",pt:"Silêncio",es:"Silencio"}, feeling:{en:"Peace",pt:"Paz",es:"Paz"}, story:{en:"Almost no traffic, only soft water.",pt:"Quase nenhum trânsito, apenas chuva suave.",es:"Casi no hay tráfico, solo lluvia suave."}, hue:175, sky:["#020d0d","#123638"], lights:["#5eead4","#99f6e4","#fef9c3"], rain:.20, thunder:0, type:"rain", rainStyle:"drizzle", fog:.30, target:.73 },
-      { name:{en:"Clearing Sky",pt:"O Céu Clareia",es:"El Cielo se Abre"}, feeling:{en:"Renewal",pt:"Renovação",es:"Renovación"}, story:{en:"The last clouds slowly drift away.",pt:"As últimas nuvens se afastam devagar.",es:"Las últimas nubes se alejan lentamente."}, hue:35, sky:["#17100a","#513b20"], lights:["#fde68a","#fb923c","#fef3c7"], rain:.16, thunder:0, type:"rain", rainStyle:"clearing", fog:.28, target:.72 },
-      { name:{en:"Moving Car",pt:"Carro em Movimento",es:"Coche en Marcha"}, feeling:{en:"Journey",pt:"Jornada",es:"Viaje"}, story:{en:"The wet road glides past the side window.",pt:"A estrada molhada passa pela janela lateral.",es:"La carretera mojada pasa junto a la ventanilla."}, hue:200, sky:["#0a0a0a","#1a1a1a"], lights:["#ef4444","#f59e0b"], rain:.66, thunder:.06, type:"car", rainStyle:"carRain", fog:.42, target:.78 },
-      { name:{en:"Snowfall",pt:"Queda de Neve",es:"Nevada"}, feeling:{en:"Stillness",pt:"Quietude",es:"Quietud"}, story:{en:"Snow softens every sound outside.",pt:"A neve suaviza todos os sons lá fora.",es:"La nieve suaviza todos los sonidos afuera."}, hue:200, sky:["#2d3748","#4a5568"], lights:["#e2e8f0","#cbd5e0"], rain:.34, thunder:0, type:"snow", rainStyle:"snowSoft", fog:.38, target:.75 },
-      { name:{en:"Highway Rain",pt:"Chuva na Rodovia",es:"Lluvia en la Autopista"}, feeling:{en:"Speed",pt:"Velocidade",es:"Velocidad"}, story:{en:"Fast drops race across the side glass.",pt:"Gotas rápidas correm pelo vidro lateral.",es:"Gotas rápidas corren por la ventanilla."}, hue:220, sky:["#050510","#151530"], lights:["#ffffff","#ef4444","#22d3ee"], rain:.92, thunder:.30, type:"car", rainStyle:"highwayRain", fog:.51, target:.80 },
-      { name:{en:"Morning Frost",pt:"Geada Matinal",es:"Escarcha Matinal"}, feeling:{en:"Clarity",pt:"Claridade",es:"Claridad"}, story:{en:"The first warmth melts the frozen glass.",pt:"O primeiro calor derrete o vidro congelado.",es:"El primer calor derrite el cristal helado."}, hue:190, sky:["#4a5568","#a0aec0"], lights:["#ffffff","#e2e8f0"], rain:.24, thunder:0, type:"snow", rainStyle:"snowLight", fog:.47, target:.78 },
-      { name:{en:"Summer Sun Shower",pt:"Chuva de Verão",es:"Lluvia de Verano"}, feeling:{en:"Warmth",pt:"Calor",es:"Calidez"}, story:{en:"Warm rain glows beneath the sun.",pt:"A chuva morna brilha sob o sol.",es:"La lluvia cálida brilla bajo el sol."}, hue:50, sky:["#ecc94b","#f6e05e"], lights:["#ffffff"], rain:.46, thunder:.10, type:"rain", rainStyle:"sunShower", fog:.30, target:.74 },
-      { name:{en:"Midnight Blizzard",pt:"Nevasca à Meia-Noite",es:"Ventisca de Medianoche"}, feeling:{en:"Isolation",pt:"Isolamento",es:"Aislamiento"}, story:{en:"A fierce wind hides the sleeping world.",pt:"Um vento feroz esconde o mundo adormecido.",es:"Un viento feroz oculta el mundo dormido."}, hue:230, sky:["#000000","#111827"], lights:["#718096","#a0aec0"], rain:.86, thunder:.18, type:"snow", rainStyle:"blizzard", fog:.58, target:.81 },
-      { name:{en:"City Tunnel",pt:"Túnel da Cidade",es:"Túnel de la Ciudad"}, feeling:{en:"Echo",pt:"Eco",es:"Eco"}, story:{en:"Amber lights rush past in a steady rhythm.",pt:"Luzes âmbar passam em um ritmo constante.",es:"Luces ámbar pasan con un ritmo constante."}, hue:30, sky:["#1a1005","#3a2010"], lights:["#f6ad55","#ed8936"], rain:.48, thunder:0, type:"car", rainStyle:"tunnelRain", fog:.40, target:.77 },
-      { name:{en:"Golden Hour Drops",pt:"Gotas Douradas",es:"Gotas Doradas"}, feeling:{en:"Beauty",pt:"Beleza",es:"Belleza"}, story:{en:"Sunset light glows through every drop.",pt:"A luz do pôr do sol atravessa cada gota.",es:"La luz del atardecer atraviesa cada gota."}, hue:20, sky:["#c53030","#ed8936"], lights:["#fefcbf","#fbd38d"], rain:.38, thunder:0, type:"rain", rainStyle:"goldenRain", fog:.31, target:.74 },
-      { name:{en:"Snowy Drive",pt:"Passeio na Neve",es:"Viaje Nevado"}, feeling:{en:"Comfort",pt:"Aconchego",es:"Abrigo"}, story:{en:"Warm inside, frozen and quiet outside.",pt:"Quente por dentro, frio e silencioso lá fora.",es:"Calidez adentro, frío y silencio afuera."}, hue:210, sky:["#1a202c","#2d3748"], lights:["#e2e8f0","#ef4444"], rain:.52, thunder:0, type:"car_snow", rainStyle:"snowDrive", fog:.45, target:.78 },
-      { name:{en:"The Last Wipe",pt:"A Última Limpeza",es:"La Última Limpieza"}, feeling:{en:"Closure",pt:"Despedida",es:"Despedida"}, story:{en:"The glass clears and the journey rests.",pt:"O vidro clareia e a jornada descansa.",es:"El cristal se aclara y el viaje descansa."}, hue:200, sky:["#2b6cb0","#4299e1"], lights:["#ffffff","#bee3f8"], rain:.12, thunder:0, type:"rain", rainStyle:"finalRain", fog:.25, target:.70 }
+      { name:{en:"First Rain",pt:"Primeira Chuva",es:"Primera Lluvia"}, feeling:{en:"Serenity",pt:"Serenidade",es:"Serenidad"}, story:{en:"Quiet rain settles over the city.",pt:"Uma chuva tranquila cobre a cidade.",es:"Una lluvia tranquila cubre la ciudad."}, hue:215, sky:["#030712","#0f2740"], lights:["#38bdf8","#7dd3fc","#fef3c7"], rain:.42, thunder:0, type:"rain", rainStyle:"light", fog:.40 },
+      { name:{en:"Distant Lights",pt:"Luzes Distantes",es:"Luces Distantes"}, feeling:{en:"Nostalgia",pt:"Nostalgia",es:"Nostalgia"}, story:{en:"Warm windows glow across the night.",pt:"Janelas quentes brilham do outro lado da noite.",es:"Ventanas cálidas brillan al otro lado de la noche."}, hue:235, sky:["#080817","#202044"], lights:["#fbbf24","#f472b6","#818cf8"], rain:.58, thunder:0, type:"rain", rainStyle:"steady", fog:.44 },
+      { name:{en:"After Midnight",pt:"Depois da Meia-Noite",es:"Después de Medianoche"}, feeling:{en:"Solitude",pt:"Solidão",es:"Soledad"}, story:{en:"The city sleeps beneath heavier rain.",pt:"A cidade dorme sob uma chuva mais forte.",es:"La ciudad duerme bajo una lluvia más fuerte."}, hue:225, sky:["#020617","#111827"], lights:["#22d3ee","#60a5fa","#a5b4fc"], rain:.78, thunder:.12, type:"rain", rainStyle:"heavy", fog:.50 },
+      { name:{en:"Neon Splash",pt:"Neon",es:"Neón"}, feeling:{en:"Contemplation",pt:"Contemplação",es:"Contemplación"}, story:{en:"Color drifts through the falling rain.",pt:"As cores atravessam a chuva que cai.",es:"Los colores atraviesan la lluvia que cae."}, hue:285, sky:["#10051c","#321344"], lights:["#f43f5e","#a855f7","#06b6d4"], rain:.88, thunder:.18, type:"rain", rainStyle:"neon", fog:.46 },
+      { name:{en:"The Window",pt:"A Janela",es:"La Ventana"}, feeling:{en:"Intimacy",pt:"Intimidade",es:"Intimidad"}, story:{en:"A quiet shelter behind the glass.",pt:"Um abrigo tranquilo atrás do vidro.",es:"Un refugio tranquilo detrás del cristal."}, hue:195, sky:["#03151b","#12323c"], lights:["#67e8f9","#fde68a","#f0f9ff"], rain:.36, thunder:0, type:"rain", rainStyle:"soft", fog:.36 },
+      { name:{en:"Storm",pt:"Tempestade",es:"Tormenta"}, feeling:{en:"Tension",pt:"Tensão",es:"Tensión"}, story:{en:"Wind, thunder and rain fill the sky.",pt:"Vento, trovões e chuva tomam o céu.",es:"Viento, truenos y lluvia llenan el cielo."}, hue:210, sky:["#02040a","#16202d"], lights:["#e0f2fe","#93c5fd","#f8fafc"], rain:1, thunder:1, type:"rain", rainStyle:"storm", fog:.55 },
+      { name:{en:"Horizon",pt:"Horizonte",es:"Horizonte"}, feeling:{en:"Hope",pt:"Esperança",es:"Esperanza"}, story:{en:"A thin line of morning light appears.",pt:"Uma faixa de luz da manhã começa a surgir.",es:"Una franja de luz matinal comienza a aparecer."}, hue:205, sky:["#07111c","#24485d"], lights:["#fde68a","#fbbf24","#bae6fd"], rain:.30, thunder:0, type:"rain", rainStyle:"breeze", fog:.34 },
+      { name:{en:"Memories",pt:"Memórias",es:"Recuerdos"}, feeling:{en:"Longing",pt:"Saudade",es:"Añoranza"}, story:{en:"Each drop carries something remembered.",pt:"Cada gota carrega uma lembrança.",es:"Cada gota lleva consigo un recuerdo."}, hue:260, sky:["#090613","#2b183b"], lights:["#c4b5fd","#f9a8d4","#fef3c7"], rain:.54, thunder:.05, type:"rain", rainStyle:"memory", fog:.43 },
+      { name:{en:"Silence",pt:"Silêncio",es:"Silencio"}, feeling:{en:"Peace",pt:"Paz",es:"Paz"}, story:{en:"Almost no traffic, only soft water.",pt:"Quase nenhum trânsito, apenas chuva suave.",es:"Casi no hay tráfico, solo lluvia suave."}, hue:175, sky:["#020d0d","#123638"], lights:["#5eead4","#99f6e4","#fef9c3"], rain:.20, thunder:0, type:"rain", rainStyle:"drizzle", fog:.30 },
+      { name:{en:"Clearing Sky",pt:"O Céu Clareia",es:"El Cielo se Abre"}, feeling:{en:"Renewal",pt:"Renovação",es:"Renovación"}, story:{en:"The last clouds slowly drift away.",pt:"As últimas nuvens se afastam devagar.",es:"Las últimas nubes se alejan lentamente."}, hue:35, sky:["#17100a","#513b20"], lights:["#fde68a","#fb923c","#fef3c7"], rain:.16, thunder:0, type:"rain", rainStyle:"clearing", fog:.28 },
+      { name:{en:"Moving Car",pt:"Carro em Movimento",es:"Coche en Marcha"}, feeling:{en:"Journey",pt:"Jornada",es:"Viaje"}, story:{en:"The wet road glides past the side window.",pt:"A estrada molhada passa pela janela lateral.",es:"La carretera mojada pasa junto a la ventanilla."}, hue:200, sky:["#0a0a0a","#1a1a1a"], lights:["#ef4444","#f59e0b"], rain:.66, thunder:.06, type:"car", rainStyle:"carRain", fog:.42 },
+      { name:{en:"Snowfall",pt:"Queda de Neve",es:"Nevada"}, feeling:{en:"Stillness",pt:"Quietude",es:"Quietud"}, story:{en:"Snow softens every sound outside.",pt:"A neve suaviza todos os sons lá fora.",es:"La nieve suaviza todos los sonidos afuera."}, hue:200, sky:["#2d3748","#4a5568"], lights:["#e2e8f0","#cbd5e0"], rain:.34, thunder:0, type:"snow", rainStyle:"snowSoft", fog:.38 },
+      { name:{en:"Highway Rain",pt:"Chuva na Rodovia",es:"Lluvia en la Autopista"}, feeling:{en:"Speed",pt:"Velocidade",es:"Velocidad"}, story:{en:"Fast drops race across the side glass.",pt:"Gotas rápidas correm pelo vidro lateral.",es:"Gotas rápidas corren por la ventanilla."}, hue:220, sky:["#050510","#151530"], lights:["#ffffff","#ef4444","#22d3ee"], rain:.92, thunder:.30, type:"car", rainStyle:"highwayRain", fog:.51 },
+      { name:{en:"Morning Frost",pt:"Geada Matinal",es:"Escarcha Matinal"}, feeling:{en:"Clarity",pt:"Claridade",es:"Claridad"}, story:{en:"The first warmth melts the frozen glass.",pt:"O primeiro calor derrete o vidro congelado.",es:"El primer calor derrite el cristal helado."}, hue:190, sky:["#4a5568","#a0aec0"], lights:["#ffffff","#e2e8f0"], rain:.24, thunder:0, type:"snow", rainStyle:"snowLight", fog:.47 },
+      { name:{en:"Summer Sun Shower",pt:"Chuva de Verão",es:"Lluvia de Verano"}, feeling:{en:"Warmth",pt:"Calor",es:"Calidez"}, story:{en:"Warm rain glows beneath the sun.",pt:"A chuva morna brilha sob o sol.",es:"La lluvia cálida brilla bajo el sol."}, hue:50, sky:["#ecc94b","#f6e05e"], lights:["#ffffff"], rain:.46, thunder:.10, type:"rain", rainStyle:"sunShower", fog:.30 },
+      { name:{en:"Midnight Blizzard",pt:"Nevasca à Meia-Noite",es:"Ventisca de Medianoche"}, feeling:{en:"Isolation",pt:"Isolamento",es:"Aislamiento"}, story:{en:"A fierce wind hides the sleeping world.",pt:"Um vento feroz esconde o mundo adormecido.",es:"Un viento feroz oculta el mundo dormido."}, hue:230, sky:["#000000","#111827"], lights:["#718096","#a0aec0"], rain:.86, thunder:.18, type:"snow", rainStyle:"blizzard", fog:.58 },
+      { name:{en:"City Tunnel",pt:"Túnel da Cidade",es:"Túnel de la Ciudad"}, feeling:{en:"Echo",pt:"Eco",es:"Eco"}, story:{en:"Amber lights rush past in a steady rhythm.",pt:"Luzes âmbar passam em um ritmo constante.",es:"Luces ámbar pasan con un ritmo constante."}, hue:30, sky:["#1a1005","#3a2010"], lights:["#f6ad55","#ed8936"], rain:.48, thunder:0, type:"car", rainStyle:"tunnelRain", fog:.40 },
+      { name:{en:"Golden Hour Drops",pt:"Gotas Douradas",es:"Gotas Doradas"}, feeling:{en:"Beauty",pt:"Beleza",es:"Belleza"}, story:{en:"Sunset light glows through every drop.",pt:"A luz do pôr do sol atravessa cada gota.",es:"La luz del atardecer atraviesa cada gota."}, hue:20, sky:["#c53030","#ed8936"], lights:["#fefcbf","#fbd38d"], rain:.38, thunder:0, type:"rain", rainStyle:"goldenRain", fog:.31 },
+      { name:{en:"Snowy Drive",pt:"Passeio na Neve",es:"Viaje Nevado"}, feeling:{en:"Comfort",pt:"Aconchego",es:"Abrigo"}, story:{en:"Warm inside, frozen and quiet outside.",pt:"Quente por dentro, frio e silencioso lá fora.",es:"Calidez adentro, frío y silencio afuera."}, hue:210, sky:["#1a202c","#2d3748"], lights:["#e2e8f0","#ef4444"], rain:.52, thunder:0, type:"car_snow", rainStyle:"snowDrive", fog:.45 },
+      { name:{en:"The Last Wipe",pt:"A Última Limpeza",es:"La Última Limpieza"}, feeling:{en:"Closure",pt:"Despedida",es:"Despedida"}, story:{en:"The glass clears and the journey rests.",pt:"O vidro clareia e a jornada descansa.",es:"El cristal se aclara y el viaje descansa."}, hue:200, sky:["#2b6cb0","#4299e1"], lights:["#ffffff","#bee3f8"], rain:.12, thunder:0, type:"rain", rainStyle:"finalRain", fog:.25 }
     ];
 
     const brushes = {
@@ -851,14 +848,16 @@ const phases = [
 
     function saveGame() {
       const payload = {
-        version: 10,
+        version: 11,
         points: state.points, stars: state.stars, highestPhase: state.highestPhase,
         currentPhase: state.resumePhase ?? (state.isZen ? state.campaignPhase : state.currentPhase),
         brush1: state.brush1, brush2: state.brush2, unlockedBrushes,
         rainIntensity: state.rainIntensity, ambVolume: state.ambVolume, rainVolume: state.rainVolume,
         gameSound: state.gameSound, musicSound: state.musicSound, vibration: state.vibration,
         lang: state.lang, lightningEnabled: state.lightningEnabled, zenAutoFog: state.zenAutoFog,
-        completedPhases: state.completedPhases, completedSinceAd: state.completedSinceAd,
+        tutorialSeen: state.tutorialSeen,
+        completedPhases: state.completedPhases, perfectPhases: state.perfectPhases,
+        completedSinceAd: state.completedSinceAd,
         lastAdAt: state.lastAdAt
       };
       try { localStorage.setItem("rainySkylineSave", JSON.stringify(payload)); }
@@ -893,6 +892,10 @@ const phases = [
         state.completedPhases = Array.isArray(data.completedPhases)
           ? [...new Set(data.completedPhases.map(Number).filter(i => Number.isInteger(i) && i >= 0 && i < phases.length))]
           : Array.from({length: state.highestPhase}, (_, i) => i);
+        state.perfectPhases = Array.isArray(data.perfectPhases)
+          ? [...new Set(data.perfectPhases.map(Number).filter(i => Number.isInteger(i) && i >= 0 && i < phases.length))]
+          : [];
+        state.tutorialSeen = data.tutorialSeen === true;
         state.completedSinceAd = Math.max(0, Number(data.completedSinceAd) || 0);
         state.lastAdAt = Math.max(0, Number(data.lastAdAt) || 0);
       } catch (error) { console.warn("Save inválido."); }
@@ -906,6 +909,12 @@ const phases = [
     const rainCtx = rainCanvas.getContext("2d");
     const glassCtx = glassCanvas.getContext("2d");
     const fogCtx = fogCanvas.getContext("2d");
+    // A aparência da névoa e a área limpa vivem separadas. A máscara nunca passa
+    // de 100%, portanto a regeneração não consegue clarear nem escurecer o padrão.
+    const fogBaseCanvas = document.createElement("canvas");
+    const fogBaseCtx = fogBaseCanvas.getContext("2d");
+    const fogMaskCanvas = document.createElement("canvas");
+    const fogMaskCtx = fogMaskCanvas.getContext("2d");
 
     let W = window.innerWidth; let H = window.innerHeight;
     const lowPowerDevice = (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) ||
@@ -1104,13 +1113,13 @@ const phases = [
     }
 
     function resize() {
-      const preserveFog = state.started && fogCanvas.width > 0 && fogCanvas.height > 0;
-      let fogSnapshot=null, previousGrid=null, previousGridX=0, previousGridY=0;
+      const preserveFog = state.started && fogMaskCanvas.width > 0 && fogMaskCanvas.height > 0;
+      let maskSnapshot=null, previousGrid=null, previousGridX=0, previousGridY=0;
       if(preserveFog){
-        fogSnapshot=document.createElement("canvas");
-        fogSnapshot.width=fogCanvas.width;
-        fogSnapshot.height=fogCanvas.height;
-        fogSnapshot.getContext("2d").drawImage(fogCanvas,0,0);
+        maskSnapshot=document.createElement("canvas");
+        maskSnapshot.width=fogMaskCanvas.width;
+        maskSnapshot.height=fogMaskCanvas.height;
+        maskSnapshot.getContext("2d").drawImage(fogMaskCanvas,0,0);
         previousGrid=fogGrid.slice();
         previousGridX=GRID_X;
         previousGridY=GRID_Y;
@@ -1122,15 +1131,19 @@ const phases = [
       if(typeof brushStampCache !== "undefined") brushStampCache.clear();
       setupCanvas(bgCanvas, bgCtx); setupCanvas(rainCanvas, rainCtx);
       setupCanvas(glassCanvas, glassCtx); setupCanvas(fogCanvas, fogCtx);
+      setupCanvas(fogBaseCanvas, fogBaseCtx); setupCanvas(fogMaskCanvas, fogMaskCtx);
       if (typeof glassDropsSystem !== "undefined") glassDropsSystem.resize();
       generateCity(); drawCityBackground();
-      if(preserveFog && fogSnapshot && previousGrid?.length){
-        fogCtx.drawImage(fogSnapshot,0,0,fogSnapshot.width,fogSnapshot.height,0,0,W,H);
+      if(preserveFog && maskSnapshot && previousGrid?.length){
+        buildFogBase();
+        fogMaskCtx.globalCompositeOperation="source-over";
+        fogMaskCtx.clearRect(0,0,W,H);
+        fogMaskCtx.drawImage(maskSnapshot,0,0,maskSnapshot.width,maskSnapshot.height,0,0,W,H);
+        renderFogFromMask();
         createFogGrid();
         for(let y=0;y<GRID_Y;y++){
           for(let x=0;x<GRID_X;x++){
             const index=y*GRID_X+x;
-            if(fogGrid[index]!==0) continue;
             const oldX=Math.min(previousGridX-1,Math.floor((x+.5)/GRID_X*previousGridX));
             const oldY=Math.min(previousGridY-1,Math.floor((y+.5)/GRID_Y*previousGridY));
             if(previousGrid[oldY*previousGridX+oldX]===1){ fogGrid[index]=1; fogClearedCells++; }
@@ -1335,14 +1348,15 @@ const phases = [
         this.isBead=this.layer===0&&Math.random()<.38;
       }
 
-      update(dt) {
-        const phase = phases[state.currentPhase] || phases[0];
-        const intensity = 0.46 + getEffectiveRainIntensity() * 0.78;
+      update(dt,climate=null) {
+        const phase=phases[state.currentPhase] || phases[0];
+        const intensity=climate ? climate.speed : 0.46+getEffectiveRainIntensity()*.78;
         this.age += dt;
         const broadGust=Math.sin(state.elapsed*.61)*.62+Math.sin(state.elapsed*.19+1.8)*.38;
         const localGust=Math.sin(this.age*(.7+this.pulse)+this.phase);
         this.currentVx=this.wind+broadGust*this.gustAmp+localGust*this.gustAmp*.28;
-        this.currentVy=this.vy*intensity*this.styleSpeed*(.96+Math.sin(state.elapsed*.34+this.phase)*.04);
+        const styleMultiplier=climate ? 1 : this.styleSpeed;
+        this.currentVy=this.vy*intensity*styleMultiplier*(.96+Math.sin(state.elapsed*.34+this.phase)*.04);
         if (phase.type === 'car' || phase.type === 'car_snow') {
           const carParticleSpeed = phase.type === 'car_snow' ? 92 : 185;
           this.currentVx+=carParticleSpeed*(.35+this.z*.95);
@@ -1353,31 +1367,35 @@ const phases = [
         if (this.y > H + 70 || this.x < -140 || this.x > W + 180) this.reset();
       }
 
-      draw() {
+      draw(climate=null) {
+        const lengthScale=climate?.length ?? 1;
+        const widthScale=climate?.width ?? 1;
+        const weatherOpacity=climate?.opacity;
         if (this.isSnow) {
-          const a=Math.min(.42,this.alpha*(.70+getEffectiveRainIntensity()*.34));
+          const a=Math.min(.42,this.alpha*(weatherOpacity ?? (.70+getEffectiveRainIntensity()*.34)));
           rainCtx.save();
           if(this.blur) rainCtx.filter=`blur(${this.blur}px)`;
           rainCtx.fillStyle = `rgba(255,255,255,${a})`;
           rainCtx.beginPath();
-          rainCtx.arc(this.x, this.y, this.width, 0, Math.PI * 2);
+          rainCtx.arc(this.x,this.y,this.width*widthScale,0,Math.PI*2);
           rainCtx.fill();
           rainCtx.restore();
           return;
         }
 
-        const a=Math.min(.32,this.alpha*(.72+getEffectiveRainIntensity()*.42));
+        const a=Math.min(.32,this.alpha*(weatherOpacity ?? (.72+getEffectiveRainIntensity()*.42)));
         if(this.isBead){
           rainCtx.fillStyle=`rgba(190,222,245,${a*.72})`;
           rainCtx.beginPath();
-          rainCtx.ellipse(this.x,this.y,Math.max(.25,this.width*.62),Math.max(.7,this.len*.26),0,0,Math.PI*2);
+          rainCtx.ellipse(this.x,this.y,Math.max(.25,this.width*widthScale*.62),Math.max(.7,this.len*lengthScale*.26),0,0,Math.PI*2);
           rainCtx.fill();
           return;
         }
 
-        const travelTime=this.len/Math.max(1,this.currentVy);
+        const visualLength=this.len*lengthScale;
+        const travelTime=visualLength/Math.max(1,this.currentVy);
         const tailX=this.x-this.currentVx*travelTime;
-        const tailY=this.y-this.len;
+        const tailY=this.y-visualLength;
         const bend=Math.sin(this.age*1.7+this.phase)*(this.layer===2?3.2:this.layer===1?1.2:.35);
         // A chuva recebe apenas um reflexo da paleta da fase; continua parecendo
         // água, mas deixa de ser uma camada azul idêntica sobre todas as imagens.
@@ -1394,7 +1412,7 @@ const phases = [
         rainCtx.save();
         if(this.blur) rainCtx.filter=`blur(${this.blur}px)`;
         rainCtx.strokeStyle=gradient;
-        rainCtx.lineWidth=this.width;
+        rainCtx.lineWidth=this.width*widthScale;
         rainCtx.lineCap="round";
         rainCtx.beginPath();
         rainCtx.moveTo(tailX,tailY);
@@ -1407,7 +1425,7 @@ const phases = [
 
     const rainParticles = Array.from({ length: lowPowerDevice ? 120 : 180 }, () => new Particle());
     // ============================================================
-    // GOTAS NO VIDRO — V8 DETALHE SUTIL
+    // GOTAS NO VIDRO — V9 DETALHE SUTIL
     // O toque apenas remove. Poucas gotas escorrem naturalmente e só elas
     // incorporam gotas abaixo, ficando maiores e um pouco mais rápidas.
     // ============================================================
@@ -1431,7 +1449,7 @@ const phases = [
         this.highlight=.06+Math.random()*.09;
         this.vx=0;
         this.vy=0;
-        this.dripping=this.r>3.2 && Math.random()<.025;
+        this.dripping=this.r>3.2 && Math.random()<.006;
         if(this.dripping){
           this.vx=(Math.random()-.5)*2.4;
           this.vy=7+Math.random()*13;
@@ -1570,7 +1588,7 @@ const phases = [
         drop.y=position.y;
         drop.vx=0;
         drop.vy=0;
-        drop.dripping=drop.r>3.2 && Math.random()<.025;
+        drop.dripping=drop.r>3.2 && Math.random()<.006;
         if(drop.dripping) drop.vy=7+Math.random()*13;
         return drop;
       }
@@ -1591,7 +1609,7 @@ const phases = [
           if(!drop.alive) continue;
           // De vez em quando uma gota média começa a descer sozinha.
           if(!drop.dripping && drop.spawnProgress>=1 && drop.r>3.2){
-            const startChance=dt*(.0012+getEffectiveRainIntensity()*.0018);
+            const startChance=dt*.006;
             if(Math.random()<startChance){
               drop.dripping=true;
               drop.vx=(Math.random()-.5)*2.2;
@@ -1676,48 +1694,100 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       fogPlayableCells = fogGrid.length;
     }
 
-    function initFog() {
-      createFogGrid();
-      fogCtx.globalCompositeOperation = "source-over";
-      fogCtx.clearRect(0, 0, W, H);
+    function buildFogBase() {
+      fogBaseCtx.globalCompositeOperation="source-over";
+      fogBaseCtx.globalAlpha=1;
+      fogBaseCtx.clearRect(0,0,W,H);
 
-      // Embaçamento clássico restaurado: leitura simples e confortável,
-      // sem a sobreposição colorida que criava sensação de visão dupla.
-      fogCtx.save();
-      fogCtx.filter = "blur(10px) saturate(.82)";
-      fogCtx.globalAlpha = .76;
-      fogCtx.drawImage(bgCanvas, 0, 0, bgCanvas.width, bgCanvas.height, -12, -12, W + 24, H + 24);
-      fogCtx.restore();
+      // Mantém exatamente o embaçamento clássico aprovado.
+      fogBaseCtx.save();
+      fogBaseCtx.filter="blur(10px) saturate(.82)";
+      fogBaseCtx.globalAlpha=.76;
+      fogBaseCtx.drawImage(bgCanvas,0,0,bgCanvas.width,bgCanvas.height,-12,-12,W+24,H+24);
+      fogBaseCtx.restore();
 
-      const phase = phases[state.currentPhase] || phases[0];
-      const fogOpacity = Math.max(.18, Math.min(.48, (phase.fog ?? .40)*.86));
-      fogCtx.fillStyle = `rgba(190,205,213,${fogOpacity})`;
-      fogCtx.fillRect(0, 0, W, H);
+      const phase=phases[state.currentPhase] || phases[0];
+      const fogOpacity=Math.max(.18,Math.min(.48,(phase.fog ?? .40)*.86));
+      fogBaseCtx.fillStyle=`rgba(190,205,213,${fogOpacity})`;
+      fogBaseCtx.fillRect(0,0,W,H);
 
-      // Textura larga e discreta do embaçamento anterior.
-      fogCtx.globalAlpha = .035;
+      fogBaseCtx.globalAlpha=.035;
       for(let i=0;i<34;i++){
-        const x = Math.random()*W;
-        const y = Math.random()*H;
-        const rw = 90 + Math.random()*190;
-        const rh = 50 + Math.random()*130;
-        fogCtx.fillStyle = "rgba(255,255,255,.18)";
-        fogCtx.beginPath();
-        fogCtx.ellipse(x,y,rw,rh,Math.random()*Math.PI,0,Math.PI*2);
-        fogCtx.fill();
+        const x=Math.random()*W;
+        const y=Math.random()*H;
+        const rw=90+Math.random()*190;
+        const rh=50+Math.random()*130;
+        fogBaseCtx.fillStyle="rgba(255,255,255,.18)";
+        fogBaseCtx.beginPath();
+        fogBaseCtx.ellipse(x,y,rw,rh,Math.random()*Math.PI,0,Math.PI*2);
+        fogBaseCtx.fill();
       }
-      fogCtx.globalAlpha=1;
-      state.fogProgress = 0; updateProgress(true);
+      fogBaseCtx.globalAlpha=1;
     }
 
-    function clearFogStamp(x, y, brush, radius) {
-      const stamp=getBrushStamp(brush,radius);
+    function renderFogFromMask() {
       fogCtx.save();
-      fogCtx.globalCompositeOperation = "destination-out";
-      fogCtx.drawImage(stamp.canvas,x-stamp.cssSize/2,y-stamp.cssSize/2,stamp.cssSize,stamp.cssSize);
+      fogCtx.globalCompositeOperation="source-over";
+      fogCtx.globalAlpha=1;
+      fogCtx.clearRect(0,0,W,H);
+      fogCtx.drawImage(fogBaseCanvas,0,0,fogBaseCanvas.width,fogBaseCanvas.height,0,0,W,H);
+      fogCtx.globalCompositeOperation="destination-in";
+      fogCtx.drawImage(fogMaskCanvas,0,0,fogMaskCanvas.width,fogMaskCanvas.height,0,0,W,H);
       fogCtx.restore();
-      glassDropsSystem.wipe(x, y, radius * .82);
-      markFogGrid(x, y, radius * .72);
+    }
+
+    function initFog() {
+      createFogGrid();
+      buildFogBase();
+      fogMaskCtx.globalCompositeOperation="source-over";
+      fogMaskCtx.globalAlpha=1;
+      fogMaskCtx.clearRect(0,0,W,H);
+      fogMaskCtx.fillStyle="#fff";
+      fogMaskCtx.fillRect(0,0,W,H);
+      renderFogFromMask();
+      state.phaseCompletionPending=false;
+      state.fogProgress=0;
+      updateProgress(true);
+    }
+
+    function clearFogStamp(x,y,brush,radius) {
+      const stamp=getBrushStamp(brush,radius);
+      fogMaskCtx.save();
+      fogMaskCtx.globalCompositeOperation="destination-out";
+      fogMaskCtx.drawImage(stamp.canvas,x-stamp.cssSize/2,y-stamp.cssSize/2,stamp.cssSize,stamp.cssSize);
+      fogMaskCtx.restore();
+      glassDropsSystem.wipe(x,y,radius*.82);
+      markFogGrid(x,y,radius*.72);
+    }
+
+    const ZEN_FOG_REGEN_ALPHA=.0088;
+    function regenerateZenFog(dt) {
+      const frameScale=Math.max(0,Math.min(6,dt*60));
+      if(frameScale<=0) return;
+
+      // O valor corresponde à velocidade clássica em 70%, agora fixo e
+      // independente da intensidade da chuva.
+      const regenAlpha=1-Math.pow(1-ZEN_FOG_REGEN_ALPHA,frameScale);
+      fogMaskCtx.save();
+      fogMaskCtx.globalCompositeOperation="source-over";
+      fogMaskCtx.fillStyle=`rgba(255,255,255,${regenAlpha})`;
+      fogMaskCtx.fillRect(0,0,W,H);
+      fogMaskCtx.restore();
+      renderFogFromMask();
+
+      // Preserva as probabilidades clássicas da grade em pulsos equivalentes a 60 FPS.
+      let logicalTicks=Math.floor(frameScale);
+      if(Math.random()<frameScale-logicalTicks) logicalTicks++;
+      for(let tick=0;tick<logicalTicks;tick++){
+        if(Math.random()<.22){
+          for(let i=0;i<fogGrid.length;i++){
+            if(fogGrid[i]===1 && Math.random()<.018){
+              fogGrid[i]=0;
+              fogClearedCells=Math.max(0,fogClearedCells-1);
+            }
+          }
+        }
+      }
     }
 
     function getBrushStamp(brush, radius) {
@@ -1749,8 +1819,10 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
 
     function clearFogLine(fromX, fromY, toX, toY, brush) {
       if (!state.hasInteracted) {
-        state.hasInteracted = true;
+        state.hasInteracted=true;
+        state.tutorialSeen=true;
         document.getElementById("instruction").classList.add("hidden-text");
+        saveGame();
       }
       const scale = Math.max(.82, Math.min(1.18, Math.min(W, H) / 390));
       // Núcleo visual 16% menor: a limpeza parece feita pelo dedo, sem abrir
@@ -1768,9 +1840,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
           radius
         );
       }
-      const now = performance.now();
-      state.cleanStreak = now - state.lastWipe < 350 ? state.cleanStreak + 1 : 1;
-      state.lastWipe = now;
+      renderFogFromMask();
       updateProgress();
     }
 
@@ -1793,13 +1863,25 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       return marked;
     }
 
+    const PERFECT_TARGET=.995;
+    const PERFECT_BONUS=50;
+
+    function finishPendingPhase() {
+      if(!state.phaseCompletionPending || !state.started || state.paused || state.isZen) return;
+      state.phaseCompletionPending=false;
+      completePhase(state.fogProgress>=PERFECT_TARGET);
+    }
+
     function updateProgress() {
-      state.fogProgress = fogClearedCells / Math.max(1, fogPlayableCells);
-      // Quase todo o vidro jogável precisa estar limpo. Os 2% restantes evitam
-      // prender o jogador em células inacessíveis sob o HUD e nas bordas.
-      const target = COMPLETION_TARGET;
-      document.getElementById("progressFill").style.width = `${Math.min(1, state.fogProgress / target) * 100}%`;
-      if (state.fogProgress >= target && state.started && !state.paused && !state.isZen) completePhase();
+      state.fogProgress=fogClearedCells/Math.max(1,fogPlayableCells);
+      const target=COMPLETION_TARGET;
+      const fill=document.getElementById("progressFill");
+      fill.style.width=`${Math.min(1,state.fogProgress/target)*100}%`;
+      fill.classList.toggle("perfect",!state.isZen && state.fogProgress>=PERFECT_TARGET);
+      if(state.fogProgress>=target && state.started && !state.paused && !state.isZen){
+        state.phaseCompletionPending=true;
+        if(state.activePointers.size===0) finishPendingPhase();
+      }
     }
 
     function getPointerBrushKey(pointerId) {
@@ -1840,11 +1922,17 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       pointer.y = fromY;
     }
     function handlePointerUp(e) {
-      if (state.activePointers.has(e.pointerId)) e.preventDefault();
+      const hadPointer=state.activePointers.has(e.pointerId);
+      if(hadPointer) e.preventDefault();
       state.activePointers.delete(e.pointerId);
       state.pointerBrushes.delete(e.pointerId);
+      if(hadPointer && state.activePointers.size===0) finishPendingPhase();
     }
-    fogCanvas.addEventListener("pointerdown", handlePointerDown); fogCanvas.addEventListener("pointermove", handlePointerMove); fogCanvas.addEventListener("pointerup", handlePointerUp); fogCanvas.addEventListener("pointercancel", handlePointerUp);
+    fogCanvas.addEventListener("pointerdown",handlePointerDown);
+    fogCanvas.addEventListener("pointermove",handlePointerMove);
+    fogCanvas.addEventListener("pointerup",handlePointerUp);
+    fogCanvas.addEventListener("pointercancel",handlePointerUp);
+    fogCanvas.addEventListener("lostpointercapture",handlePointerUp);
 
     let audioCtx = null, masterGain = null, rainGain = null, droneGain = null;
     let rainFilter = null, droneOsc = null, thunderTimer = null;
@@ -1946,28 +2034,37 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       });
     }
 
-    function completePhase() {
-      state.started = false;
-      state.paused = false;
+    function completePhase(perfectWipe=false) {
+      state.started=false;
+      state.paused=false;
+      state.phaseCompletionPending=false;
       if(masterGain&&audioCtx) masterGain.gain.setTargetAtTime(.24,audioCtx.currentTime,.4);
       if(thunderTimer) clearTimeout(thunderTimer);
       const completedIndex=state.currentPhase;
       const firstClear=!state.completedPhases.includes(completedIndex);
+      const firstPerfect=perfectWipe && !state.perfectPhases.includes(completedIndex);
       const base=100;
       const bonus=firstClear?50:0;
-      const total=base+bonus;
-      state.points += total;
-      if(firstClear){ state.completedPhases.push(completedIndex); state.stars += 1; }
-      state.completedSinceAd += 1;
-      if (state.currentPhase < ACTIVE_PHASE_COUNT - 1) state.highestPhase = Math.max(state.highestPhase, state.currentPhase + 1);
+      const perfectBonus=firstPerfect?PERFECT_BONUS:0;
+      const total=base+bonus+perfectBonus;
+      state.points+=total;
+      if(firstClear){ state.completedPhases.push(completedIndex); state.stars+=1; }
+      if(firstPerfect) state.perfectPhases.push(completedIndex);
+      state.completedSinceAd+=1;
+      if(state.currentPhase<ACTIVE_PHASE_COUNT-1) state.highestPhase=Math.max(state.highestPhase,state.currentPhase+1);
       state.resumePhase=Math.min(completedIndex+1,ACTIVE_PHASE_COUNT-1);
       saveGame();
-      document.getElementById("rewardPhaseName").textContent = `${localize(phases[completedIndex].name)} · ${localize(phases[completedIndex].feeling)}`;
-      document.getElementById("rewardBase").textContent = `+${base}`;
-      document.getElementById("rewardBonus").textContent = `+${bonus}`;
-      document.getElementById("rewardBonusLine").style.display = bonus ? "flex" : "none";
-      document.getElementById("rewardCoins").textContent = `+${total} 🌧️`;
-      document.getElementById("rewardTotal").textContent = `+${total} 🌧️`;
+      document.getElementById("rewardPhaseName").textContent=`${localize(phases[completedIndex].name)} · ${localize(phases[completedIndex].feeling)}`;
+      document.getElementById("rewardBase").textContent=`+${base}`;
+      document.getElementById("rewardBonus").textContent=`+${bonus}`;
+      document.getElementById("rewardBonusLine").style.display=bonus?"flex":"none";
+      document.getElementById("rewardPerfectLine").style.display=perfectWipe?"flex":"none";
+      document.getElementById("rewardPerfectBonus").textContent=firstPerfect?`+${perfectBonus}`:"✓";
+      const rewardIcon=document.querySelector(".reward-icon");
+      rewardIcon.classList.toggle("perfect",perfectWipe);
+      rewardIcon.textContent=perfectWipe?"✦":"◇";
+      document.getElementById("rewardCoins").textContent=`+${total} 🌧️`;
+      document.getElementById("rewardTotal").textContent=`+${total} 🌧️`;
       document.getElementById("hud").classList.add("hidden");
       document.getElementById("rewardScreen").classList.remove("hidden");
       const nextButton=document.getElementById("nextPhaseBtn");
@@ -1976,7 +2073,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       nextButton.textContent=isLastTestPhase?t("btn_mainmenu"):t("btn_next");
       menuButton.style.display=isLastTestPhase?"none":"";
       updateCoins();
-      blip(620,.34,.035);
+      blip(perfectWipe?760:620,.34,.035);
       preloadBackground(completedIndex+1);
     }
 
@@ -1995,7 +2092,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       const loadedBackground=await ensurePhaseBackground(idx);
       if(requestId!==startRequestId) return;
       state.started = true; state.paused = false; saveGame();
-      state.hasInteracted = false; state.activePointers.clear(); state.pointerBrushes.clear(); state.elapsed=0; state.cleanStreak=0; state.zenScore=0; state.lastTime=performance.now(); state.phaseStartedAt=performance.now();
+      state.hasInteracted=state.tutorialSeen; state.activePointers.clear(); state.pointerBrushes.clear(); state.elapsed=0; state.phaseCompletionPending=false; state.lastTime=performance.now();
       generateCity(); drawCityBackground();
       applyPhaseAtmosphere(phases[idx]);
       rainParticles.forEach(p=>p.reset(true));
@@ -2003,7 +2100,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       initFog(); updatePhaseUI();
       document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
       document.getElementById("hud").classList.remove("hidden");
-      document.getElementById("instruction").classList.remove("hidden-text");
+      document.getElementById("instruction").classList.toggle("hidden-text",state.tutorialSeen);
       requestAnimationFrame(()=>requestAnimationFrame(()=>sceneTransition?.classList.remove("active")));
       if(!loadedBackground) showToast(t("background_missing"));
       document.getElementById('progressLabelText').textContent = zen ? t('zen_progress_label') : t('defog_window');
@@ -2037,10 +2134,11 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     function renderPhases() {
       const list = document.getElementById("phaseList"); list.innerHTML = "";
       phases.slice(0,ACTIVE_PHASE_COUNT).forEach((p, i) => {
-        const unlocked = i <= state.highestPhase;
-        const div = document.createElement("div");
-        div.className = "phase-item " + (i === state.currentPhase ? "active " : "") + (!unlocked ? "locked" : "");
-        div.innerHTML = `<div class="phase-number">${t('phase_hud')} ${i + 1}</div><div class="phase-name">${unlocked ? localize(p.name) : t('phase_locked')}</div><div class="phase-mini-feeling">${unlocked ? localize(p.feeling) : t('phase_req')}</div>`;
+        const unlocked=i<=state.highestPhase;
+        const perfect=state.perfectPhases.includes(i);
+        const div=document.createElement("div");
+        div.className="phase-item "+(i===state.currentPhase?"active ":"")+(!unlocked?"locked ":"")+(perfect?"perfect-phase":"");
+        div.innerHTML=`<div class="phase-number">${t('phase_hud')} ${i+1}${perfect?'<span class="perfect-mark" aria-label="'+t('perfect')+'">✦</span>':""}</div><div class="phase-name">${unlocked?localize(p.name):t('phase_locked')}</div><div class="phase-mini-feeling">${unlocked?localize(p.feeling):t('phase_req')}</div>`;
         if (unlocked) div.onclick = () => { initAudio(); startPhase(i); };
         list.appendChild(div);
       });
@@ -2085,22 +2183,22 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       document.getElementById("fingerSlot2").classList.toggle("selected",state.selectedBrushSlot===2);
     }
 
-    /* ZEN — escala climática: cada nível muda densidade, velocidade,
-       comprimento/comportamento visual e, no topo, começa a entrar neve. */
+    /* ZEN — dez níveis diretos e previsíveis de chuva.
+       A intensidade não interfere mais na regeneração da névoa. */
     const ZEN_CLIMATE = {
-      10:{density:.18,speed:.42,length:.55,width:.62},
-      20:{density:.28,speed:.50,length:.62,width:.68},
-      30:{density:.40,speed:.58,length:.70,width:.74},
-      40:{density:.52,speed:.68,length:.78,width:.80},
-      50:{density:.64,speed:.78,length:.86,width:.88},
-      60:{density:.76,speed:.88,length:.94,width:.96},
-      70:{density:.88,speed:1.00,length:1.02,width:1.04},
-      80:{density:1.00,speed:1.12,length:1.08,width:1.10},
-      90:{density:1.12,speed:1.25,length:1.14,width:1.16},
-      100:{density:1.18,speed:1.30,length:1.08,width:1.18}
+      10:{particles:.16,speed:.55,length:.58,width:.65,opacity:.64},
+      20:{particles:.24,speed:.63,length:.65,width:.70,opacity:.70},
+      30:{particles:.32,speed:.72,length:.72,width:.76,opacity:.76},
+      40:{particles:.42,speed:.82,length:.80,width:.84,opacity:.82},
+      50:{particles:.52,speed:.92,length:.88,width:.90,opacity:.88},
+      60:{particles:.62,speed:1.00,length:.96,width:.96,opacity:.94},
+      70:{particles:.72,speed:1.08,length:1.04,width:1.02,opacity:1.00},
+      80:{particles:.82,speed:1.16,length:1.10,width:1.08,opacity:1.06},
+      90:{particles:.92,speed:1.25,length:1.16,width:1.14,opacity:1.12},
+      100:{particles:1.00,speed:1.35,length:1.23,width:1.22,opacity:1.18}
     };
     function getZenClimate(){
-      const level=Math.max(10,Math.min(100,Math.round(state.rainIntensity*100/10)*10));
+      const level=Math.max(10,Math.min(100,Math.round(state.rainIntensity*10)*10));
       return ZEN_CLIMATE[level] || ZEN_CLIMATE[70];
     }
 
@@ -2113,6 +2211,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       if(masterGain&&audioCtx) masterGain.gain.setTargetAtTime(.20,audioCtx.currentTime,.35);
       state.activePointers.clear();
       state.pointerBrushes.clear();
+      state.phaseCompletionPending=false;
       if(wasZen){
         state.currentPhase=Math.max(0,Math.min(ACTIVE_PHASE_COUNT-1,state.highestPhase,state.campaignPhase));
       } else if(advanceToNext && state.currentPhase < ACTIVE_PHASE_COUNT-1){
@@ -2160,32 +2259,20 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
           sunShower:.72, blizzard:1.30, tunnelRain:1.12, goldenRain:.74,
           snowDrive:.90, finalRain:.82
         })[phase.rainStyle || "steady"] || 1;
-        const climateDensity = climate ? climate.density : 1;
         // Rajadas largas evitam uma cortina perfeitamente uniforme.
         const gustDensity=.86+.14*(.5+.5*Math.sin(state.elapsed*.72+Math.sin(state.elapsed*.17)));
-        const activeRainCount = Math.max(8, Math.min(rainParticles.length,
-          Math.round((8 + zenIntensity * (rainParticles.length - 8)) * styleDensity * climateDensity * gustDensity)
-        ));
+        const activeRainCount=climate
+          ? Math.max(8,Math.min(rainParticles.length,Math.round(rainParticles.length*climate.particles*gustDensity)))
+          : Math.max(8,Math.min(rainParticles.length,
+              Math.round((8+zenIntensity*(rainParticles.length-8))*styleDensity*gustDensity)
+            ));
         // Desenha de trás para frente para a profundidade continuar legível.
         for(let depthLayer=0;depthLayer<3;depthLayer++){
           for(let i=0;i<activeRainCount;i++){
-            const p = rainParticles[i];
+            const p=rainParticles[i];
             if(p.layer!==depthLayer) continue;
-            const baseVy = p.vy;
-            const baseLen = p.len;
-            const baseWidth = p.width;
-            if(climate){
-              p.vy = baseVy * climate.speed;
-              p.len = baseLen * climate.length;
-              p.width = baseWidth * climate.width;
-            }
-            p.update(dt);
-            p.draw();
-            if(climate){
-              p.vy = baseVy;
-              p.len = baseLen;
-              p.width = baseWidth;
-            }
+            p.update(dt,climate);
+            p.draw(climate);
           }
         }
         for(let i=activeRainCount;i<rainParticles.length;i++){ if(rainParticles[i].y > H + 80) rainParticles[i].reset(); }
@@ -2196,32 +2283,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         if(state.isZen){
           // A regeneração automática é o padrão do Zen, como no jogo original.
           // Quando desativada, o botão compacto "mist" reaparece para controle manual.
-          if(state.zenAutoFog){
-            // Mantém exatamente a velocidade visual original a 60 FPS, mas compensa
-            // aparelhos de 30/90/120 Hz para a névoa não voltar mais rápida ou mais lenta.
-            const frameScale=Math.max(0,Math.min(6,dt*60));
-            let logicalTicks=Math.floor(frameScale);
-            if(Math.random()<frameScale-logicalTicks) logicalTicks++;
-            if(logicalTicks>0){
-              const baseFogAlpha=0.006 + (state.rainIntensity * 0.004);
-              const normalizedFogAlpha=1-Math.pow(1-baseFogAlpha,logicalTicks);
-              fogCtx.globalCompositeOperation="source-over";
-              fogCtx.fillStyle=`rgba(210,225,232,${normalizedFogAlpha})`;
-              fogCtx.fillRect(0,0,W,H);
-              // Preserva também o comportamento original da grade: 22% de chance
-              // por pulso e 1,8% por célula, agora com pulsos equivalentes a 60 FPS.
-              for(let tick=0;tick<logicalTicks;tick++){
-                if(Math.random()<.22){
-                  for(let i=0;i<fogGrid.length;i++){
-                    if(fogGrid[i]===1 && Math.random()<.018){
-                      fogGrid[i]=0;
-                      fogClearedCells=Math.max(0,fogClearedCells-1);
-                    }
-                  }
-                }
-              }
-            }
-          }
+          if(state.zenAutoFog) regenerateZenFog(dt);
           updateProgress();
         }
       }
@@ -2287,7 +2349,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
 
 
     // Atmospheric settings
-    document.getElementById('rainSlider').addEventListener('input',e=>{state.rainIntensity=Number(e.target.value)/100;document.getElementById('rainVal').textContent=Math.round(state.rainIntensity*100)+'%';updateAudio();saveGame();});
+    document.getElementById('rainSlider').addEventListener('input',e=>{state.rainIntensity=Number(e.target.value)/100;document.getElementById('rainVal').textContent=Math.round(state.rainIntensity*100)+'%';rainParticles.forEach(p=>p.reset(true));updateAudio();saveGame();});
     document.getElementById('ambSlider').addEventListener('input',e=>{state.ambVolume=Number(e.target.value)/100;document.getElementById('ambVal').textContent=Math.round(state.ambVolume*100)+'%';updateAudio();saveGame();});
     document.getElementById('rainSoundSlider').addEventListener('input',e=>{state.rainVolume=Number(e.target.value)/100;document.getElementById('rainSoundVal').textContent=Math.round(state.rainVolume*100)+'%';updateAudio();saveGame();});
     document.getElementById('vibrationToggle').onclick=()=>{state.vibration=!state.vibration;syncToggle("vibrationToggle",state.vibration);saveGame();};
@@ -2304,7 +2366,6 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     document.getElementById('zenMistBtn').onclick=()=>{
       if(!state.isZen || state.zenAutoFog) return;
       initFog();
-      state.zenScore=0;
       updateProgress();
     };
 
