@@ -1,10 +1,10 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
     <!--
       TESTE DAS FASES 01–10
       Aceita Fases_01_10.zip na raiz ou imagens extraídas em
       assets/backgrounds/phase-01.webp ... phase-10.webp (PNG/JPG também).
       O ZIP precisa conter dez imagens reais e não pode estar vazio.
-      V3 — integração visual com embaçamento clássico e chuva sem impacto no chão.
+      V4 — Zen estável, chuva pura em 100%, desempenho limitado e multitouch seguro.
     -->
     <html lang="en">
     <head>
@@ -913,6 +913,9 @@ const phases = [
     // Mantém boa nitidez sem multiplicar demais o custo dos quatro canvases.
     let DPR = Math.min(window.devicePixelRatio || 1, lowPowerDevice ? 1 : 1.5);
     let backgroundDirty = true;
+    // Limita o custo de renderização: ~60 FPS normalmente e ~30 FPS em aparelhos econômicos.
+    // A margem de 1 ms evita perder quadros por pequenas diferenças do requestAnimationFrame.
+    const MIN_FRAME_INTERVAL = (1000 / (lowPowerDevice ? 30 : 60)) - 1;
     let lastRenderedFrame = 0;
     let lastBackgroundFrame = 0;
     let currentBackgroundImage = null;
@@ -1802,22 +1805,20 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     function getPointerBrushKey(pointerId) {
       if (state.pointerBrushes.has(pointerId)) return state.pointerBrushes.get(pointerId);
       const index = state.activePointers.size;
-      let key;
-      if (index === 0) key = state.brush1;
-      else if (index === 1) key = state.brush2;
-      else {
-        const extras = Object.keys(brushes).filter(k => k !== state.brush1 && k !== state.brush2);
-        key = extras[(index - 2) % extras.length] || "soft";
-      }
+      // O jogo possui exatamente dois espaços de pincel. Toques extras são ignorados
+      // para não liberar pincéis da loja sem compra nem transformar a limpeza em atalho.
+      if (index >= 2) return null;
+      const key = index === 0 ? state.brush1 : state.brush2;
       state.pointerBrushes.set(pointerId, key);
       return key;
     }
     function handlePointerDown(e) {
       if(!state.started || state.paused) return;
       e.preventDefault();
+      const key = getPointerBrushKey(e.pointerId);
+      if(!key) return;
       initAudio();
       fogCanvas.setPointerCapture?.(e.pointerId);
-      const key = getPointerBrushKey(e.pointerId);
       state.activePointers.set(e.pointerId, {x:e.clientX, y:e.clientY, key});
       clearFogLine(e.clientX, e.clientY, e.clientX, e.clientY, brushes[key]);
     }
@@ -2024,6 +2025,8 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       const zen = state.isZen;
       document.getElementById("phaseDisplay").parentElement.style.display = zen ? "none" : "";
       document.getElementById("currencyHud").style.display = zen ? "none" : "";
+      // No Zen não há meta de conclusão: mostramos apenas "Paz infinita", sem uma barra contraditória.
+      document.querySelector(".progress-bar").style.display = zen ? "none" : "";
       document.getElementById("zenMistBtn").style.display = zen && !state.zenAutoFog ? "flex" : "none";
       document.getElementById("zenFogSetting").style.display = zen ? "block" : "none";
       syncToggle("zenFogToggle",state.zenAutoFog);
@@ -2085,16 +2088,16 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     /* ZEN — escala climática: cada nível muda densidade, velocidade,
        comprimento/comportamento visual e, no topo, começa a entrar neve. */
     const ZEN_CLIMATE = {
-      10:{density:.18,speed:.42,length:.55,width:.62,snow:.00},
-      20:{density:.28,speed:.50,length:.62,width:.68,snow:.00},
-      30:{density:.40,speed:.58,length:.70,width:.74,snow:.00},
-      40:{density:.52,speed:.68,length:.78,width:.80,snow:.00},
-      50:{density:.64,speed:.78,length:.86,width:.88,snow:.00},
-      60:{density:.76,speed:.88,length:.94,width:.96,snow:.00},
-      70:{density:.88,speed:1.00,length:1.02,width:1.04,snow:.00},
-      80:{density:1.00,speed:1.12,length:1.08,width:1.10,snow:.00},
-      90:{density:1.12,speed:1.25,length:1.14,width:1.16,snow:.00},
-      100:{density:1.18,speed:1.30,length:1.08,width:1.18,snow:.30}
+      10:{density:.18,speed:.42,length:.55,width:.62},
+      20:{density:.28,speed:.50,length:.62,width:.68},
+      30:{density:.40,speed:.58,length:.70,width:.74},
+      40:{density:.52,speed:.68,length:.78,width:.80},
+      50:{density:.64,speed:.78,length:.86,width:.88},
+      60:{density:.76,speed:.88,length:.94,width:.96},
+      70:{density:.88,speed:1.00,length:1.02,width:1.04},
+      80:{density:1.00,speed:1.12,length:1.08,width:1.10},
+      90:{density:1.12,speed:1.25,length:1.14,width:1.16},
+      100:{density:1.18,speed:1.30,length:1.08,width:1.18}
     };
     function getZenClimate(){
       const level=Math.max(10,Math.min(100,Math.round(state.rainIntensity*100/10)*10));
@@ -2132,7 +2135,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     }
 
     function loop(time) {
-      if(lowPowerDevice && time-lastRenderedFrame<32){ queueNextFrame(); return; }
+      if(lastRenderedFrame && time-lastRenderedFrame<MIN_FRAME_INTERVAL){ queueNextFrame(); return; }
       lastRenderedFrame=time;
       const dt = Math.min((time - state.lastTime) / 1000, 0.1); state.lastTime = time;
       if (state.started && !state.paused) {
@@ -2186,7 +2189,6 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
           }
         }
         for(let i=activeRainCount;i<rainParticles.length;i++){ if(rainParticles[i].y > H + 80) rainParticles[i].reset(); }
-        rsDrawZenWeather(dt);
         glassDropsSystem.update(dt);
         glassDropsSystem.draw(glassCtx);
         glassDropsSystem.replenish();
@@ -2195,16 +2197,27 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
           // A regeneração automática é o padrão do Zen, como no jogo original.
           // Quando desativada, o botão compacto "mist" reaparece para controle manual.
           if(state.zenAutoFog){
-            // Regeneração realmente idêntica à primeira versão: a camada volta
-            // diretamente no mesmo canvas que o dedo apaga.
-            fogCtx.globalCompositeOperation="source-over";
-            fogCtx.fillStyle=`rgba(210,225,232,${0.006 + (state.rainIntensity * 0.004)})`;
-            fogCtx.fillRect(0,0,W,H);
-            if(Math.random()<.22){
-              for(let i=0;i<fogGrid.length;i++){
-                if(fogGrid[i]===1 && Math.random()<.018){
-                  fogGrid[i]=0;
-                  fogClearedCells=Math.max(0,fogClearedCells-1);
+            // Mantém exatamente a velocidade visual original a 60 FPS, mas compensa
+            // aparelhos de 30/90/120 Hz para a névoa não voltar mais rápida ou mais lenta.
+            const frameScale=Math.max(0,Math.min(6,dt*60));
+            let logicalTicks=Math.floor(frameScale);
+            if(Math.random()<frameScale-logicalTicks) logicalTicks++;
+            if(logicalTicks>0){
+              const baseFogAlpha=0.006 + (state.rainIntensity * 0.004);
+              const normalizedFogAlpha=1-Math.pow(1-baseFogAlpha,logicalTicks);
+              fogCtx.globalCompositeOperation="source-over";
+              fogCtx.fillStyle=`rgba(210,225,232,${normalizedFogAlpha})`;
+              fogCtx.fillRect(0,0,W,H);
+              // Preserva também o comportamento original da grade: 22% de chance
+              // por pulso e 1,8% por célula, agora com pulsos equivalentes a 60 FPS.
+              for(let tick=0;tick<logicalTicks;tick++){
+                if(Math.random()<.22){
+                  for(let i=0;i<fogGrid.length;i++){
+                    if(fogGrid[i]===1 && Math.random()<.018){
+                      fogGrid[i]=0;
+                      fogClearedCells=Math.max(0,fogClearedCells-1);
+                    }
+                  }
                 }
               }
             }
@@ -2344,25 +2357,6 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       `;
     });
     
-
-/* 8 — Zen intensity becomes a weather scale; at 100% snow begins. */
-let rsZenSnow=[];
-function rsEnsureZenSnow(){
-  if(rsZenSnow.length<160) rsZenSnow=Array.from({length:160},()=>({x:Math.random()*W,y:Math.random()*H,v:35+Math.random()*80,r:.7+Math.random()*2}));
-}
-function rsDrawZenWeather(dt=1/60){
-  if(!state.isZen || !state.started || state.paused || state.rainIntensity<1) return;
-  rsEnsureZenSnow();
-  const amount=Math.min(1,(state.rainIntensity-0.85)/.15);
-  rainCtx.save();
-  rainCtx.fillStyle='rgba(255,255,255,.72)';
-  for(let i=0;i<Math.floor(rsZenSnow.length*amount);i++){
-    const s=rsZenSnow[i]; s.y += s.v*dt; s.x += Math.sin((performance.now()+i*70)*.001)*7.2*dt;
-    if(s.y>H+8){s.y=-8;s.x=Math.random()*W;}
-    rainCtx.beginPath(); rainCtx.arc(s.x,s.y,s.r,0,Math.PI*2); rainCtx.fill();
-  }
-  rainCtx.restore();
-}
 
 </script>
     </body>
