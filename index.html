@@ -1,10 +1,10 @@
-  <!DOCTYPE html>
+ <!DOCTYPE html>
     <!--
       TESTE DAS FASES 01–10
       Aceita Fases_01_10.zip na raiz ou imagens extraídas em
       assets/backgrounds/phase-01.webp ... phase-10.webp (PNG/JPG também).
       O ZIP precisa conter dez imagens reais e não pode estar vazio.
-      V2.1 — integração visual entre arte, vidro, névoa e chuva.
+      V3 — integração visual com embaçamento clássico e chuva sem impacto no chão.
     -->
     <html lang="en">
     <head>
@@ -1330,10 +1330,6 @@ const phases = [
         this.currentVx=this.wind;
         this.currentVy=this.vy;
         this.isBead=this.layer===0&&Math.random()<.38;
-        this.splash = 0;
-        this.splashSize = 0;
-        this.lastSplashY = -999;
-        this._ground = H * (0.80 + Math.random() * 0.08);
       }
 
       update(dt) {
@@ -1350,15 +1346,6 @@ const phases = [
         }
         this.x+=this.currentVx*dt;
         this.y+=this.currentVy*dt;
-
-        if (!this.isSnow && this.layer>0 && this.y>this._ground && this.lastSplashY!==this._ground) {
-          if(Math.random()<(this.layer===2?.22:.055)*getEffectiveRainIntensity()){
-            this.splash=.10+this.z*.13;
-            this.splashSize=1.5+this.z*3.5;
-            this.lastSplashY = this._ground;
-          }
-        }
-        if (this.splash > 0) this.splash -= dt;
 
         if (this.y > H + 70 || this.x < -140 || this.x > W + 180) this.reset();
       }
@@ -1412,14 +1399,6 @@ const phases = [
         rainCtx.stroke();
         rainCtx.restore();
 
-        if(this.splash>0){
-          const life=Math.max(0,this.splash/.30);
-          rainCtx.strokeStyle=`rgba(185,220,244,${a*life*.7})`;
-          rainCtx.lineWidth=Math.max(.35,this.width*.5);
-          rainCtx.beginPath();
-          rainCtx.ellipse(this.x,this._ground,this.splashSize*(1.4-life*.35),this.splashSize*.30,0,0,Math.PI*2);
-          rainCtx.stroke();
-        }
       }
     }
 
@@ -1699,30 +1678,27 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       fogCtx.globalCompositeOperation = "source-over";
       fogCtx.clearRect(0, 0, W, H);
 
-      const phase = phases[state.currentPhase] || phases[0];
-      const hue = Number.isFinite(phase.hue) ? phase.hue : 210;
-
-      // A condensação agora conserva cores e volumes da paisagem. Ela ainda
-      // desfoca, mas não cria uma segunda imagem branca e opaca sobre o cenário.
+      // Embaçamento clássico restaurado: leitura simples e confortável,
+      // sem a sobreposição colorida que criava sensação de visão dupla.
       fogCtx.save();
-      fogCtx.filter = "blur(14px) saturate(.74) brightness(.88)";
-      fogCtx.globalAlpha = .44;
-      fogCtx.drawImage(bgCanvas, 0, 0, bgCanvas.width, bgCanvas.height, -16, -16, W + 32, H + 32);
+      fogCtx.filter = "blur(10px) saturate(.82)";
+      fogCtx.globalAlpha = .76;
+      fogCtx.drawImage(bgCanvas, 0, 0, bgCanvas.width, bgCanvas.height, -12, -12, W + 24, H + 24);
       fogCtx.restore();
 
-      const fogOpacity = Math.max(.14, Math.min(.24, (phase.fog ?? .40)*.42));
-      fogCtx.fillStyle = `hsla(${hue},12%,78%,${fogOpacity})`;
+      const phase = phases[state.currentPhase] || phases[0];
+      const fogOpacity = Math.max(.18, Math.min(.48, (phase.fog ?? .40)*.86));
+      fogCtx.fillStyle = `rgba(190,205,213,${fogOpacity})`;
       fogCtx.fillRect(0, 0, W, H);
 
-      // Variações grandes e muito suaves simulam umidade irregular sem formar
-      // círculos ou placas visíveis.
-      fogCtx.globalAlpha = .028;
-      for(let i=0;i<26;i++){
+      // Textura larga e discreta do embaçamento anterior.
+      fogCtx.globalAlpha = .035;
+      for(let i=0;i<34;i++){
         const x = Math.random()*W;
         const y = Math.random()*H;
-        const rw = 110 + Math.random()*210;
-        const rh = 70 + Math.random()*150;
-        fogCtx.fillStyle = `hsla(${hue},20%,92%,.14)`;
+        const rw = 90 + Math.random()*190;
+        const rh = 50 + Math.random()*130;
+        fogCtx.fillStyle = "rgba(255,255,255,.18)";
         fogCtx.beginPath();
         fogCtx.ellipse(x,y,rw,rh,Math.random()*Math.PI,0,Math.PI*2);
         fogCtx.fill();
