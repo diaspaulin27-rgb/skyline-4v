@@ -4,6 +4,7 @@
       Aceita Fases_01_10.zip na raiz ou imagens extraídas em
       assets/backgrounds/phase-01.webp ... phase-10.webp (PNG/JPG também).
       O ZIP precisa conter dez imagens reais e não pode estar vazio.
+      V2.1 — integração visual entre arte, vidro, névoa e chuva.
     -->
     <html lang="en">
     <head>
@@ -79,6 +80,32 @@
     /* As gotas ficam sobre a condensação para já aparecerem no início da fase. */
     #glassCanvas { z-index: 8; pointer-events: none; }
     #fogCanvas { z-index: 7; touch-action: none; }
+
+    /* Película permanente: impede que a paisagem limpa pareça um wallpaper cru. */
+    #glassAtmosphere {
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      pointer-events: none;
+      opacity: .96;
+      background:
+        radial-gradient(ellipse at 48% 37%, rgba(225,242,250,.035), transparent 58%),
+        linear-gradient(180deg, rgba(188,216,228,.025), rgba(3,9,18,.075));
+      box-shadow: inset 0 0 84px rgba(2,7,16,.16);
+      transition: background .7s ease;
+    }
+
+    /* Escurece por um instante a entrada de cada cenário, evitando troca tipo slideshow. */
+    #sceneTransition {
+      position: absolute;
+      inset: 0;
+      z-index: 19;
+      pointer-events: none;
+      background: #030712;
+      opacity: 0;
+      transition: opacity .72s ease;
+    }
+    #sceneTransition.active { opacity: 1; transition: none; }
 
     #lightningFlash {
       position: absolute;
@@ -277,9 +304,11 @@
     <div id="game">
       <canvas id="bgCanvas"></canvas>
       <canvas id="rainCanvas"></canvas>
+      <div id="glassAtmosphere"></div>
       <canvas id="glassCanvas"></canvas>
       <canvas id="fogCanvas"></canvas>
       <div id="lightningFlash"></div>
+      <div id="sceneTransition"></div>
       <div id="vignette"></div>
       <div id="weatherGlow"></div>
       <div id="cleanSpark"></div>
@@ -1139,8 +1168,13 @@ const phases = [
         const dw = image.naturalWidth * scale;
         const dh = image.naturalHeight * scale;
         bgCtx.drawImage(image, (W - dw) / 2, (H - dh) / 2, dw, dh);
-        // Leve uniformização para manter o HUD legível sem alterar a arte.
-        bgCtx.fillStyle = phase.type === "snow" ? "rgba(3,7,18,.035)" : "rgba(3,7,18,.075)";
+        // Gradação vertical discreta: conserva a arte, mas a coloca dentro do mesmo
+        // clima do vidro, da chuva e do HUD.
+        const grade = bgCtx.createLinearGradient(0, 0, 0, H);
+        grade.addColorStop(0, `hsla(${phase.hue},24%,8%,${phase.type === "snow" ? .025 : .045})`);
+        grade.addColorStop(.55, "rgba(3,7,18,.018)");
+        grade.addColorStop(1, "rgba(2,6,14,.105)");
+        bgCtx.fillStyle = grade;
         bgCtx.fillRect(0, 0, W, H);
         backgroundDirty = false;
         return;
@@ -1210,6 +1244,30 @@ const phases = [
     function getEffectiveRainIntensity() {
       const phase = phases[state.currentPhase] || phases[0];
       return state.isZen ? Math.max(.1, Math.min(1, state.rainIntensity)) : phase.rain;
+    }
+
+    const phaseAccentCache = new Map();
+    function getPhaseAccentRgb() {
+      const index = state.currentPhase;
+      if (phaseAccentCache.has(index)) return phaseAccentCache.get(index);
+      const hex = (phases[index]?.lights?.[0] || "#b9d9ee").replace("#","");
+      const full = hex.length === 3 ? hex.split("").map(char=>char+char).join("") : hex;
+      const rgb = {
+        r: parseInt(full.slice(0,2),16) || 185,
+        g: parseInt(full.slice(2,4),16) || 217,
+        b: parseInt(full.slice(4,6),16) || 238
+      };
+      phaseAccentCache.set(index,rgb);
+      return rgb;
+    }
+
+    function applyPhaseAtmosphere(phase) {
+      const layer = document.getElementById("glassAtmosphere");
+      if (!layer) return;
+      const hue = Number.isFinite(phase?.hue) ? phase.hue : 210;
+      layer.style.background =
+        `radial-gradient(ellipse at 48% 37%, hsla(${hue},48%,78%,.045), transparent 58%),` +
+        `linear-gradient(180deg, rgba(195,220,230,.022), hsla(${hue},28%,10%,.082))`;
     }
 
     class Particle {
@@ -1331,9 +1389,13 @@ const phases = [
         const tailX=this.x-this.currentVx*travelTime;
         const tailY=this.y-this.len;
         const bend=Math.sin(this.age*1.7+this.phase)*(this.layer===2?3.2:this.layer===1?1.2:.35);
-        const red=182+Math.round(this.z*28);
-        const green=212+Math.round(this.z*27);
-        const blue=238+Math.round(this.z*17);
+        // A chuva recebe apenas um reflexo da paleta da fase; continua parecendo
+        // água, mas deixa de ser uma camada azul idêntica sobre todas as imagens.
+        const accent=getPhaseAccentRgb();
+        const tint=.09+this.z*.07;
+        const red=Math.round((182+this.z*28)*(1-tint)+accent.r*tint);
+        const green=Math.round((212+this.z*27)*(1-tint)+accent.g*tint);
+        const blue=Math.round((238+this.z*17)*(1-tint)+accent.b*tint);
         const gradient=rainCtx.createLinearGradient(tailX,tailY,this.x,this.y);
         gradient.addColorStop(0,`rgba(${red},${green},${blue},0)`);
         gradient.addColorStop(.42,`rgba(${red},${green},${blue},${a*.36})`);
@@ -1440,9 +1502,10 @@ const phases = [
         }
         ctx.closePath();
 
+        const accent=getPhaseAccentRgb();
         const fill=ctx.createRadialGradient(-r*.22,-r*.25,0,0,0,r);
         fill.addColorStop(0,`rgba(255,255,255,${this.highlight*.20})`);
-        fill.addColorStop(.55,`rgba(220,235,240,${this.alpha*.035})`);
+        fill.addColorStop(.55,`rgba(${accent.r},${accent.g},${accent.b},${this.alpha*.045})`);
         fill.addColorStop(1,"rgba(255,255,255,0)");
         ctx.fillStyle=fill;
         ctx.fill();
@@ -1636,27 +1699,30 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       fogCtx.globalCompositeOperation = "source-over";
       fogCtx.clearRect(0, 0, W, H);
 
-      // Uma cópia desfocada da paisagem mantém o cenário visível sob a condensação.
-      // Ao limpar, aparece a versão nítida — não uma mancha escura parecida com tinta.
+      const phase = phases[state.currentPhase] || phases[0];
+      const hue = Number.isFinite(phase.hue) ? phase.hue : 210;
+
+      // A condensação agora conserva cores e volumes da paisagem. Ela ainda
+      // desfoca, mas não cria uma segunda imagem branca e opaca sobre o cenário.
       fogCtx.save();
-      fogCtx.filter = "blur(10px) saturate(.82)";
-      fogCtx.globalAlpha = .76;
-      fogCtx.drawImage(bgCanvas, 0, 0, bgCanvas.width, bgCanvas.height, -12, -12, W + 24, H + 24);
+      fogCtx.filter = "blur(14px) saturate(.74) brightness(.88)";
+      fogCtx.globalAlpha = .44;
+      fogCtx.drawImage(bgCanvas, 0, 0, bgCanvas.width, bgCanvas.height, -16, -16, W + 32, H + 32);
       fogCtx.restore();
 
-      const phase = phases[state.currentPhase] || phases[0];
-      const fogOpacity = Math.max(.18, Math.min(.48, (phase.fog ?? .40)*.86));
-      fogCtx.fillStyle = `rgba(190,205,213,${fogOpacity})`;
+      const fogOpacity = Math.max(.14, Math.min(.24, (phase.fog ?? .40)*.42));
+      fogCtx.fillStyle = `hsla(${hue},12%,78%,${fogOpacity})`;
       fogCtx.fillRect(0, 0, W, H);
 
-      // Textura larga e discreta: quebra a uniformidade sem formar círculos visíveis.
-      fogCtx.globalAlpha = .035;
-      for(let i=0;i<34;i++){
+      // Variações grandes e muito suaves simulam umidade irregular sem formar
+      // círculos ou placas visíveis.
+      fogCtx.globalAlpha = .028;
+      for(let i=0;i<26;i++){
         const x = Math.random()*W;
         const y = Math.random()*H;
-        const rw = 90 + Math.random()*190;
-        const rh = 50 + Math.random()*130;
-        fogCtx.fillStyle = "rgba(255,255,255,.18)";
+        const rw = 110 + Math.random()*210;
+        const rh = 70 + Math.random()*150;
+        fogCtx.fillStyle = `hsla(${hue},20%,92%,.14)`;
         fogCtx.beginPath();
         fogCtx.ellipse(x,y,rw,rh,Math.random()*Math.PI,0,Math.PI*2);
         fogCtx.fill();
@@ -1688,11 +1754,12 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       const context=canvas.getContext("2d");
       context.setTransform(DPR,0,0,DPR,0,0);
       const center=cssSize/2;
-      const inner = radius * Math.max(.16, .34 - softness * .08);
+      const inner = radius * Math.max(.10, .24 - softness * .05);
       const gradient = context.createRadialGradient(center, center, inner, center, center, radius);
       gradient.addColorStop(0, "rgba(0,0,0,1)");
-      gradient.addColorStop(Math.max(.46, .64 - softness * .08), "rgba(0,0,0,.94)");
-      gradient.addColorStop(Math.min(.91, .78 + vignette * .08), `rgba(0,0,0,${.24 + softness * .10})`);
+      gradient.addColorStop(Math.max(.32, .52 - softness * .10), "rgba(0,0,0,.96)");
+      gradient.addColorStop(Math.min(.88, .72 + vignette * .07), `rgba(0,0,0,${.30 + softness * .08})`);
+      gradient.addColorStop(.95, "rgba(0,0,0,.05)");
       gradient.addColorStop(1, "rgba(0,0,0,0)");
       context.fillStyle=gradient;
       context.fillRect(0,0,cssSize,cssSize);
@@ -1707,7 +1774,9 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         document.getElementById("instruction").classList.add("hidden-text");
       }
       const scale = Math.max(.82, Math.min(1.18, Math.min(W, H) / 390));
-      const radius = brush.radius * scale;
+      // Núcleo visual 16% menor: a limpeza parece feita pelo dedo, sem abrir
+      // grandes recortes verticais sobre a ilustração.
+      const radius = brush.radius * scale * .84;
       const distance = Math.hypot(toX - fromX, toY - fromY);
       const spacing = Math.max(4, radius * .22);
       const steps = Math.max(1, Math.ceil(distance / spacing));
@@ -1938,6 +2007,8 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     async function startPhase(idx, zen = false) {
       if (!Number.isInteger(idx) || idx < 0 || idx >= ACTIVE_PHASE_COUNT) return;
       if (idx > state.highestPhase && !zen) return;
+      const sceneTransition=document.getElementById("sceneTransition");
+      sceneTransition?.classList.add("active");
       const requestId=++startRequestId;
       if(!zen) state.campaignPhase=idx;
       state.currentPhase = idx; state.resumePhase=null; state.started = false; state.paused = true; state.isZen = zen;
@@ -1949,12 +2020,14 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       state.started = true; state.paused = false; saveGame();
       state.hasInteracted = false; state.activePointers.clear(); state.pointerBrushes.clear(); state.elapsed=0; state.cleanStreak=0; state.zenScore=0; state.lastTime=performance.now(); state.phaseStartedAt=performance.now();
       generateCity(); drawCityBackground();
+      applyPhaseAtmosphere(phases[idx]);
       rainParticles.forEach(p=>p.reset(true));
       glassDropsSystem.resetForPhase();
       initFog(); updatePhaseUI();
       document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
       document.getElementById("hud").classList.remove("hidden");
       document.getElementById("instruction").classList.remove("hidden-text");
+      requestAnimationFrame(()=>requestAnimationFrame(()=>sceneTransition?.classList.remove("active")));
       if(!loadedBackground) showToast(t("background_missing"));
       document.getElementById('progressLabelText').textContent = zen ? t('zen_progress_label') : t('defog_window');
       const glow=document.getElementById('weatherGlow');
