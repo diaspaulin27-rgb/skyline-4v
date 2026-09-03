@@ -1,9 +1,9 @@
   <!DOCTYPE html>
     <!--
-      TESTE DAS FASES 01–10
-      Aceita Fases_01_10.zip na raiz ou imagens extraídas em
-      assets/backgrounds/phase-01.webp ... phase-10.webp (PNG/JPG também).
-      O ZIP precisa conter dez imagens reais e não pode estar vazio.
+      RAINY SKYLINE — 20 FASES
+      Aceita Fases_01_10.zip + Fases_11_20.zip na raiz ou imagens extraídas em
+      assets/backgrounds/phase-01.webp ... phase-20.webp (PNG/JPG também).
+      Cada ZIP precisa conter dez imagens reais e não pode estar vazio.
       V3 — integração visual com embaçamento clássico e chuva sem impacto no chão.
     -->
     <html lang="en">
@@ -208,6 +208,8 @@
 
     .phase-title { margin: 0; font-family: Georgia, serif; font-weight: 400; font-size: 27px; }
     .phase-feeling { margin: 7px 0 4px; color: var(--primary); font-size: 11px; letter-spacing: 2px; text-transform: uppercase; }
+    .phase-story { color: rgba(255,255,255,.55); line-height: 1.55; font-size: 12px; margin: 0 0 22px; }
+
     .btn-stack { display: flex; flex-direction: column; gap: 12px; }
     .btn {
       min-height: 52px; border-radius: 16px; border: 1px solid var(--panel-border);
@@ -350,6 +352,7 @@
           <div id="mainPhaseInfo">
             <h2 class="phase-title" id="menuPhaseName">The First Rain</h2>
             <div class="phase-feeling" id="menuPhaseFeeling">Serenity</div>
+            <p class="phase-story" id="menuPhaseStory">A silent city watches the first rain of the night.</p>
           </div>
           <div class="btn-stack">
             <button id="continueBtn" class="btn btn-primary" data-i18n="btn_continue">CONTINUE PHASE</button>
@@ -477,12 +480,11 @@
 
     <script>
     /* =========================================================
-       RAINY SKYLINE V10 (teste das fases 1–10 + ZIP compatível + Zen original)
+       RAINY SKYLINE V11 (20 fases + ZIP duplo + Zen original)
     ========================================================= */
 
-    // As 20 fases continuam cadastradas abaixo. Nesta rodada de testes,
-    // somente as dez primeiras ficam disponíveis no menu, campanha e Zen.
-    const ACTIVE_PHASE_COUNT = 10;
+    // As 20 fases ficam disponíveis no menu, campanha e modo Zen.
+    const ACTIVE_PHASE_COUNT = 20;
     const COMPLETION_TARGET = .98;
 
     // Fundos incorporados: elimina dependência de ZIP, pastas ou nomes externos.
@@ -545,7 +547,7 @@
         zen_auto_fog_desc: "Fog slowly returns in Zen Mode.",
         ad_loading: "Preparing a short break…",
         loading_phase: "Preparing the weather…",
-        background_missing: "Phase images were not found. Check Fases_01_10.zip.",
+        background_missing: "Phase images were not found. Check Fases_01_10.zip and Fases_11_20.zip.",
         phase_hud: "PHASE",
         wipe_instruction: "SWIPE TO WIPE THE FOG",
         defog_window: "Defog the window",
@@ -669,7 +671,7 @@
         zen_auto_fog_desc: "A névoa retorna lentamente no Modo Zen.",
         ad_loading: "Preparando uma breve pausa…",
         loading_phase: "Preparando o clima…",
-        background_missing: "As imagens das fases não foram encontradas. Confira Fases_01_10.zip.",
+        background_missing: "As imagens das fases não foram encontradas. Confira Fases_01_10.zip e Fases_11_20.zip.",
         phase_hud: "FASE",
         wipe_instruction: "PASSE O DEDO PARA LIMPAR",
         defog_window: "Desembace a janela",
@@ -748,7 +750,7 @@
         if(missing.length) console.warn(`Traduções ausentes em ${lang}:`,missing);
       }
       phases.forEach((phase,index)=>{
-        for(const field of ["name","feeling"]){
+        for(const field of ["name","feeling","story"]){
           for(const lang of ["en","pt","es"]){
             if(!phase[field]?.[lang]) console.warn(`Fase ${index+1}: ${field}.${lang} ausente`);
           }
@@ -807,26 +809,26 @@ const GLASS_DROP_PHASES = [
 ];
 
 const phases = [
-      { name:{en:"First Rain",pt:"Primeira Chuva",es:"Primera Lluvia"}, feeling:{en:"Serenity",pt:"Serenidade",es:"Serenidad"}, hue:215, sky:["#030712","#0f2740"], lights:["#38bdf8","#7dd3fc","#fef3c7"], rain:.42, thunder:0, type:"rain", rainStyle:"light", fog:.40, target:.76 },
-      { name:{en:"Distant Lights",pt:"Luzes Distantes",es:"Luces Distantes"}, feeling:{en:"Nostalgia",pt:"Nostalgia",es:"Nostalgia"}, hue:235, sky:["#080817","#202044"], lights:["#fbbf24","#f472b6","#818cf8"], rain:.58, thunder:0, type:"rain", rainStyle:"steady", fog:.44, target:.78 },
-      { name:{en:"After Midnight",pt:"Depois da Meia-Noite",es:"Después de Medianoche"}, feeling:{en:"Solitude",pt:"Solidão",es:"Soledad"}, hue:225, sky:["#020617","#111827"], lights:["#22d3ee","#60a5fa","#a5b4fc"], rain:.78, thunder:.12, type:"rain", rainStyle:"heavy", fog:.50, target:.78 },
-      { name:{en:"Neon Splash",pt:"Neon",es:"Neón"}, feeling:{en:"Contemplation",pt:"Contemplação",es:"Contemplación"}, hue:285, sky:["#10051c","#321344"], lights:["#f43f5e","#a855f7","#06b6d4"], rain:.88, thunder:.18, type:"rain", rainStyle:"neon", fog:.46, target:.80 },
-      { name:{en:"The Window",pt:"A Janela",es:"La Ventana"}, feeling:{en:"Intimacy",pt:"Intimidade",es:"Intimidad"}, hue:195, sky:["#03151b","#12323c"], lights:["#67e8f9","#fde68a","#f0f9ff"], rain:.36, thunder:0, type:"rain", rainStyle:"soft", fog:.36, target:.75 },
-      { name:{en:"Storm",pt:"Tempestade",es:"Tormenta"}, feeling:{en:"Tension",pt:"Tensão",es:"Tensión"}, hue:210, sky:["#02040a","#16202d"], lights:["#e0f2fe","#93c5fd","#f8fafc"], rain:1, thunder:1, type:"rain", rainStyle:"storm", fog:.55, target:.80 },
-      { name:{en:"Horizon",pt:"Horizonte",es:"Horizonte"}, feeling:{en:"Hope",pt:"Esperança",es:"Esperanza"}, hue:205, sky:["#07111c","#24485d"], lights:["#fde68a","#fbbf24","#bae6fd"], rain:.30, thunder:0, type:"rain", rainStyle:"breeze", fog:.34, target:.74 },
-      { name:{en:"Memories",pt:"Memórias",es:"Recuerdos"}, feeling:{en:"Longing",pt:"Saudade",es:"Añoranza"}, hue:260, sky:["#090613","#2b183b"], lights:["#c4b5fd","#f9a8d4","#fef3c7"], rain:.54, thunder:.05, type:"rain", rainStyle:"memory", fog:.43, target:.78 },
-      { name:{en:"Silence",pt:"Silêncio",es:"Silencio"}, feeling:{en:"Peace",pt:"Paz",es:"Paz"}, hue:175, sky:["#020d0d","#123638"], lights:["#5eead4","#99f6e4","#fef9c3"], rain:.20, thunder:0, type:"rain", rainStyle:"drizzle", fog:.30, target:.73 },
-      { name:{en:"Clearing Sky",pt:"O Céu Clareia",es:"El Cielo se Abre"}, feeling:{en:"Renewal",pt:"Renovação",es:"Renovación"}, hue:35, sky:["#17100a","#513b20"], lights:["#fde68a","#fb923c","#fef3c7"], rain:.16, thunder:0, type:"rain", rainStyle:"clearing", fog:.28, target:.72 },
-      { name:{en:"Moving Car",pt:"Carro em Movimento",es:"Coche en Marcha"}, feeling:{en:"Journey",pt:"Jornada",es:"Viaje"}, hue:200, sky:["#0a0a0a","#1a1a1a"], lights:["#ef4444","#f59e0b"], rain:.66, thunder:.06, type:"car", rainStyle:"carRain", fog:.42, target:.78 },
-      { name:{en:"Snowfall",pt:"Queda de Neve",es:"Nevada"}, feeling:{en:"Stillness",pt:"Quietude",es:"Quietud"}, hue:200, sky:["#2d3748","#4a5568"], lights:["#e2e8f0","#cbd5e0"], rain:.34, thunder:0, type:"snow", rainStyle:"snowSoft", fog:.38, target:.75 },
-      { name:{en:"Highway Rain",pt:"Chuva na Rodovia",es:"Lluvia en la Autopista"}, feeling:{en:"Speed",pt:"Velocidade",es:"Velocidad"}, hue:220, sky:["#050510","#151530"], lights:["#ffffff","#ef4444","#22d3ee"], rain:.92, thunder:.30, type:"car", rainStyle:"highwayRain", fog:.51, target:.80 },
-      { name:{en:"Morning Frost",pt:"Geada Matinal",es:"Escarcha Matinal"}, feeling:{en:"Clarity",pt:"Claridade",es:"Claridad"}, hue:190, sky:["#4a5568","#a0aec0"], lights:["#ffffff","#e2e8f0"], rain:.24, thunder:0, type:"snow", rainStyle:"snowLight", fog:.47, target:.78 },
-      { name:{en:"Summer Sun Shower",pt:"Chuva de Verão",es:"Lluvia de Verano"}, feeling:{en:"Warmth",pt:"Calor",es:"Calidez"}, hue:50, sky:["#ecc94b","#f6e05e"], lights:["#ffffff"], rain:.46, thunder:.10, type:"rain", rainStyle:"sunShower", fog:.30, target:.74 },
-      { name:{en:"Midnight Blizzard",pt:"Nevasca à Meia-Noite",es:"Ventisca de Medianoche"}, feeling:{en:"Isolation",pt:"Isolamento",es:"Aislamiento"}, hue:230, sky:["#000000","#111827"], lights:["#718096","#a0aec0"], rain:.86, thunder:.18, type:"snow", rainStyle:"blizzard", fog:.58, target:.81 },
-      { name:{en:"City Tunnel",pt:"Túnel da Cidade",es:"Túnel de la Ciudad"}, feeling:{en:"Echo",pt:"Eco",es:"Eco"}, hue:30, sky:["#1a1005","#3a2010"], lights:["#f6ad55","#ed8936"], rain:.48, thunder:0, type:"car", rainStyle:"tunnelRain", fog:.40, target:.77 },
-      { name:{en:"Golden Hour Drops",pt:"Gotas Douradas",es:"Gotas Doradas"}, feeling:{en:"Beauty",pt:"Beleza",es:"Belleza"}, hue:20, sky:["#c53030","#ed8936"], lights:["#fefcbf","#fbd38d"], rain:.38, thunder:0, type:"rain", rainStyle:"goldenRain", fog:.31, target:.74 },
-      { name:{en:"Snowy Drive",pt:"Passeio na Neve",es:"Viaje Nevado"}, feeling:{en:"Comfort",pt:"Aconchego",es:"Abrigo"}, hue:210, sky:["#1a202c","#2d3748"], lights:["#e2e8f0","#ef4444"], rain:.52, thunder:0, type:"car_snow", rainStyle:"snowDrive", fog:.45, target:.78 },
-      { name:{en:"The Last Wipe",pt:"A Última Limpeza",es:"La Última Limpieza"}, feeling:{en:"Closure",pt:"Despedida",es:"Despedida"}, hue:200, sky:["#2b6cb0","#4299e1"], lights:["#ffffff","#bee3f8"], rain:.12, thunder:0, type:"rain", rainStyle:"finalRain", fog:.25, target:.70 }
+      { name:{en:"First Rain",pt:"Primeira Chuva",es:"Primera Lluvia"}, feeling:{en:"Serenity",pt:"Serenidade",es:"Serenidad"}, story:{en:"Quiet rain settles over the city.",pt:"Uma chuva tranquila cobre a cidade.",es:"Una lluvia tranquila cubre la ciudad."}, hue:215, sky:["#030712","#0f2740"], lights:["#38bdf8","#7dd3fc","#fef3c7"], rain:.42, thunder:0, type:"rain", rainStyle:"light", fog:.40, target:.76 },
+      { name:{en:"Distant Lights",pt:"Luzes Distantes",es:"Luces Distantes"}, feeling:{en:"Nostalgia",pt:"Nostalgia",es:"Nostalgia"}, story:{en:"Warm windows glow across the night.",pt:"Janelas quentes brilham do outro lado da noite.",es:"Ventanas cálidas brillan al otro lado de la noche."}, hue:235, sky:["#080817","#202044"], lights:["#fbbf24","#f472b6","#818cf8"], rain:.58, thunder:0, type:"rain", rainStyle:"steady", fog:.44, target:.78 },
+      { name:{en:"After Midnight",pt:"Depois da Meia-Noite",es:"Después de Medianoche"}, feeling:{en:"Solitude",pt:"Solidão",es:"Soledad"}, story:{en:"The city sleeps beneath heavier rain.",pt:"A cidade dorme sob uma chuva mais forte.",es:"La ciudad duerme bajo una lluvia más fuerte."}, hue:225, sky:["#020617","#111827"], lights:["#22d3ee","#60a5fa","#a5b4fc"], rain:.78, thunder:.12, type:"rain", rainStyle:"heavy", fog:.50, target:.78 },
+      { name:{en:"Neon Splash",pt:"Neon",es:"Neón"}, feeling:{en:"Contemplation",pt:"Contemplação",es:"Contemplación"}, story:{en:"Color drifts through the falling rain.",pt:"As cores atravessam a chuva que cai.",es:"Los colores atraviesan la lluvia que cae."}, hue:285, sky:["#10051c","#321344"], lights:["#f43f5e","#a855f7","#06b6d4"], rain:.88, thunder:.18, type:"rain", rainStyle:"neon", fog:.46, target:.80 },
+      { name:{en:"The Window",pt:"A Janela",es:"La Ventana"}, feeling:{en:"Intimacy",pt:"Intimidade",es:"Intimidad"}, story:{en:"A quiet shelter behind the glass.",pt:"Um abrigo tranquilo atrás do vidro.",es:"Un refugio tranquilo detrás del cristal."}, hue:195, sky:["#03151b","#12323c"], lights:["#67e8f9","#fde68a","#f0f9ff"], rain:.36, thunder:0, type:"rain", rainStyle:"soft", fog:.36, target:.75 },
+      { name:{en:"Storm",pt:"Tempestade",es:"Tormenta"}, feeling:{en:"Tension",pt:"Tensão",es:"Tensión"}, story:{en:"Wind, thunder and rain fill the sky.",pt:"Vento, trovões e chuva tomam o céu.",es:"Viento, truenos y lluvia llenan el cielo."}, hue:210, sky:["#02040a","#16202d"], lights:["#e0f2fe","#93c5fd","#f8fafc"], rain:1, thunder:1, type:"rain", rainStyle:"storm", fog:.55, target:.80 },
+      { name:{en:"Horizon",pt:"Horizonte",es:"Horizonte"}, feeling:{en:"Hope",pt:"Esperança",es:"Esperanza"}, story:{en:"A thin line of morning light appears.",pt:"Uma faixa de luz da manhã começa a surgir.",es:"Una franja de luz matinal comienza a aparecer."}, hue:205, sky:["#07111c","#24485d"], lights:["#fde68a","#fbbf24","#bae6fd"], rain:.30, thunder:0, type:"rain", rainStyle:"breeze", fog:.34, target:.74 },
+      { name:{en:"Memories",pt:"Memórias",es:"Recuerdos"}, feeling:{en:"Longing",pt:"Saudade",es:"Añoranza"}, story:{en:"Each drop carries something remembered.",pt:"Cada gota carrega uma lembrança.",es:"Cada gota lleva consigo un recuerdo."}, hue:260, sky:["#090613","#2b183b"], lights:["#c4b5fd","#f9a8d4","#fef3c7"], rain:.54, thunder:.05, type:"rain", rainStyle:"memory", fog:.43, target:.78 },
+      { name:{en:"Silence",pt:"Silêncio",es:"Silencio"}, feeling:{en:"Peace",pt:"Paz",es:"Paz"}, story:{en:"Almost no traffic, only soft water.",pt:"Quase nenhum trânsito, apenas chuva suave.",es:"Casi no hay tráfico, solo lluvia suave."}, hue:175, sky:["#020d0d","#123638"], lights:["#5eead4","#99f6e4","#fef9c3"], rain:.20, thunder:0, type:"rain", rainStyle:"drizzle", fog:.30, target:.73 },
+      { name:{en:"Clearing Sky",pt:"O Céu Clareia",es:"El Cielo se Abre"}, feeling:{en:"Renewal",pt:"Renovação",es:"Renovación"}, story:{en:"The last clouds slowly drift away.",pt:"As últimas nuvens se afastam devagar.",es:"Las últimas nubes se alejan lentamente."}, hue:35, sky:["#17100a","#513b20"], lights:["#fde68a","#fb923c","#fef3c7"], rain:.16, thunder:0, type:"rain", rainStyle:"clearing", fog:.28, target:.72 },
+      { name:{en:"Moving Car",pt:"Carro em Movimento",es:"Coche en Marcha"}, feeling:{en:"Journey",pt:"Jornada",es:"Viaje"}, story:{en:"The wet road glides past the side window.",pt:"A estrada molhada passa pela janela lateral.",es:"La carretera mojada pasa junto a la ventanilla."}, hue:200, sky:["#0a0a0a","#1a1a1a"], lights:["#ef4444","#f59e0b"], rain:.66, thunder:.06, type:"car", rainStyle:"carRain", fog:.42, target:.78 },
+      { name:{en:"Snowfall",pt:"Queda de Neve",es:"Nevada"}, feeling:{en:"Stillness",pt:"Quietude",es:"Quietud"}, story:{en:"Snow softens every sound outside.",pt:"A neve suaviza todos os sons lá fora.",es:"La nieve suaviza todos los sonidos afuera."}, hue:200, sky:["#2d3748","#4a5568"], lights:["#e2e8f0","#cbd5e0"], rain:.34, thunder:0, type:"snow", rainStyle:"snowSoft", fog:.38, target:.75 },
+      { name:{en:"Highway Rain",pt:"Chuva na Rodovia",es:"Lluvia en la Autopista"}, feeling:{en:"Speed",pt:"Velocidade",es:"Velocidad"}, story:{en:"Fast drops race across the side glass.",pt:"Gotas rápidas correm pelo vidro lateral.",es:"Gotas rápidas corren por la ventanilla."}, hue:220, sky:["#050510","#151530"], lights:["#ffffff","#ef4444","#22d3ee"], rain:.92, thunder:.30, type:"car", rainStyle:"highwayRain", fog:.51, target:.80 },
+      { name:{en:"Morning Frost",pt:"Geada Matinal",es:"Escarcha Matinal"}, feeling:{en:"Clarity",pt:"Claridade",es:"Claridad"}, story:{en:"The first warmth melts the frozen glass.",pt:"O primeiro calor derrete o vidro congelado.",es:"El primer calor derrite el cristal helado."}, hue:190, sky:["#4a5568","#a0aec0"], lights:["#ffffff","#e2e8f0"], rain:.24, thunder:0, type:"snow", rainStyle:"snowLight", fog:.47, target:.78 },
+      { name:{en:"Summer Sun Shower",pt:"Chuva de Verão",es:"Lluvia de Verano"}, feeling:{en:"Warmth",pt:"Calor",es:"Calidez"}, story:{en:"Warm rain glows beneath the sun.",pt:"A chuva morna brilha sob o sol.",es:"La lluvia cálida brilla bajo el sol."}, hue:50, sky:["#ecc94b","#f6e05e"], lights:["#ffffff"], rain:.46, thunder:.10, type:"rain", rainStyle:"sunShower", fog:.30, target:.74 },
+      { name:{en:"Midnight Blizzard",pt:"Nevasca à Meia-Noite",es:"Ventisca de Medianoche"}, feeling:{en:"Isolation",pt:"Isolamento",es:"Aislamiento"}, story:{en:"A fierce wind hides the sleeping world.",pt:"Um vento feroz esconde o mundo adormecido.",es:"Un viento feroz oculta el mundo dormido."}, hue:230, sky:["#000000","#111827"], lights:["#718096","#a0aec0"], rain:.86, thunder:.18, type:"snow", rainStyle:"blizzard", fog:.58, target:.81 },
+      { name:{en:"City Tunnel",pt:"Túnel da Cidade",es:"Túnel de la Ciudad"}, feeling:{en:"Echo",pt:"Eco",es:"Eco"}, story:{en:"Amber lights rush past in a steady rhythm.",pt:"Luzes âmbar passam em um ritmo constante.",es:"Luces ámbar pasan con un ritmo constante."}, hue:30, sky:["#1a1005","#3a2010"], lights:["#f6ad55","#ed8936"], rain:.48, thunder:0, type:"car", rainStyle:"tunnelRain", fog:.40, target:.77 },
+      { name:{en:"Golden Hour Drops",pt:"Gotas Douradas",es:"Gotas Doradas"}, feeling:{en:"Beauty",pt:"Beleza",es:"Belleza"}, story:{en:"Sunset light glows through every drop.",pt:"A luz do pôr do sol atravessa cada gota.",es:"La luz del atardecer atraviesa cada gota."}, hue:20, sky:["#c53030","#ed8936"], lights:["#fefcbf","#fbd38d"], rain:.38, thunder:0, type:"rain", rainStyle:"goldenRain", fog:.31, target:.74 },
+      { name:{en:"Snowy Drive",pt:"Passeio na Neve",es:"Viaje Nevado"}, feeling:{en:"Comfort",pt:"Aconchego",es:"Abrigo"}, story:{en:"Warm inside, frozen and quiet outside.",pt:"Quente por dentro, frio e silencioso lá fora.",es:"Calidez adentro, frío y silencio afuera."}, hue:210, sky:["#1a202c","#2d3748"], lights:["#e2e8f0","#ef4444"], rain:.52, thunder:0, type:"car_snow", rainStyle:"snowDrive", fog:.45, target:.78 },
+      { name:{en:"The Last Wipe",pt:"A Última Limpeza",es:"La Última Limpieza"}, feeling:{en:"Closure",pt:"Despedida",es:"Despedida"}, story:{en:"The glass clears and the journey rests.",pt:"O vidro clareia e a jornada descansa.",es:"El cristal se aclara y el viaje descansa."}, hue:200, sky:["#2b6cb0","#4299e1"], lights:["#ffffff","#bee3f8"], rain:.12, thunder:0, type:"rain", rainStyle:"finalRain", fog:.25, target:.70 }
     ];
 
     const brushes = {
@@ -919,10 +921,21 @@ const phases = [
     const zipPhaseSources = new Map();
     const zipObjectUrls = new Set();
     let zipLoadPromise = null;
-    const ZIP_BACKGROUND_ARCHIVES = ["Fases_01_10.zip", "fases_01_10.zip"];
+    const ZIP_BACKGROUND_ARCHIVES = Object.freeze([
+      {
+        files: ["Fases_01_10.zip", "fases_01_10.zip"],
+        startIndex: 0,
+        expectedCount: 10
+      },
+      {
+        files: ["Fases_11_20.zip", "fases_11_20.zip"],
+        startIndex: 10,
+        expectedCount: 10
+      }
+    ]);
 
-    // Estrutura definitiva: assets/backgrounds/phase-01.webp até phase-10.webp.
-    // Durante este teste, também aceitamos PNG/JPG, arquivos na raiz e o ZIP já enviado.
+    // Estrutura definitiva: assets/backgrounds/phase-01.webp até phase-20.webp.
+    // Também aceitamos PNG/JPG, arquivos na raiz e os dois ZIPs das fases.
     function backgroundCandidates(index) {
       const custom = window.RAINY_SKYLINE_BACKGROUNDS?.[index];
       if (Array.isArray(custom)) return custom;
@@ -975,15 +988,19 @@ const phases = [
       return Number((explicit || anyNumber)?.[1] || 999);
     }
 
-    async function readPhaseImagesFromZip(buffer) {
+    async function readPhaseImagesFromZip(buffer, startIndex = 0, expectedCount = 10) {
       const view = new DataView(buffer);
       const decoder = new TextDecoder("utf-8");
       const end = findZipEnd(view);
       const totalEntries = view.getUint16(end + 10, true);
       let offset = view.getUint32(end + 16, true);
       const entries = [];
+
       for (let index = 0; index < totalEntries; index++) {
-        if (view.getUint32(offset, true) !== 0x02014b50) throw new Error("Diretório do ZIP corrompido");
+        if (view.getUint32(offset, true) !== 0x02014b50) {
+          throw new Error("Diretório do ZIP corrompido");
+        }
+
         const flags = view.getUint16(offset + 8, true);
         const method = view.getUint16(offset + 10, true);
         const compressedSize = view.getUint32(offset + 20, true);
@@ -992,39 +1009,92 @@ const phases = [
         const commentLength = view.getUint16(offset + 32, true);
         const localOffset = view.getUint32(offset + 42, true);
         const name = decoder.decode(new Uint8Array(buffer, offset + 46, nameLength));
+
         if (!name.startsWith("__MACOSX/") && /\.(webp|png|jpe?g)$/i.test(name)) {
           entries.push({ name, flags, method, compressedSize, localOffset });
         }
+
         offset += 46 + nameLength + extraLength + commentLength;
       }
-      entries.sort((a,b) => zipImageOrder(a.name) - zipImageOrder(b.name) || a.name.localeCompare(b.name, undefined, { numeric:true }));
-      if (entries.length < ACTIVE_PHASE_COUNT) throw new Error(`O ZIP contém somente ${entries.length} imagens reconhecidas`);
-      for (let index = 0; index < ACTIVE_PHASE_COUNT; index++) {
-        const entry = entries[index];
-        const bytes = await unzipImage(buffer, entry);
-        const url = URL.createObjectURL(new Blob([bytes], { type:imageMime(entry.name) }));
-        zipObjectUrls.add(url);
-        zipPhaseSources.set(index, url);
+
+      entries.sort((a, b) =>
+        zipImageOrder(a.name) - zipImageOrder(b.name) ||
+        a.name.localeCompare(b.name, undefined, { numeric: true })
+      );
+
+      if (entries.length < expectedCount) {
+        throw new Error(`O ZIP contém somente ${entries.length} imagens reconhecidas; ${expectedCount} eram esperadas.`);
       }
+
+      const usableCount = Math.min(
+        expectedCount,
+        entries.length,
+        ACTIVE_PHASE_COUNT - startIndex
+      );
+
+      for (let localIndex = 0; localIndex < usableCount; localIndex++) {
+        const phaseIndex = startIndex + localIndex;
+        const entry = entries[localIndex];
+        const bytes = await unzipImage(buffer, entry);
+        const url = URL.createObjectURL(new Blob([bytes], { type: imageMime(entry.name) }));
+        const previousUrl = zipPhaseSources.get(phaseIndex);
+
+        if (previousUrl && previousUrl !== url && zipObjectUrls.has(previousUrl)) {
+          URL.revokeObjectURL(previousUrl);
+          zipObjectUrls.delete(previousUrl);
+        }
+
+        zipObjectUrls.add(url);
+        zipPhaseSources.set(phaseIndex, url);
+      }
+
       return zipPhaseSources;
     }
 
     async function ensureZipPhaseSources() {
       if (zipLoadPromise) return zipLoadPromise;
+
       zipLoadPromise = (async () => {
+        let loadedArchiveCount = 0;
         let lastError = null;
-        for (const archive of ZIP_BACKGROUND_ARCHIVES) {
-          try {
-            const response = await fetch(archive, { cache:"no-cache" });
-            if (!response.ok) throw new Error(`${archive}: HTTP ${response.status}`);
-            return await readPhaseImagesFromZip(await response.arrayBuffer());
-          } catch (error) { lastError = error; }
+
+        for (const group of ZIP_BACKGROUND_ARCHIVES) {
+          let groupLoaded = false;
+
+          for (const archive of group.files) {
+            try {
+              const response = await fetch(archive, { cache: "no-cache" });
+              if (!response.ok) throw new Error(`${archive}: HTTP ${response.status}`);
+
+              await readPhaseImagesFromZip(
+                await response.arrayBuffer(),
+                group.startIndex,
+                group.expectedCount
+              );
+
+              loadedArchiveCount++;
+              groupLoaded = true;
+              break;
+            } catch (error) {
+              lastError = error;
+            }
+          }
+
+          if (!groupLoaded) {
+            console.warn(`Não foi possível carregar o pacote iniciado na fase ${group.startIndex + 1}.`);
+          }
         }
-        throw lastError || new Error("Fases_01_10.zip não encontrado");
+
+        if (loadedArchiveCount === 0 && lastError) throw lastError;
+        return zipPhaseSources;
       })().catch(error => {
-        console.warn("Não foi possível carregar os fundos do ZIP; usando o cenário interno.", error);
+        console.warn(
+          "Não foi possível carregar os fundos dos ZIPs; usando imagens individuais ou o cenário interno.",
+          error
+        );
         return zipPhaseSources;
       });
+
       return zipLoadPromise;
     }
 
@@ -2016,6 +2086,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       document.getElementById("phaseTotalDisplay").textContent = ACTIVE_PHASE_COUNT;
       document.getElementById("menuPhaseName").textContent = localize(p.name);
       document.getElementById("menuPhaseFeeling").textContent = localize(p.feeling);
+      document.getElementById("menuPhaseStory").textContent = localize(p.story);
       updateCoins();
       const zen = state.isZen;
       document.getElementById("phaseDisplay").parentElement.style.display = zen ? "none" : "";
