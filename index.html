@@ -3,7 +3,8 @@
       RAINY SKYLINE V12 — BUILD INTEGRADA
       20 fases + arte exclusiva do Modo Zen incorporadas no próprio arquivo.
       Sem dependência de ZIP para iniciar ou trocar de fase.
-      Ajustes finais de progressão, névoa Zen, limpeza perfeita, gotas e áudio-base.
+      V13: máscaras reais do vidro nas fases de carro, parallax/movimento,
+      retrovisor com névoa permanente e regeneração Zen totalmente suave.
     -->
     <html lang="en">
     <head>
@@ -508,7 +509,7 @@
     </script>
     <script>
     /* =========================================================
-       RAINY SKYLINE V12 (20 fases + Zen exclusivo + assets incorporados)
+       RAINY SKYLINE V13 (20 fases + Zen suave + vidro real dos carros + parallax)
     ========================================================= */
 
     // As 20 fases ficam disponíveis no menu, campanha e modo Zen.
@@ -900,6 +901,165 @@ const phases = [
       return state.isZen ? ZEN_GLASS_DROP_CONFIG : (GLASS_DROP_PHASES[state.currentPhase] || GLASS_DROP_PHASES[0]);
     }
 
+    // ---------------------------------------------------------
+    // FASES DE CARRO — vidro real, retrovisor e área limpável
+    // ---------------------------------------------------------
+    // Coordenadas normalizadas na arte original (941 × 1672).
+    // A máscara acompanha o "cover" usado para desenhar o wallpaper, então
+    // continua alinhada mesmo em iPhones/Androids com proporções diferentes.
+    const CAR_GLASS_PROFILES = Object.freeze({
+      10: { // 11 — Moving Car (janela lateral)
+        polygon:[[.18,.00],[1,.00],[1,.690],[.58,.682],[.22,.666],[.10,.620],[.050,.535],[.046,.405],[.085,.285]],
+        mirror:{cx:.245,cy:.600,rx:.145,ry:.055,rotation:.055}
+      },
+      12: { // 13 — Highway Rain (janela lateral)
+        polygon:[[.18,.00],[1,.00],[1,.700],[.60,.695],[.22,.680],[.095,.630],[.045,.545],[.043,.405],[.085,.285]],
+        mirror:{cx:.205,cy:.625,rx:.135,ry:.052,rotation:.055}
+      },
+      16: { // 17 — City Tunnel (para-brisa)
+        polygon:[[.025,.025],[.975,.025],[.995,.965],[.005,.965]]
+      },
+      18: { // 19 — Snowy Drive (janela lateral)
+        polygon:[[.18,.00],[1,.00],[1,.700],[.60,.692],[.23,.676],[.105,.632],[.050,.545],[.047,.405],[.088,.285]],
+        mirror:{cx:.245,cy:.625,rx:.150,ry:.055,rotation:.055}
+      }
+    });
+
+    function isCarPhase(phase = getActivePhase()) {
+      return !state.isZen && (phase?.type === "car" || phase?.type === "car_snow");
+    }
+
+    function getCarGlassProfile() {
+      return isCarPhase() ? (CAR_GLASS_PROFILES[state.currentPhase] || null) : null;
+    }
+
+    function getArtworkTransform(image = currentBackgroundImage) {
+      if (image?.naturalWidth && image?.naturalHeight) {
+        const scale = Math.max(W / image.naturalWidth, H / image.naturalHeight);
+        const dw = image.naturalWidth * scale;
+        const dh = image.naturalHeight * scale;
+        return { scale, dw, dh, dx:(W-dw)/2, dy:(H-dh)/2 };
+      }
+      return { scale:1, dw:W, dh:H, dx:0, dy:0 };
+    }
+
+    function artworkPoint(nx, ny, transform = getArtworkTransform()) {
+      return { x:transform.dx + nx * transform.dw, y:transform.dy + ny * transform.dh };
+    }
+
+    function screenToArtwork(x, y, transform = getArtworkTransform()) {
+      return {
+        x:(x - transform.dx) / Math.max(1, transform.dw),
+        y:(y - transform.dy) / Math.max(1, transform.dh)
+      };
+    }
+
+    function pointInPolygon(x, y, points) {
+      let inside = false;
+      for (let i=0, j=points.length-1; i<points.length; j=i++) {
+        const xi=points[i][0], yi=points[i][1];
+        const xj=points[j][0], yj=points[j][1];
+        const intersects=((yi>y)!==(yj>y)) &&
+          (x < (xj-xi)*(y-yi)/((yj-yi)||1e-9)+xi);
+        if(intersects) inside=!inside;
+      }
+      return inside;
+    }
+
+    function pointInRotatedEllipse(x, y, ellipse) {
+      if(!ellipse) return false;
+      const cos=Math.cos(-ellipse.rotation), sin=Math.sin(-ellipse.rotation);
+      const dx=x-ellipse.cx, dy=y-ellipse.cy;
+      const rx=dx*cos-dy*sin, ry=dx*sin+dy*cos;
+      return (rx*rx)/(ellipse.rx*ellipse.rx)+(ry*ry)/(ellipse.ry*ellipse.ry) <= 1;
+    }
+
+    function isPointInPlayableGlass(x, y) {
+      const profile=getCarGlassProfile();
+      if(!profile) return true;
+      const p=screenToArtwork(x,y);
+      if(!pointInPolygon(p.x,p.y,profile.polygon)) return false;
+      if(profile.mirror && pointInRotatedEllipse(p.x,p.y,profile.mirror)) return false;
+      return true;
+    }
+
+    function traceCarGlassPolygon(ctx, profile = getCarGlassProfile(), transform = getArtworkTransform()) {
+      if(!profile?.polygon?.length) return false;
+      ctx.beginPath();
+      profile.polygon.forEach(([nx,ny],index)=>{
+        const p=artworkPoint(nx,ny,transform);
+        if(index===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
+      });
+      ctx.closePath();
+      return true;
+    }
+
+    function getMirrorScreenGeometry(profile = getCarGlassProfile(), transform = getArtworkTransform()) {
+      if(!profile?.mirror) return null;
+      const m=profile.mirror;
+      const center=artworkPoint(m.cx,m.cy,transform);
+      return {
+        cx:center.x, cy:center.y,
+        rx:m.rx*transform.dw, ry:m.ry*transform.dh,
+        rotation:m.rotation || 0
+      };
+    }
+
+    function eraseMirrorFromContext(ctx) {
+      const mirror=getMirrorScreenGeometry();
+      if(!mirror) return;
+      ctx.save();
+      ctx.globalCompositeOperation="destination-out";
+      ctx.beginPath();
+      ctx.ellipse(mirror.cx,mirror.cy,mirror.rx,mirror.ry,mirror.rotation,0,Math.PI*2);
+      ctx.fillStyle="#000";
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function clipToCarGlass(ctx) {
+      const profile=getCarGlassProfile();
+      if(!profile) return false;
+      ctx.save();
+      traceCarGlassPolygon(ctx,profile);
+      ctx.clip();
+      return true;
+    }
+
+    function drawPermanentMirrorFog(ctx) {
+      const mirror=getMirrorScreenGeometry();
+      if(!mirror) return;
+      ctx.save();
+      ctx.translate(mirror.cx,mirror.cy);
+      ctx.rotate(mirror.rotation);
+      // Névoa propositalmente discreta: o retrovisor fica do lado de fora
+      // e nunca participa da limpeza do vidro da cabine.
+      const gradient=ctx.createRadialGradient(
+        -mirror.rx*.18,-mirror.ry*.18,mirror.ry*.08,
+        0,0,mirror.rx
+      );
+      gradient.addColorStop(0,"rgba(220,232,238,.16)");
+      gradient.addColorStop(.62,"rgba(194,210,220,.115)");
+      gradient.addColorStop(1,"rgba(170,190,205,.055)");
+      ctx.fillStyle=gradient;
+      ctx.beginPath();
+      ctx.ellipse(0,0,mirror.rx*.86,mirror.ry*.74,0,0,Math.PI*2);
+      ctx.fill();
+      ctx.globalAlpha=.24;
+      ctx.filter="blur(2.2px)";
+      ctx.fillStyle="rgba(232,240,244,.16)";
+      ctx.beginPath();
+      ctx.ellipse(-mirror.rx*.08,-mirror.ry*.03,mirror.rx*.70,mirror.ry*.50,0,0,Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function getCompletionTarget() {
+      // Nas fases de carro a área real de vidro é bem menor; por isso a fase
+      // só termina quando TODOS os blocos válidos daquele vidro foram limpos.
+      return isCarPhase() ? 1 : COMPLETION_TARGET;
+    }
+
     const brushes = {
       soft: { name:{en:"Soft",pt:"Suave",es:"Suave"}, cost:0, radius:34, blur:.95, vignette:.35, desc:{en:"Gentle and balanced.",pt:"Suave e equilibrado.",es:"Suave y equilibrado."} },
       precise: { name:{en:"Precise",pt:"Preciso",es:"Preciso"}, cost:100, radius:23, blur:.42, vignette:.18, desc:{en:"For small details.",pt:"Para pequenos detalhes.",es:"Para pequeños detalles."} },
@@ -919,7 +1079,7 @@ const phases = [
 
     function saveGame() {
       const payload = {
-        version: 12,
+        version: 13,
         points: state.points, stars: state.stars, highestPhase: state.highestPhase,
         currentPhase: state.resumePhase ?? (state.isZen ? state.campaignPhase : state.currentPhase),
         brush1: state.brush1, brush2: state.brush2, unlockedBrushes,
@@ -979,6 +1139,11 @@ const phases = [
     const fogCtx = fogCanvas.getContext("2d");
     const fogBaseCanvas = document.createElement("canvas");
     const fogBaseCtx = fogBaseCanvas.getContext("2d");
+    // A névoa visível agora é composta por uma base fixa + uma máscara de alpha.
+    // Limpar apaga a máscara; no Zen ela volta suavemente sem criar quadrados.
+    const fogMaskCanvas = document.createElement("canvas");
+    const fogMaskCtx = fogMaskCanvas.getContext("2d");
+    let fogVisualDirty = true;
 
     let W = window.innerWidth; let H = window.innerHeight;
     const lowPowerDevice = (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) ||
@@ -1098,13 +1263,13 @@ const phases = [
     }
 
     function resize() {
-      const preserveFog = state.started && fogCanvas.width > 0 && fogCanvas.height > 0;
-      let fogSnapshot=null, previousGrid=null, previousGridX=0, previousGridY=0;
+      const preserveFog = state.started && fogMaskCanvas.width > 0 && fogMaskCanvas.height > 0;
+      let maskSnapshot=null, previousGrid=null, previousGridX=0, previousGridY=0;
       if(preserveFog){
-        fogSnapshot=document.createElement("canvas");
-        fogSnapshot.width=fogCanvas.width;
-        fogSnapshot.height=fogCanvas.height;
-        fogSnapshot.getContext("2d").drawImage(fogCanvas,0,0);
+        maskSnapshot=document.createElement("canvas");
+        maskSnapshot.width=fogMaskCanvas.width;
+        maskSnapshot.height=fogMaskCanvas.height;
+        maskSnapshot.getContext("2d").drawImage(fogMaskCanvas,0,0);
         previousGrid=fogGrid.slice();
         previousGridX=GRID_X;
         previousGridY=GRID_Y;
@@ -1116,21 +1281,29 @@ const phases = [
       if(typeof brushStampCache !== "undefined") brushStampCache.clear();
       setupCanvas(bgCanvas, bgCtx); setupCanvas(rainCanvas, rainCtx);
       setupCanvas(glassCanvas, glassCtx); setupCanvas(fogCanvas, fogCtx);
+      setupFogMaskCanvas();
       if (typeof glassDropsSystem !== "undefined") glassDropsSystem.resize();
       generateCity(); drawCityBackground();
-      if(preserveFog && fogSnapshot && previousGrid?.length){
+
+      if(preserveFog && maskSnapshot && previousGrid?.length){
         buildFogBase();
-        fogCtx.drawImage(fogSnapshot,0,0,fogSnapshot.width,fogSnapshot.height,0,0,W,H);
+        fogMaskCtx.clearRect(0,0,W,H);
+        fogMaskCtx.drawImage(maskSnapshot,0,0,maskSnapshot.width,maskSnapshot.height,0,0,W,H);
+        applyPlayableGlassMaskToFogMask();
         createFogGrid();
+        fogClearedCells=0;
         for(let y=0;y<GRID_Y;y++){
           for(let x=0;x<GRID_X;x++){
             const index=y*GRID_X+x;
-            if(fogGrid[index]!==0) continue;
+            if(fogGrid[index]===-1) continue;
             const oldX=Math.min(previousGridX-1,Math.floor((x+.5)/GRID_X*previousGridX));
             const oldY=Math.min(previousGridY-1,Math.floor((y+.5)/GRID_Y*previousGridY));
-            if(previousGrid[oldY*previousGridX+oldX]===1){ fogGrid[index]=1; fogClearedCells++; }
+            const oldValue=previousGrid[oldY*previousGridX+oldX];
+            if(oldValue===1){ fogGrid[index]=1; fogClearedCells++; }
           }
         }
+        fogVisualDirty=true;
+        renderFogFromMask();
         updateProgress(true);
       } else initFog();
     }
@@ -1156,6 +1329,121 @@ const phases = [
       for(let i=0;i<7;i++) traffic.push({x:Math.random()*W,y:H*(.72+Math.random()*.14),speed:35+Math.random()*100,scale:.5+Math.random()*.8,tail:phase.lights[(i+1)%phase.lights.length]});
     }
 
+
+    function drawImageCover(ctx, image, transform, shiftX=0, shiftY=0, scaleBoost=1) {
+      const cx=W/2, cy=H/2;
+      const dw=transform.dw*scaleBoost;
+      const dh=transform.dh*scaleBoost;
+      const dx=cx-dw/2+shiftX;
+      const dy=cy-dh/2+shiftY;
+      ctx.drawImage(image,dx,dy,dw,dh);
+    }
+
+    function drawSideCarParallax(image, transform) {
+      const profile=getCarGlassProfile();
+      if(!profile) return;
+
+      // A arte é um único wallpaper. Para criar profundidade sem deslocar
+      // porta/pilar/retrovisor, somente a região do vidro recebe camadas móveis.
+      const travel=state.carOffset;
+      const bands=[
+        {from:.00,to:.48,amp:W*.010,speed:.0017,phase:.3},
+        {from:.43,to:.61,amp:W*.020,speed:.0024,phase:1.1},
+        {from:.56,to:.72,amp:W*.034,speed:.0032,phase:2.0}
+      ];
+
+      for(const band of bands){
+        bgCtx.save();
+        traceCarGlassPolygon(bgCtx,profile,transform);
+        bgCtx.clip();
+        const y0=transform.dy+band.from*transform.dh;
+        const y1=transform.dy+band.to*transform.dh;
+        bgCtx.beginPath();
+        bgCtx.rect(0,y0-8,W,(y1-y0)+16);
+        bgCtx.clip();
+        const shift=-Math.abs(Math.sin(travel*band.speed+band.phase))*band.amp;
+        const bob=Math.sin(state.elapsed*1.15+band.phase)*(band===bands[2]?1.4:.7);
+        drawImageCover(bgCtx,image,transform,shift,bob,1.045);
+        bgCtx.restore();
+      }
+
+      // Linhas de reflexo rápidas no plano mais próximo reforçam a direção
+      // do movimento sem alterar a ilustração original.
+      bgCtx.save();
+      traceCarGlassPolygon(bgCtx,profile,transform);
+      bgCtx.clip();
+      const roadTop=transform.dy+transform.dh*.565;
+      const roadBottom=transform.dy+transform.dh*.715;
+      for(let i=0;i<7;i++){
+        const speed=75+i*13;
+        const span=W+220;
+        let x=(i*173-travel*speed/100)%span;
+        if(x<-180) x+=span;
+        const y=roadTop+(roadBottom-roadTop)*(i/6);
+        const len=34+i*13;
+        bgCtx.strokeStyle=`rgba(205,225,238,${.028+i*.006})`;
+        bgCtx.lineWidth=.7+i*.14;
+        bgCtx.beginPath();
+        bgCtx.moveTo(x,y);
+        bgCtx.lineTo(x+len,y+.7);
+        bgCtx.stroke();
+      }
+      bgCtx.restore();
+
+      // O retrovisor pertence ao carro, não à paisagem: redesenha a região dele
+      // sobre o parallax para permanecer perfeitamente fixa.
+      const mirror=getMirrorScreenGeometry(profile,transform);
+      if(mirror){
+        bgCtx.save();
+        bgCtx.beginPath();
+        bgCtx.ellipse(
+          mirror.cx,mirror.cy,
+          mirror.rx*1.16,mirror.ry*1.28,
+          mirror.rotation,0,Math.PI*2
+        );
+        bgCtx.clip();
+        drawImageCover(bgCtx,image,transform,0,0,1);
+        bgCtx.restore();
+      }
+    }
+
+    function drawTunnelParallax(image, transform) {
+      const profile=getCarGlassProfile();
+      if(!profile) return;
+      const zoom=1.018+Math.sin(state.elapsed*1.05)*.006;
+      bgCtx.save();
+      traceCarGlassPolygon(bgCtx,profile,transform);
+      bgCtx.clip();
+      drawImageCover(
+        bgCtx,image,transform,
+        Math.sin(state.elapsed*.72)*W*.0025,
+        Math.sin(state.elapsed*1.30)*H*.0018,
+        zoom
+      );
+
+      // Movimento de perspectiva: luzes/umidade saem do ponto de fuga.
+      const vpX=W*.50, vpY=H*.43;
+      const phase=(state.carOffset*.00135)%1;
+      for(let i=0;i<10;i++){
+        const p=(i/10+phase)%1;
+        const eased=p*p;
+        const y=vpY+(H-vpY)*eased;
+        const spread=W*.42*eased;
+        const alpha=.025+.085*p;
+        bgCtx.strokeStyle=`rgba(246,181,91,${alpha})`;
+        bgCtx.lineWidth=.8+2.3*p;
+        bgCtx.beginPath();
+        bgCtx.moveTo(vpX-spread*.18,y);
+        bgCtx.lineTo(vpX-spread*.34,y+7+22*p);
+        bgCtx.stroke();
+        bgCtx.beginPath();
+        bgCtx.moveTo(vpX+spread*.18,y);
+        bgCtx.lineTo(vpX+spread*.34,y+7+22*p);
+        bgCtx.stroke();
+      }
+      bgCtx.restore();
+    }
+
     function drawCityBackground() {
       const phase = getActivePhase();
       bgCtx.clearRect(0, 0, W, H);
@@ -1163,10 +1451,16 @@ const phases = [
       const expectedBackgroundKey = state.isZen ? "zen" : state.currentPhase;
       if (currentBackgroundImage && currentBackgroundIndex === expectedBackgroundKey) {
         const image = currentBackgroundImage;
-        const scale = Math.max(W / image.naturalWidth, H / image.naturalHeight);
-        const dw = image.naturalWidth * scale;
-        const dh = image.naturalHeight * scale;
-        bgCtx.drawImage(image, (W - dw) / 2, (H - dh) / 2, dw, dh);
+        const transform=getArtworkTransform(image);
+
+        // Interior do carro permanece absolutamente fixo. Só a paisagem visível
+        // através do vidro recebe o deslocamento de profundidade.
+        drawImageCover(bgCtx,image,transform,0,0,1);
+        if(isCarPhase()){
+          if(state.currentPhase===16) drawTunnelParallax(image,transform);
+          else drawSideCarParallax(image,transform);
+        }
+
         // Gradação vertical discreta: conserva a arte, mas a coloca dentro do mesmo
         // clima do vidro, da chuva e do HUD.
         const grade = bgCtx.createLinearGradient(0, 0, 0, H);
@@ -1456,7 +1750,10 @@ const phases = [
         this.vx*=Math.exp(-dt*.72);
         if(this.r>4.8 || this.vy>15) this.dripping=true;
 
-        if(this.y>H+35 || this.x<-35 || this.x>W+35) this.scheduleRespawn(3000);
+        if(
+          this.y>H+35 || this.x<-35 || this.x>W+35 ||
+          (isCarPhase() && !isPointInPlayableGlass(this.x,this.y))
+        ) this.scheduleRespawn(3000);
       }
 
       draw(ctx) {
@@ -1536,13 +1833,14 @@ const phases = [
       }
 
       findOpenPosition(radius,ignoreDrop=null) {
-        let best={x:radius+4+Math.random()*Math.max(1,this.W-radius*2-8),y:58+Math.random()*Math.max(1,this.H-128)};
+        let best=null;
         let bestClearance=-Infinity;
-        for(let attempt=0;attempt<48;attempt++){
+        for(let attempt=0;attempt<110;attempt++){
           const candidate={
             x:radius+4+Math.random()*Math.max(1,this.W-radius*2-8),
             y:58+Math.random()*Math.max(1,this.H-128)
           };
+          if(!isPointInPlayableGlass(candidate.x,candidate.y)) continue;
           let minimum=Infinity;
           for(const other of this.drops){
             if(other===ignoreDrop || !other.alive) continue;
@@ -1552,7 +1850,14 @@ const phases = [
           if(minimum>=0) return candidate;
           if(minimum>bestClearance){ bestClearance=minimum; best=candidate; }
         }
-        return best;
+        if(best) return best;
+
+        // Fallback seguro: procura qualquer ponto do vidro real.
+        for(let attempt=0;attempt<160;attempt++){
+          const candidate={x:Math.random()*this.W,y:Math.random()*this.H};
+          if(isPointInPlayableGlass(candidate.x,candidate.y)) return candidate;
+        }
+        return {x:this.W*.5,y:this.H*.42};
       }
 
       configureDrop(drop,initial=true) {
@@ -1672,14 +1977,34 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     let fogPlayableCells = 1;
     const brushStampCache = new Map();
 
+    function setupFogMaskCanvas() {
+      fogMaskCanvas.width=Math.max(1,Math.round(W*DPR));
+      fogMaskCanvas.height=Math.max(1,Math.round(H*DPR));
+      fogMaskCtx.setTransform(DPR,0,0,DPR,0,0);
+      fogMaskCtx.globalCompositeOperation="source-over";
+      fogMaskCtx.globalAlpha=1;
+      fogMaskCtx.clearRect(0,0,W,H);
+    }
+
     function createFogGrid() {
       GRID_X = Math.max(14, Math.ceil(W / 26));
       GRID_Y = Math.max(22, Math.ceil(H / 26));
-      fogGrid = Array.from({ length: GRID_X * GRID_Y }, () => 0);
+      fogGrid = Array.from({ length: GRID_X * GRID_Y }, () => -1);
       fogClearedCells = 0;
-      // O cálculo agora considera o vidro inteiro. Como o contador de moedas não
-      // bloqueia o toque e o botão de pausa ocupa menos de 2%, chegar a 98% é possível.
-      fogPlayableCells = fogGrid.length;
+      fogPlayableCells = 0;
+
+      for(let gy=0;gy<GRID_Y;gy++){
+        for(let gx=0;gx<GRID_X;gx++){
+          const px=(gx+.5)/GRID_X*W;
+          const py=(gy+.5)/GRID_Y*H;
+          const index=gy*GRID_X+gx;
+          if(isPointInPlayableGlass(px,py)){
+            fogGrid[index]=0;
+            fogPlayableCells++;
+          }
+        }
+      }
+      fogPlayableCells=Math.max(1,fogPlayableCells);
     }
 
     function buildFogBase() {
@@ -1688,8 +2013,8 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       fogBaseCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
       fogBaseCtx.clearRect(0, 0, W, H);
 
-      // O "padrão" da névoa é criado uma vez e reutilizado na regeneração Zen.
-      // Assim ela volta ao mesmo visual, sem acumular branco nem escurecer a cena.
+      // A base visual é gerada uma única vez. No Zen só a máscara muda,
+      // então a névoa não acumula branco nem forma blocos.
       fogBaseCtx.save();
       fogBaseCtx.filter = "blur(10px) saturate(.82)";
       fogBaseCtx.globalAlpha = .76;
@@ -1715,39 +2040,72 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       fogBaseCtx.globalAlpha = 1;
     }
 
-    function drawFullFogBase() {
-      fogCtx.globalCompositeOperation = "source-over";
-      fogCtx.clearRect(0, 0, W, H);
-      fogCtx.drawImage(fogBaseCanvas, 0, 0, fogBaseCanvas.width, fogBaseCanvas.height, 0, 0, W, H);
+    function applyPlayableGlassMaskToFogMask() {
+      const profile=getCarGlassProfile();
+      if(!profile) return;
+      fogMaskCtx.save();
+      fogMaskCtx.globalCompositeOperation="destination-in";
+      traceCarGlassPolygon(fogMaskCtx,profile);
+      fogMaskCtx.fillStyle="#fff";
+      fogMaskCtx.fill();
+      fogMaskCtx.restore();
+
+      // Retrovisor é deliberadamente removido da máscara de limpeza.
+      // A névoa leve dele é desenhada separadamente e nunca pode ser apagada.
+      const mirror=getMirrorScreenGeometry(profile);
+      if(mirror){
+        fogMaskCtx.save();
+        fogMaskCtx.globalCompositeOperation="destination-out";
+        fogMaskCtx.beginPath();
+        fogMaskCtx.ellipse(mirror.cx,mirror.cy,mirror.rx,mirror.ry,mirror.rotation,0,Math.PI*2);
+        fogMaskCtx.fillStyle="#000";
+        fogMaskCtx.fill();
+        fogMaskCtx.restore();
+      }
     }
 
-    function restoreFogCell(index) {
-      if(index < 0 || index >= fogGrid.length || fogGrid[index] !== 1) return false;
-      const gx = index % GRID_X;
-      const gy = Math.floor(index / GRID_X);
-      const x0 = gx / GRID_X * W;
-      const y0 = gy / GRID_Y * H;
-      const x1 = (gx + 1) / GRID_X * W;
-      const y1 = (gy + 1) / GRID_Y * H;
-      const w = Math.max(1, x1 - x0);
-      const h = Math.max(1, y1 - y0);
-      const sx = Math.floor(x0 * DPR);
-      const sy = Math.floor(y0 * DPR);
-      const sw = Math.max(1, Math.ceil(w * DPR));
-      const sh = Math.max(1, Math.ceil(h * DPR));
+    function resetFogMask() {
+      setupFogMaskCanvas();
+      fogMaskCtx.globalCompositeOperation="source-over";
+      fogMaskCtx.fillStyle="#fff";
+      const profile=getCarGlassProfile();
+      if(profile){
+        traceCarGlassPolygon(fogMaskCtx,profile);
+        fogMaskCtx.fill();
+        const mirror=getMirrorScreenGeometry(profile);
+        if(mirror){
+          fogMaskCtx.save();
+          fogMaskCtx.globalCompositeOperation="destination-out";
+          fogMaskCtx.beginPath();
+          fogMaskCtx.ellipse(mirror.cx,mirror.cy,mirror.rx,mirror.ry,mirror.rotation,0,Math.PI*2);
+          fogMaskCtx.fillStyle="#000";
+          fogMaskCtx.fill();
+          fogMaskCtx.restore();
+        }
+      } else {
+        fogMaskCtx.fillRect(0,0,W,H);
+      }
+      fogVisualDirty=true;
+    }
 
-      // Limpa a célula antes de copiar o padrão: sem soma de alfa, sem "ficar branco".
-      fogCtx.clearRect(x0, y0, w + .6, h + .6);
-      fogCtx.drawImage(fogBaseCanvas, sx, sy, sw, sh, x0, y0, w + .6, h + .6);
-      fogGrid[index] = 0;
-      fogClearedCells = Math.max(0, fogClearedCells - 1);
-      return true;
+    function renderFogFromMask() {
+      if(!fogVisualDirty) return;
+      fogCtx.save();
+      fogCtx.globalCompositeOperation="source-over";
+      fogCtx.globalAlpha=1;
+      fogCtx.clearRect(0,0,W,H);
+      fogCtx.drawImage(fogBaseCanvas,0,0,fogBaseCanvas.width,fogBaseCanvas.height,0,0,W,H);
+      fogCtx.globalCompositeOperation="destination-in";
+      fogCtx.drawImage(fogMaskCanvas,0,0,fogMaskCanvas.width,fogMaskCanvas.height,0,0,W,H);
+      fogCtx.restore();
+      fogVisualDirty=false;
     }
 
     function initFog() {
       createFogGrid();
       buildFogBase();
-      drawFullFogBase();
+      resetFogMask();
+      renderFogFromMask();
       state.fogProgress = 0;
       zenFogRegenAccumulator = 0;
       updateProgress(true);
@@ -1756,35 +2114,47 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     let zenFogRegenAccumulator = 0;
     function regenerateZenFog(dt) {
       if(!state.isZen || !state.zenAutoFog || !state.started || state.paused || fogClearedCells <= 0) return;
-      const intensity = getEffectiveRainIntensity();
-      zenFogRegenAccumulator += dt;
-      const interval = Math.max(.075, .17 - intensity * .075);
 
-      while(zenFogRegenAccumulator >= interval && fogClearedCells > 0){
-        zenFogRegenAccumulator -= interval;
-        const restoreCount = intensity >= .85 ? 2 : 1;
-        for(let n=0;n<restoreCount && fogClearedCells>0;n++){
-          let restored=false;
-          for(let attempt=0;attempt<18;attempt++){
-            const index=Math.floor(Math.random()*fogGrid.length);
-            if(restoreFogCell(index)){ restored=true; break; }
-          }
-          if(!restored){
-            const index=fogGrid.findIndex(value => value===1);
-            if(index>=0) restoreFogCell(index);
-          }
+      const intensity=getEffectiveRainIntensity();
+      // Máscara branca volta com alpha minúsculo a cada quadro. Como alpha é
+      // limitado naturalmente a 1, a névoa converge para o padrão original
+      // sem ficar mais branca/escura e sem os quadrados vistos no vídeo.
+      const visualRate=.030+intensity*.042;
+      const visualAlpha=1-Math.exp(-visualRate*dt);
+      fogMaskCtx.save();
+      fogMaskCtx.globalCompositeOperation="source-over";
+      fogMaskCtx.fillStyle=`rgba(255,255,255,${visualAlpha})`;
+      fogMaskCtx.fillRect(0,0,W,H);
+      fogMaskCtx.restore();
+      fogVisualDirty=true;
+
+      // O progresso usa a mesma curva exponencial da máscara. Cada célula limpa
+      // tem uma pequena chance de voltar a "embaçada", mantendo score e visual juntos.
+      const gridRate=.028+intensity*.040;
+      const restoreChance=1-Math.exp(-gridRate*dt);
+      let restored=0;
+      for(let index=0;index<fogGrid.length;index++){
+        if(fogGrid[index]!==1) continue;
+        if(Math.random()<restoreChance){
+          fogGrid[index]=0;
+          restored++;
         }
       }
+      if(restored) fogClearedCells=Math.max(0,fogClearedCells-restored);
+      zenFogRegenAccumulator+=dt;
     }
 
     function clearFogStamp(x, y, brush, radius) {
+      if(!isPointInPlayableGlass(x,y)) return false;
       const stamp=getBrushStamp(brush,radius);
-      fogCtx.save();
-      fogCtx.globalCompositeOperation = "destination-out";
-      fogCtx.drawImage(stamp.canvas,x-stamp.cssSize/2,y-stamp.cssSize/2,stamp.cssSize,stamp.cssSize);
-      fogCtx.restore();
+      fogMaskCtx.save();
+      fogMaskCtx.globalCompositeOperation = "destination-out";
+      fogMaskCtx.drawImage(stamp.canvas,x-stamp.cssSize/2,y-stamp.cssSize/2,stamp.cssSize,stamp.cssSize);
+      fogMaskCtx.restore();
+      fogVisualDirty=true;
       glassDropsSystem.wipe(x, y, radius * .82);
       markFogGrid(x, y, radius * .72);
+      return true;
     }
 
     function getBrushStamp(brush, radius) {
@@ -1862,11 +2232,11 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
 
     function updateProgress() {
       state.fogProgress = fogClearedCells / Math.max(1, fogPlayableCells);
-      // 98% libera a conclusão; enquanto o dedo continua no vidro o jogador pode
-      // chegar a 99,5% e conquistar a Limpeza Perfeita sem pressão de tempo.
-      const target = COMPLETION_TARGET;
+      // Campanha normal: 98%. Fases de carro: 100% do vidro REAL,
+      // já que a máscara exclui porta, moldura e retrovisor.
+      const target = getCompletionTarget();
       document.getElementById("progressFill").style.width = `${Math.min(1, state.fogProgress / target) * 100}%`;
-      const canFinish = state.fogProgress >= target && state.started && !state.paused && !state.isZen;
+      const canFinish = state.fogProgress + 1e-9 >= target && state.started && !state.paused && !state.isZen;
       if (canFinish && state.activePointers.size === 0) completePhase();
     }
 
@@ -1885,6 +2255,8 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     }
     function handlePointerDown(e) {
       if(!state.started || state.paused) return;
+      // Nas fases de carro, tocar porta/moldura/retrovisor não inicia limpeza.
+      if(!isPointInPlayableGlass(e.clientX,e.clientY)) return;
       e.preventDefault();
       initAudio();
       fogCanvas.setPointerCapture?.(e.pointerId);
@@ -1913,7 +2285,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       if (state.activePointers.has(e.pointerId)) e.preventDefault();
       state.activePointers.delete(e.pointerId);
       state.pointerBrushes.delete(e.pointerId);
-      if(state.started && !state.paused && !state.isZen && state.fogProgress >= COMPLETION_TARGET) updateProgress();
+      if(state.started && !state.paused && !state.isZen && state.fogProgress >= getCompletionTarget()) updateProgress();
     }
     fogCanvas.addEventListener("pointerdown", handlePointerDown); fogCanvas.addEventListener("pointermove", handlePointerMove); fogCanvas.addEventListener("pointerup", handlePointerUp); fogCanvas.addEventListener("pointercancel", handlePointerUp);
 
@@ -2087,7 +2459,9 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       const loadedBackground=await ensurePhaseBackground(idx, zen);
       if(requestId!==startRequestId) return;
       state.started = true; state.paused = false; saveGame();
-      state.hasInteracted = false; state.activePointers.clear(); state.pointerBrushes.clear(); state.elapsed=0; state.cleanStreak=0; state.zenScore=0; state.lastTime=performance.now(); state.phaseStartedAt=performance.now();
+      state.hasInteracted = false; state.activePointers.clear(); state.pointerBrushes.clear();
+      state.elapsed=0; state.carOffset=0; state.cleanStreak=0; state.zenScore=0;
+      state.lastTime=performance.now(); state.phaseStartedAt=performance.now();
       generateCity(); drawCityBackground();
       const activePhase = getActivePhase();
       applyPhaseAtmosphere(activePhase);
@@ -2235,8 +2609,10 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         if(movingPhase) {
           state.carOffset += dt * 300;
         }
-        // Fundos fotográficos e fases estáticas não são redesenhados a cada quadro.
-        if(backgroundDirty || (movingPhase && !currentBackgroundImage && time-lastBackgroundFrame>32)) {
+        // Fases estáticas só redesenham quando necessário. Fases de carro,
+        // inclusive com arte incorporada, redesenham para o parallax funcionar.
+        const carFrameInterval=lowPowerDevice ? 46 : 30;
+        if(backgroundDirty || (movingPhase && time-lastBackgroundFrame>carFrameInterval)) {
           drawCityBackground();
           lastBackgroundFrame=time;
         }
@@ -2256,6 +2632,10 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         const activeRainCount = Math.max(8, Math.min(rainParticles.length,
           Math.round((8 + zenIntensity * (rainParticles.length - 8)) * styleDensity * climateDensity * gustDensity)
         ));
+
+        // Em carro, chuva e gotas só existem sobre o vidro — nunca sobre porta,
+        // acabamento interno ou retrovisor.
+        const rainClipped=clipToCarGlass(rainCtx);
         // Desenha de trás para frente para a profundidade continuar legível.
         for(let depthLayer=0;depthLayer<3;depthLayer++){
           for(let i=0;i<activeRainCount;i++){
@@ -2278,9 +2658,21 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
             }
           }
         }
-        for(let i=activeRainCount;i<rainParticles.length;i++){ if(rainParticles[i].y > H + 80) rainParticles[i].reset(); }
+        if(rainClipped) rainCtx.restore();
+        if(isCarPhase()) eraseMirrorFromContext(rainCtx);
+
+        for(let i=activeRainCount;i<rainParticles.length;i++){
+          if(rainParticles[i].y > H + 80) rainParticles[i].reset();
+        }
+
         glassDropsSystem.update(dt);
+        const glassClipped=clipToCarGlass(glassCtx);
         glassDropsSystem.draw(glassCtx);
+        if(glassClipped) glassCtx.restore();
+        if(isCarPhase()){
+          eraseMirrorFromContext(glassCtx);
+          drawPermanentMirrorFog(glassCtx);
+        }
         glassDropsSystem.replenish();
         
         if(state.isZen){
@@ -2289,6 +2681,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
           if(state.zenAutoFog) regenerateZenFog(dt);
           updateProgress();
         }
+        if(fogVisualDirty) renderFogFromMask();
       }
       queueNextFrame();
     }
