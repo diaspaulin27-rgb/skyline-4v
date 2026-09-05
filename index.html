@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
     <!--
       RAINY SKYLINE V12 — BUILD INTEGRADA
       20 fases + arte exclusiva do Modo Zen incorporadas no próprio arquivo.
       Sem dependência de ZIP para iniciar ou trocar de fase.
       V13: máscaras reais do vidro nas fases de carro, parallax/movimento,
       retrovisor com névoa permanente.
-      ZEN FIX: regeneração com pausa, difusão contínua e retorno ao padrão original.
+      ZEN FIX: regeneração simples compatível com Safari iOS, 1.8s idle / 8s restore.
     -->
     <html lang="en">
     <head>
@@ -2121,39 +2121,29 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     // A grade continua existindo apenas para score/progresso. O visual NÃO é
     // reconstruído por células: a máscara é difundida e recebe uma névoa muito
     // suave até voltar exatamente à opacidade original.
-    const ZEN_FOG_IDLE_DELAY_MS = 6500;
-    const ZEN_FOG_RESTORE_SECONDS = 22;
-    const ZEN_FOG_DIFFUSION_INTERVAL = lowPowerDevice ? .12 : .075;
+    const ZEN_FOG_IDLE_DELAY_MS = 1800;
+    const ZEN_FOG_RESTORE_SECONDS = 8;
+    // Atualiza a máscara em poucos passos por segundo: visível, barato no mobile
+    // e sem depender de ctx.filter/blur em canvas offscreen no Safari iOS.
+    const ZEN_FOG_REGEN_INTERVAL = lowPowerDevice ? .16 : .125;
 
     let zenFogRegenAccumulator = 0;
     let zenFogRegenElapsed = 0;
     let zenFogLastInteractionAt = 0;
     let zenFogNeedsRestore = false;
 
-    const zenFogDiffusionCanvas = document.createElement("canvas");
-    const zenFogDiffusionCtx = zenFogDiffusionCanvas.getContext("2d");
-
-    function ensureZenFogDiffusionCanvas() {
-      const width = Math.max(1, Math.round(W * DPR));
-      const height = Math.max(1, Math.round(H * DPR));
-      if (zenFogDiffusionCanvas.width === width && zenFogDiffusionCanvas.height === height) return;
-      zenFogDiffusionCanvas.width = width;
-      zenFogDiffusionCanvas.height = height;
-      zenFogDiffusionCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
-    }
-
     function finishZenFogRegeneration() {
-      // Volta exatamente ao mesmo estado de máscara usado no início do Zen.
+      // Recria a grade para manter score/progresso coerentes mesmo após resize.
+      createFogGrid();
       resetFogMask();
-      for(let index=0; index<fogGrid.length; index++){
-        if(fogGrid[index] !== -1) fogGrid[index] = 0;
-      }
       fogClearedCells = 0;
       state.fogProgress = 0;
       zenFogRegenElapsed = 0;
       zenFogRegenAccumulator = 0;
       zenFogNeedsRestore = false;
       fogVisualDirty = true;
+      renderFogFromMask();
+      updateProgress();
     }
 
     function regenerateZenFog(dt) {
@@ -2168,55 +2158,22 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       zenFogRegenAccumulator += safeDt;
 
       const progress = Math.min(1, zenFogRegenElapsed / ZEN_FOG_RESTORE_SECONDS);
-      // Curva lenta no começo e mais uniforme depois: evita a sensação de que
-      // a névoa "persegue" o dedo logo após a pessoa terminar de limpar.
       const eased = progress * progress * (3 - 2 * progress);
 
-      if(zenFogRegenAccumulator >= ZEN_FOG_DIFFUSION_INTERVAL){
-        const stepDt = zenFogRegenAccumulator;
+      // Regeneração simples e compatível com Safari iOS:
+      // apenas recompõe alpha branco da máscara, sem canvas auxiliar e sem blur.
+      if(zenFogRegenAccumulator >= ZEN_FOG_REGEN_INTERVAL){
         zenFogRegenAccumulator = 0;
-        ensureZenFogDiffusionCanvas();
-
-        // 1) Difusão: desfaz rapidamente a borda exata do pincel sem criar
-        // quadrados, círculos sólidos ou o desenho reconhecível do gesto.
-        zenFogDiffusionCtx.save();
-        zenFogDiffusionCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
-        zenFogDiffusionCtx.clearRect(0, 0, W, H);
-        const blurRadius = 13 + eased * 19;
-        zenFogDiffusionCtx.filter = `blur(${blurRadius}px)`;
-        zenFogDiffusionCtx.globalAlpha = 1;
-        zenFogDiffusionCtx.drawImage(
-          fogMaskCanvas,
-          0, 0, fogMaskCanvas.width, fogMaskCanvas.height,
-          0, 0, W, H
-        );
-        zenFogDiffusionCtx.restore();
-
         fogMaskCtx.save();
         fogMaskCtx.globalCompositeOperation = "source-over";
-        // Mistura uma pequena quantidade da máscara difundida. Isso suaviza
-        // a silhueta da limpeza em vez de simplesmente "encolher" o caminho.
-        fogMaskCtx.globalAlpha = Math.min(.22, .095 + eased * .075);
-        fogMaskCtx.drawImage(
-          zenFogDiffusionCanvas,
-          0, 0, zenFogDiffusionCanvas.width, zenFogDiffusionCanvas.height,
-          0, 0, W, H
-        );
-
-        // 2) Condensação global muito leve. Como a base visual é fixa e só a
-        // máscara volta para branco, a tela nunca fica mais clara a cada ciclo.
-        fogMaskCtx.globalAlpha = 1;
-        const restoreRate = .115 + eased * .075;
-        const visualAlpha = 1 - Math.exp(-restoreRate * stepDt);
-        fogMaskCtx.fillStyle = `rgba(255,255,255,${visualAlpha})`;
-        fogMaskCtx.fillRect(0, 0, W, H);
+        fogMaskCtx.globalAlpha = 0.04 + eased * 0.09;
+        fogMaskCtx.fillStyle = "#fff";
+        fogMaskCtx.fillRect(0,0,W,H);
         fogMaskCtx.restore();
-
         fogVisualDirty = true;
       }
 
-      // A grade é somente lógica. A chance é contínua e independente do desenho
-      // visível, impedindo que células apareçam na névoa.
+      // Mantém a grade lógica acompanhando o retorno da névoa.
       const gridRate = 3.25 / ZEN_FOG_RESTORE_SECONDS;
       const restoreChance = 1 - Math.exp(-gridRate * safeDt);
       let restored = 0;
@@ -2229,6 +2186,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       }
       if(restored) fogClearedCells = Math.max(0, fogClearedCells - restored);
 
+      // Aos 8s, força exatamente o mesmo estado inicial: 100% regenerado.
       if(progress >= 1) finishZenFogRegeneration();
     }
 
@@ -2297,16 +2255,6 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       state.cleanStreak = now - state.lastWipe < 350 ? state.cleanStreak + 1 : 1;
       state.lastWipe = now;
 
-      // Somente no Zen: cada novo gesto interrompe a regeneração imediatamente
-      // e reinicia a espera. A pessoa tem tempo de contemplar a área limpa antes
-      // de a condensação começar a voltar.
-      if(state.isZen){
-        zenFogLastInteractionAt = now;
-        zenFogRegenElapsed = 0;
-        zenFogRegenAccumulator = 0;
-        zenFogNeedsRestore = true;
-      }
-
       updateProgress();
     }
 
@@ -2323,7 +2271,16 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
             fogGrid[index] = 1;
             fogClearedCells++;
             marked++;
+            if(state.isZen) state.zenScore++;
           }
+        }
+      }
+
+      if(state.isZen && marked > 0){
+        const badge=document.getElementById("zenScoreBadge");
+        if(badge){
+          badge.textContent=`ZEN · ${state.zenScore}`;
+          badge.classList.add("show");
         }
       }
       return marked;
@@ -2384,6 +2341,15 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       if (state.activePointers.has(e.pointerId)) e.preventDefault();
       state.activePointers.delete(e.pointerId);
       state.pointerBrushes.delete(e.pointerId);
+
+      // No Zen o idle começa quando o gesto termina, não durante o movimento.
+      if(state.isZen && fogClearedCells > 0){
+        zenFogLastInteractionAt = performance.now();
+        zenFogRegenElapsed = 0;
+        zenFogRegenAccumulator = 0;
+        zenFogNeedsRestore = true;
+      }
+
       if(state.started && !state.paused && !state.isZen && state.fogProgress >= getCompletionTarget()) updateProgress();
     }
     fogCanvas.addEventListener("pointerdown", handlePointerDown); fogCanvas.addEventListener("pointermove", handlePointerMove); fogCanvas.addEventListener("pointerup", handlePointerUp); fogCanvas.addEventListener("pointercancel", handlePointerUp);
@@ -2592,6 +2558,11 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       document.getElementById("currencyHud").style.display = zen ? "none" : "";
       document.getElementById("zenMistBtn").style.display = zen && !state.zenAutoFog ? "flex" : "none";
       document.getElementById("zenFogSetting").style.display = zen ? "block" : "none";
+      const zenScoreBadge=document.getElementById("zenScoreBadge");
+      if(zenScoreBadge){
+        zenScoreBadge.textContent=`ZEN · ${state.zenScore}`;
+        zenScoreBadge.classList.toggle("show", zen && state.zenScore > 0);
+      }
       syncToggle("zenFogToggle",state.zenAutoFog);
     }
     function updateCoins() { document.getElementById("pointsDisplay").textContent = state.points; document.getElementById("storeCoins").textContent = state.points; }
@@ -2772,7 +2743,11 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
           eraseMirrorFromContext(glassCtx);
           drawPermanentMirrorFog(glassCtx);
         }
-        glassDropsSystem.replenish();
+        if(!state.isZen){
+          glassDropsSystem.replenish();
+        } else if(Math.random() < 0.015){
+          glassDropsSystem.replenish();
+        }
         
         if(state.isZen){
           // A regeneração automática é o padrão do Zen, como no jogo original.
@@ -2869,6 +2844,11 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       if(!state.isZen || state.zenAutoFog) return;
       initFog();
       state.zenScore=0;
+      const zenScoreBadge=document.getElementById("zenScoreBadge");
+      if(zenScoreBadge){
+        zenScoreBadge.textContent="ZEN · 0";
+        zenScoreBadge.classList.remove("show");
+      }
       updateProgress();
     };
 
