@@ -5,7 +5,7 @@
       Sem dependência de ZIP para iniciar ou trocar de fase.
       V13: máscaras reais do vidro nas fases de carro, parallax/movimento,
       retrovisor com névoa permanente.
-      ZEN REGEN: lógica de regeneração importada do Rainy Skyline ACcompleted.
+      ZEN REGEN: sistema direto de fogCanvas do Rainy Skyline ACcompleted.
     -->
     <html lang="en">
     <head>
@@ -2121,32 +2121,22 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     function regenerateZenFog(dt) {
       if(!state.isZen || !state.zenAutoFog || !state.started || state.paused) return;
 
-      // Equivalente ao ACcompleted:
-      // rgba(210,225,232, 0.006 + rainIntensity * 0.004) aplicado continuamente.
-      // Como o build atual separa base visual e máscara, recompomos o alpha da
-      // fogMask em vez de pintar diretamente no fogCanvas. Assim preservamos
-      // exatamente o visual atual e somente trocamos a lógica de regeneração.
-      const regenAlpha = 0.006 + getEffectiveRainIntensity() * 0.004;
-      fogMaskCtx.save();
-      fogMaskCtx.globalCompositeOperation = "source-over";
-      fogMaskCtx.globalAlpha = regenAlpha;
-      fogMaskCtx.fillStyle = "#fff";
-      fogMaskCtx.fillRect(0, 0, W, H);
-      fogMaskCtx.restore();
-      fogVisualDirty = true;
+      // Sistema ACcompleted, sem adaptação para fogMask:
+      // a condensação é pintada DIRETAMENTE no fogCanvas a cada frame.
+      fogCtx.globalCompositeOperation = "source-over";
+      fogCtx.fillStyle = `rgba(210,225,232,${0.006 + state.rainIntensity * .004})`;
+      fogCtx.fillRect(0,0,W,H);
 
-      // Mesma lógica probabilística do ACcompleted para a grade de progresso.
+      // Mesma restauração probabilística da grade do ACcompleted.
       if(Math.random() < .22){
         let restored = 0;
-        for(let index = 0; index < fogGrid.length; index++){
+        for(let index=0; index<fogGrid.length; index++){
           if(fogGrid[index] === 1 && Math.random() < .018){
             fogGrid[index] = 0;
             restored++;
           }
         }
-        if(restored){
-          fogClearedCells = Math.max(0, fogClearedCells - restored);
-        }
+        if(restored) fogClearedCells = Math.max(0, fogClearedCells - restored);
       }
     }
 
@@ -2157,7 +2147,26 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       fogMaskCtx.globalCompositeOperation = "destination-out";
       fogMaskCtx.drawImage(stamp.canvas,x-stamp.cssSize/2,y-stamp.cssSize/2,stamp.cssSize,stamp.cssSize);
       fogMaskCtx.restore();
-      fogVisualDirty=true;
+
+      if(state.isZen){
+        // No ACcompleted, limpeza e regeneração atuam no MESMO fogCanvas.
+        // Mantemos o stamp visual atual, mas apagamos o fogCanvas diretamente
+        // para que a névoa regenerada não seja perdida no próximo gesto.
+        fogCtx.save();
+        fogCtx.globalCompositeOperation = "destination-out";
+        fogCtx.drawImage(
+          stamp.canvas,
+          x-stamp.cssSize/2,
+          y-stamp.cssSize/2,
+          stamp.cssSize,
+          stamp.cssSize
+        );
+        fogCtx.restore();
+        fogVisualDirty=false;
+      } else {
+        fogVisualDirty=true;
+      }
+
       glassDropsSystem.wipe(x, y, radius * .82);
       markFogGrid(x, y, radius * .72);
       return true;
@@ -2703,12 +2712,13 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         }
         
         if(state.isZen){
-          // A regeneração automática é o padrão do Zen, como no jogo original.
-          // Quando desativada, o botão compacto "mist" reaparece para controle manual.
+          // ACcompleted: a névoa é recomposta diretamente no fogCanvas.
           if(state.zenAutoFog) regenerateZenFog(dt);
           updateProgress();
         }
-        if(fogVisualDirty) renderFogFromMask();
+        // Na campanha, fogMask continua sendo a fonte visual normal.
+        // No Zen, fogCanvas é persistente como no ACcompleted.
+        if(fogVisualDirty && !state.isZen) renderFogFromMask();
       }
       queueNextFrame();
     }
