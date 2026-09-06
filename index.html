@@ -5,7 +5,7 @@
       Sem dependência de ZIP para iniciar ou trocar de fase.
       V13: máscaras reais do vidro nas fases de carro, parallax/movimento,
       retrovisor com névoa permanente.
-      ZEN REGEN: ritmo ACcompleted restaurando snapshot original, sem acumular branco.
+      ZEN REGEN: ritmo ACcompleted + snapshot original + anti-ghost; HUD Zen simplificado.
     -->
     <html lang="en">
     <head>
@@ -287,8 +287,6 @@
     /* V2 atmospheric polish */
     #weatherGlow{position:absolute;inset:0;z-index:6;pointer-events:none;opacity:0;mix-blend-mode:screen;background:none;}
     #cleanSpark{position:absolute;inset:0;z-index:10;pointer-events:none;}
-    #zenScoreBadge{position:absolute;left:50%;top:calc(20px + env(safe-area-inset-top));transform:translateX(-50%);z-index:21;padding:7px 14px;border-radius:20px;background:rgba(15,23,42,.48);border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(12px);font-size:10px;letter-spacing:2px;opacity:0;transition:.4s ease;}
-    #zenScoreBadge.show{opacity:1;}
     #toast{position:absolute;left:50%;bottom:18%;transform:translate(-50%,10px);z-index:240;padding:10px 15px;border-radius:18px;background:rgba(4,10,20,.88);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(14px);font-size:12px;letter-spacing:.5px;opacity:0;pointer-events:none;transition:.25s ease;white-space:nowrap;}
     #toast.show{opacity:1;transform:translate(-50%,0);}
     </style>
@@ -313,7 +311,6 @@
       <div id="vignette"></div>
       <div id="weatherGlow"></div>
       <div id="cleanSpark"></div>
-      <div id="zenScoreBadge">ZEN · 0</div>
       <div id="toast"></div>
 
       <!-- HUD -->
@@ -2195,6 +2192,32 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
           }
           if(restored) fogClearedCells = Math.max(0, fogClearedCells - restored);
         }
+
+        // Anti-ghost do Zen: o ACcompleted continua controlando todo o ritmo.
+        // Quando restam só 5,5% das células lógicas limpas e o dedo não está
+        // na tela, eliminamos apenas o resíduo invisível/quase invisível de alpha.
+        // Isso impede que o formato antigo do gesto fique "marcado" depois
+        // de a névoa já ter praticamente voltado.
+        const remainingFogProgress =
+          fogClearedCells / Math.max(1, fogPlayableCells);
+
+        if(
+          state.activePointers.size === 0 &&
+          fogClearedCells > 0 &&
+          remainingFogProgress <= .055
+        ){
+          resetFogMask();
+
+          for(let index=0; index<fogGrid.length; index++){
+            if(fogGrid[index] !== -1) fogGrid[index] = 0;
+          }
+
+          fogClearedCells = 0;
+          state.fogProgress = 0;
+          zenFogRegenAccumulator = 0;
+          fogVisualDirty = true;
+          break;
+        }
       }
     }
 
@@ -2282,16 +2305,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
             fogGrid[index] = 1;
             fogClearedCells++;
             marked++;
-            if(state.isZen) state.zenScore++;
           }
-        }
-      }
-
-      if(state.isZen && marked > 0){
-        const badge=document.getElementById("zenScoreBadge");
-        if(badge){
-          badge.textContent=`ZEN · ${state.zenScore}`;
-          badge.classList.add("show");
         }
       }
       return marked;
@@ -2562,11 +2576,12 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       document.getElementById("currencyHud").style.display = zen ? "none" : "";
       document.getElementById("zenMistBtn").style.display = zen && !state.zenAutoFog ? "flex" : "none";
       document.getElementById("zenFogSetting").style.display = zen ? "block" : "none";
-      const zenScoreBadge=document.getElementById("zenScoreBadge");
-      if(zenScoreBadge){
-        zenScoreBadge.textContent=`ZEN · ${state.zenScore}`;
-        zenScoreBadge.classList.toggle("show", zen && state.zenScore > 0);
-      }
+
+      // No Zen fica apenas o texto "Paz Infinita"; a barra continua normal
+      // nas 20 fases da campanha.
+      const progressBar=document.querySelector(".progress-bar");
+      if(progressBar) progressBar.style.display = zen ? "none" : "";
+
       syncToggle("zenFogToggle",state.zenAutoFog);
     }
     function updateCoins() { document.getElementById("pointsDisplay").textContent = state.points; document.getElementById("storeCoins").textContent = state.points; }
@@ -2841,11 +2856,6 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       if(!state.isZen || state.zenAutoFog) return;
       initFog();
       state.zenScore=0;
-      const zenScoreBadge=document.getElementById("zenScoreBadge");
-      if(zenScoreBadge){
-        zenScoreBadge.textContent="ZEN · 0";
-        zenScoreBadge.classList.remove("show");
-      }
       updateProgress();
     };
 
