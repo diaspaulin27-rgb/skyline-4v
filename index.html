@@ -5,7 +5,7 @@
       Sem dependência de ZIP para iniciar ou trocar de fase.
       V13: máscaras reais do vidro nas fases de carro, parallax/movimento,
       retrovisor com névoa permanente.
-      ZEN REGEN: condensação orgânica progressiva exclusiva do Modo Zen; HUD Zen simplificado.
+      ZEN REGEN: fechamento contínuo e suave da máscara no Modo Zen; HUD Zen simplificado.
     -->
     <html lang="en">
     <head>
@@ -2213,122 +2213,85 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       zenFogOriginalReady = true;
     }
 
-    // Estado interno exclusivo da regeneração automática Zen.
-    // Cada célula limpa acumula condensação até voltar naturalmente.
-    let zenFogRegenHeat = [];
+    // Buffer exclusivo da regeneração automática Zen.
+    // Trabalha em resolução real: sem downscale, sem blobs e sem grade visível.
+    let zenFogEdgeCanvas = document.createElement("canvas");
+    let zenFogEdgeCtx = zenFogEdgeCanvas.getContext("2d");
 
-    function ensureZenFogRegenHeat() {
-      if(zenFogRegenHeat.length !== fogGrid.length){
-        zenFogRegenHeat = new Float32Array(fogGrid.length);
+    function ensureZenFogEdgeCanvas() {
+      if(zenFogEdgeCanvas.width !== fogMaskCanvas.width ||
+         zenFogEdgeCanvas.height !== fogMaskCanvas.height){
+        zenFogEdgeCanvas.width = fogMaskCanvas.width;
+        zenFogEdgeCanvas.height = fogMaskCanvas.height;
+        zenFogEdgeCtx = zenFogEdgeCanvas.getContext("2d");
       }
     }
 
-    function regrowZenFogOrganic() {
+    function regrowZenFogContinuous() {
       if(!state.isZen || !state.zenAutoFog) return;
 
-      ensureZenFogRegenHeat();
+      ensureZenFogEdgeCanvas();
 
+      /*
+        FECHAMENTO CONTÍNUO DA MÁSCARA
+
+        A máscara atual é copiada várias vezes com deslocamentos subpixel/pequenos
+        ao redor dela mesma. Como source-over só aumenta alpha onde já existe
+        névoa vizinha, as áreas limpas encolhem pelas bordas. Não são desenhados
+        círculos, retângulos, células ou manchas independentes.
+
+        Depois há uma reposição central extremamente leve para que áreas muito
+        grandes também terminem de fechar, mas sem preservar o gesto como uma
+        silhueta branca uniforme.
+      */
       const intensity = Math.max(0, Math.min(1, state.rainIntensity));
-      const cellW = W / GRID_X;
-      const cellH = H / GRID_Y;
+      const spread = 0.72 + intensity * 0.42;
+      const edgeAlpha = 0.105 + intensity * 0.045;
+      const centerAlpha = 0.00115 + intensity * 0.00085;
 
-      const cleaned = [];
-      const boundary = [];
-
-      for(let gy=0; gy<GRID_Y; gy++){
-        for(let gx=0; gx<GRID_X; gx++){
-          const index = gy * GRID_X + gx;
-
-          if(fogGrid[index] !== 1){
-            zenFogRegenHeat[index] = 0;
-            continue;
-          }
-
-          cleaned.push(index);
-
-          // A condensação nasce principalmente nas bordas da área limpa,
-          // fazendo o gesto encolher e perder a forma em vez de permanecer marcado.
-          let touchesFog = false;
-          for(let oy=-1; oy<=1 && !touchesFog; oy++){
-            for(let ox=-1; ox<=1; ox++){
-              if(!ox && !oy) continue;
-              const nx = gx + ox;
-              const ny = gy + oy;
-
-              if(nx < 0 || ny < 0 || nx >= GRID_X || ny >= GRID_Y){
-                touchesFog = true;
-                break;
-              }
-
-              const neighbor = fogGrid[ny * GRID_X + nx];
-              if(neighbor === 0 || neighbor === -1){
-                touchesFog = true;
-                break;
-              }
-            }
-          }
-
-          if(touchesFog) boundary.push(index);
-        }
-      }
-
-      if(!cleaned.length) return;
-
-      const pool = boundary.length ? boundary : cleaned;
-
-      // Ritmo estável e leve para celular: poucas "flores" suaves por pulso.
-      const budget = Math.min(
-        14,
-        Math.max(4, Math.round(4 + intensity * 5 + cleaned.length * 0.018))
-      );
-
-      // Alpha baixo + blobs grandes e suaves = condensação sem pixels/blocos.
-      const coreAlpha = 0.055 + intensity * 0.035;
+      zenFogEdgeCtx.save();
+      zenFogEdgeCtx.setTransform(1,0,0,1,0,0);
+      zenFogEdgeCtx.globalCompositeOperation = "copy";
+      zenFogEdgeCtx.globalAlpha = 1;
+      zenFogEdgeCtx.drawImage(fogMaskCanvas,0,0);
+      zenFogEdgeCtx.restore();
 
       fogMaskCtx.save();
-      fogMaskCtx.setTransform(DPR,0,0,DPR,0,0);
+      fogMaskCtx.setTransform(1,0,0,1,0,0);
       fogMaskCtx.globalCompositeOperation = "source-over";
+      fogMaskCtx.globalAlpha = edgeAlpha;
+
+      // 8 direções: fechamento isotrópico, sem direção preferencial.
+      const d = spread * DPR;
+      fogMaskCtx.drawImage(zenFogEdgeCanvas, d, 0);
+      fogMaskCtx.drawImage(zenFogEdgeCanvas,-d, 0);
+      fogMaskCtx.drawImage(zenFogEdgeCanvas, 0, d);
+      fogMaskCtx.drawImage(zenFogEdgeCanvas, 0,-d);
+      fogMaskCtx.drawImage(zenFogEdgeCanvas, d, d);
+      fogMaskCtx.drawImage(zenFogEdgeCanvas,-d, d);
+      fogMaskCtx.drawImage(zenFogEdgeCanvas, d,-d);
+      fogMaskCtx.drawImage(zenFogEdgeCanvas,-d,-d);
+
+      // Reposição mínima e contínua: evita "buracos eternos" no centro,
+      // mas é fraca demais para manter a geometria do dedo.
       fogMaskCtx.globalAlpha = 1;
-
-      for(let n=0; n<budget; n++){
-        const index = pool[(Math.random() * pool.length) | 0];
-        const gx = index % GRID_X;
-        const gy = (index / GRID_X) | 0;
-
-        // Pequeno jitter quebra qualquer aparência de grade.
-        const cx = (gx + .5) * cellW + (Math.random() - .5) * cellW * 1.35;
-        const cy = (gy + .5) * cellH + (Math.random() - .5) * cellH * 1.35;
-
-        const radius = Math.max(cellW, cellH) * (2.15 + Math.random() * 1.65);
-        const inner = radius * (.10 + Math.random() * .10);
-
-        const gradient = fogMaskCtx.createRadialGradient(cx,cy,inner,cx,cy,radius);
-        gradient.addColorStop(0, `rgba(255,255,255,${coreAlpha})`);
-        gradient.addColorStop(.32, `rgba(255,255,255,${coreAlpha * .78})`);
-        gradient.addColorStop(.68, `rgba(255,255,255,${coreAlpha * .34})`);
-        gradient.addColorStop(1, "rgba(255,255,255,0)");
-
-        fogMaskCtx.fillStyle = gradient;
-        fogMaskCtx.beginPath();
-        fogMaskCtx.arc(cx,cy,radius,0,Math.PI*2);
-        fogMaskCtx.fill();
-
-        // Acompanhamento lógico da mesma condensação.
-        const previous = zenFogRegenHeat[index] || 0;
-        const next = 1 - (1 - previous) * (1 - coreAlpha);
-        zenFogRegenHeat[index] = next;
-
-        // Só considera a célula recuperada depois de bastante névoa acumulada.
-        if(next >= .78 && fogGrid[index] === 1){
-          fogGrid[index] = 0;
-          fogClearedCells = Math.max(0, fogClearedCells - 1);
-          zenFogRegenHeat[index] = 0;
-        }
-      }
+      fogMaskCtx.fillStyle = `rgba(255,255,255,${centerAlpha})`;
+      fogMaskCtx.fillRect(0,0,fogMaskCanvas.width,fogMaskCanvas.height);
 
       fogMaskCtx.restore();
       fogMaskCtx.setTransform(DPR,0,0,DPR,0,0);
       fogVisualDirty = true;
+
+      // Estado lógico acompanha o visual sem redesenhar a máscara.
+      // A recuperação ocorre de modo distribuído e não interfere no formato.
+      if(Math.random() < .18){
+        for(let i=0;i<fogGrid.length;i++){
+          if(fogGrid[i] === 1 && Math.random() < .012){
+            fogGrid[i] = 0;
+            fogClearedCells = Math.max(0, fogClearedCells - 1);
+          }
+        }
+      }
     }
 
     function renderFogFromMask() {
@@ -2367,23 +2330,19 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     }
 
     // =========================================================
-    // ZEN — regeneração automática orgânica
+    // ZEN — regeneração automática contínua
     // =========================================================
-    // A névoa não reaparece como uma camada branca uniforme.
-    // Ela cresce em manchas suaves a partir das bordas da área limpa,
-    // desfazendo naturalmente o formato do gesto.
     function regenerateZenFog(dt) {
       if(!state.isZen || !state.zenAutoFog || !state.started || state.paused || !zenFogOriginalReady) return;
 
-      // Pulso visual de 20 Hz: suave, previsível e leve no iPhone.
+      // 30 pulsos/s: movimento contínuo sem custo excessivo no Safari móvel.
       zenFogRegenAccumulator += Math.min(.10, Math.max(0, dt));
+      const ZEN_CONTINUOUS_STEP = 1 / 30;
 
-      const ZEN_ORGANIC_STEP = 1 / 20;
       let safety = 0;
-
-      while(zenFogRegenAccumulator >= ZEN_ORGANIC_STEP && safety++ < 5){
-        zenFogRegenAccumulator -= ZEN_ORGANIC_STEP;
-        regrowZenFogOrganic();
+      while(zenFogRegenAccumulator >= ZEN_CONTINUOUS_STEP && safety++ < 6){
+        zenFogRegenAccumulator -= ZEN_CONTINUOUS_STEP;
+        regrowZenFogContinuous();
       }
 
       updateProgress();
