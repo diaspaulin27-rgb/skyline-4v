@@ -1,11 +1,11 @@
-  <!DOCTYPE html>
+ <!DOCTYPE html>
     <!--
       RAINY SKYLINE V12 — BUILD INTEGRADA
       20 fases + arte exclusiva do Modo Zen incorporadas no próprio arquivo.
       Sem dependência de ZIP para iniciar ou trocar de fase.
       V13: máscaras reais do vidro nas fases de carro, parallax/movimento,
       retrovisor com névoa permanente.
-      ZEN REGEN: regeneração híbrida suave 70/30 no Modo Zen; HUD Zen simplificado.
+      ZEN REGEN: regeneração ACcompleted do arquivo anterior; HUD Zen simplificado.
     -->
     <html lang="en">
     <head>
@@ -2213,75 +2213,44 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       zenFogOriginalReady = true;
     }
 
-    // Buffer exclusivo da regeneração automática Zen.
-    // Trabalha em resolução real: sem downscale, sem blobs e sem grade visível.
-    let zenFogEdgeCanvas = document.createElement("canvas");
-    let zenFogEdgeCtx = zenFogEdgeCanvas.getContext("2d");
+    // Regeneração automática Zen — comportamento do arquivo anterior.
+    // Mantém o ritmo original, adaptado à máscara desta build para não alterar
+    // nenhuma outra mecânica do jogo.
+    function regenerateZenFog(dt) {
+      if(!state.isZen || !state.zenAutoFog || !state.started || state.paused || !zenFogOriginalReady) return;
 
-    function ensureZenFogEdgeCanvas() {
-      if(zenFogEdgeCanvas.width !== fogMaskCanvas.width ||
-         zenFogEdgeCanvas.height !== fogMaskCanvas.height){
-        zenFogEdgeCanvas.width = fogMaskCanvas.width;
-        zenFogEdgeCanvas.height = fogMaskCanvas.height;
-        zenFogEdgeCtx = zenFogEdgeCanvas.getContext("2d");
-      }
-    }
+      // O arquivo anterior trabalhava quadro a quadro em ~60 Hz.
+      zenFogRegenAccumulator += Math.min(.10, Math.max(0, dt));
+      const ZEN_AC_STEP = 1 / 60;
 
-    function regrowZenFogContinuous() {
-      if(!state.isZen || !state.zenAutoFog) return;
+      let safety = 0;
+      while(zenFogRegenAccumulator >= ZEN_AC_STEP && safety++ < 8){
+        zenFogRegenAccumulator -= ZEN_AC_STEP;
 
-      ensureZenFogEdgeCanvas();
+        // Mesma fórmula de regeneração do arquivo anterior.
+        const acAlpha = 0.006 + state.rainIntensity * 0.004;
 
-      // Regeneração híbrida: base uniforme suave + difusão discreta de borda.
-      const intensity = Math.max(0, Math.min(1, state.rainIntensity));
-      const uniformAlpha = 0.00275 + intensity * 0.00155;
-      const spread = 0.34 + intensity * 0.18;
-      const edgeAlpha = 0.024 + intensity * 0.012;
+        fogMaskCtx.save();
+        fogMaskCtx.setTransform(1,0,0,1,0,0);
+        fogMaskCtx.globalCompositeOperation = "source-over";
+        fogMaskCtx.fillStyle = `rgba(255,255,255,${acAlpha})`;
+        fogMaskCtx.fillRect(0,0,fogMaskCanvas.width,fogMaskCanvas.height);
+        fogMaskCtx.restore();
+        fogMaskCtx.setTransform(DPR,0,0,DPR,0,0);
+        fogVisualDirty = true;
 
-      // Snapshot full-resolution da máscara atual.
-      zenFogEdgeCtx.save();
-      zenFogEdgeCtx.setTransform(1,0,0,1,0,0);
-      zenFogEdgeCtx.globalCompositeOperation = "copy";
-      zenFogEdgeCtx.globalAlpha = 1;
-      zenFogEdgeCtx.drawImage(fogMaskCanvas,0,0);
-      zenFogEdgeCtx.restore();
-
-      fogMaskCtx.save();
-      fogMaskCtx.setTransform(1,0,0,1,0,0);
-      fogMaskCtx.globalCompositeOperation = "source-over";
-
-      // Parte dominante: película contínua e suave.
-      fogMaskCtx.globalAlpha = 1;
-      fogMaskCtx.fillStyle = `rgba(255,255,255,${uniformAlpha})`;
-      fogMaskCtx.fillRect(0,0,fogMaskCanvas.width,fogMaskCanvas.height);
-
-      // Parte secundária: quebra suavemente a geometria do gesto.
-      const d = spread * DPR;
-      fogMaskCtx.globalAlpha = edgeAlpha;
-      fogMaskCtx.drawImage(zenFogEdgeCanvas, d, 0);
-      fogMaskCtx.drawImage(zenFogEdgeCanvas,-d, 0);
-      fogMaskCtx.drawImage(zenFogEdgeCanvas, 0, d);
-      fogMaskCtx.drawImage(zenFogEdgeCanvas, 0,-d);
-
-      fogMaskCtx.globalAlpha = edgeAlpha * .5;
-      fogMaskCtx.drawImage(zenFogEdgeCanvas, d, d);
-      fogMaskCtx.drawImage(zenFogEdgeCanvas,-d, d);
-      fogMaskCtx.drawImage(zenFogEdgeCanvas, d,-d);
-      fogMaskCtx.drawImage(zenFogEdgeCanvas,-d,-d);
-
-      fogMaskCtx.restore();
-      fogMaskCtx.setTransform(DPR,0,0,DPR,0,0);
-      fogVisualDirty = true;
-
-      // O grid lógico acompanha lentamente a recuperação visual sem desenhar formas.
-      if(Math.random() < .16){
-        for(let i=0;i<fogGrid.length;i++){
-          if(fogGrid[i] === 1 && Math.random() < .010){
-            fogGrid[i] = 0;
-            fogClearedCells = Math.max(0, fogClearedCells - 1);
+        // Mesmas probabilidades do arquivo anterior: 22% / 1.8%.
+        if(Math.random() < .22){
+          for(let i=0;i<fogGrid.length;i++){
+            if(fogGrid[i] === 1 && Math.random() < .018){
+              fogGrid[i] = 0;
+              fogClearedCells = Math.max(0, fogClearedCells - 1);
+            }
           }
         }
       }
+
+      updateProgress();
     }
 
     function renderFogFromMask() {
@@ -2317,25 +2286,6 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       renderFogFromMask();
       state.fogProgress = 0;
       updateProgress(true);
-    }
-
-    // =========================================================
-    // ZEN — regeneração automática contínua
-    // =========================================================
-    function regenerateZenFog(dt) {
-      if(!state.isZen || !state.zenAutoFog || !state.started || state.paused || !zenFogOriginalReady) return;
-
-      // 24 pulsos/s: contínuo, suave e leve no Safari móvel.
-      zenFogRegenAccumulator += Math.min(.10, Math.max(0, dt));
-      const ZEN_CONTINUOUS_STEP = 1 / 24;
-
-      let safety = 0;
-      while(zenFogRegenAccumulator >= ZEN_CONTINUOUS_STEP && safety++ < 6){
-        zenFogRegenAccumulator -= ZEN_CONTINUOUS_STEP;
-        regrowZenFogContinuous();
-      }
-
-      updateProgress();
     }
 
     function clearFogStamp(x, y, brush, radius) {
