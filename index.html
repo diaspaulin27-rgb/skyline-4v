@@ -5,7 +5,7 @@
       Sem dependência de ZIP para iniciar ou trocar de fase.
       V13: máscaras reais do vidro nas fases de carro, parallax/movimento,
       retrovisor com névoa permanente.
-      ZEN REGEN: ritmo ACcompleted exato a 60 Hz + anti-marca conservador de alpha; HUD Zen simplificado.
+      ZEN REGEN: ritmo ACcompleted exato a 60 Hz + anti-marca orgânico conservativo; HUD Zen simplificado.
     -->
     <html lang="en">
     <head>
@@ -2214,7 +2214,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     }
 
     function ensureZenFogDiffuseCanvas() {
-      // Canvas pequeno: custo baixo e estável em mobile.
+      // Canvas auxiliar pequeno para manter o custo baixo no iPhone.
       const scale = lowPowerDevice ? 0.10 : 0.125;
       const width = Math.max(48, Math.round(fogMaskCanvas.width * scale));
       const height = Math.max(72, Math.round(fogMaskCanvas.height * scale));
@@ -2232,7 +2232,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
 
       ensureZenFogDiffuseCanvas();
 
-      // 1) Captura a máscara atual em baixa resolução.
+      // Captura a máscara atual em baixa resolução.
       zenFogDiffuseCtx.save();
       zenFogDiffuseCtx.setTransform(1,0,0,1,0,0);
       zenFogDiffuseCtx.clearRect(
@@ -2253,9 +2253,6 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       );
       zenFogDiffuseCtx.restore();
 
-      // 2) Box blur conservador no ALPHA.
-      // A soma/média de opacidade é preservada; portanto o anti-marca
-      // NÃO cria névoa nova e NÃO acelera a regeneração.
       let imageData;
       try {
         imageData = zenFogDiffuseCtx.getImageData(
@@ -2270,35 +2267,66 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       const data = imageData.data;
       const w = zenFogDiffuseCanvas.width;
       const h = zenFogDiffuseCanvas.height;
-      const srcAlpha = new Uint8ClampedArray(w*h);
-      const blurAlpha = new Uint8ClampedArray(w*h);
+      const alpha = new Float32Array(w*h);
 
+      let originalAlphaSum = 0;
       for(let i=0, p=0; i<data.length; i+=4, p++){
-        srcAlpha[p] = data[i+3];
+        const a = data[i+3];
+        alpha[p] = a;
+        originalAlphaSum += a;
       }
 
-      // Blur 3x3 simples, apenas alpha.
+      /*
+        ANTI-MARCA CONSERVATIVO
+
+        Em vez de "borrar" a máscara e trazer névoa das bordas para dentro
+        como uma segunda regeneração, fazemos pequenas trocas entre pares
+        vizinhos. Cada troca conserva a soma dos dois pixels:
+
+          A' = A + (B-A)*mix
+          B' = B - (B-A)*mix
+
+        Portanto o anti-marca muda a GEOMETRIA do gesto, mas não cria névoa.
+        A quantidade total de alpha continua sendo controlada exclusivamente
+        pela fórmula ACcompleted dentro de regenerateZenFog().
+      */
+      const mix = 0.22;
+
+      // Passo horizontal, alternando os pares para não formar uma grade fixa.
+      const horizontalOffset = zenFogDiffuseTick & 1;
       for(let y=0; y<h; y++){
-        for(let x=0; x<w; x++){
-          let sum=0, count=0;
-          for(let oy=-1; oy<=1; oy++){
-            const yy=y+oy;
-            if(yy<0 || yy>=h) continue;
-            for(let ox=-1; ox<=1; ox++){
-              const xx=x+ox;
-              if(xx<0 || xx>=w) continue;
-              sum += srcAlpha[yy*w+xx];
-              count++;
-            }
-          }
-          blurAlpha[y*w+x] = Math.round(sum / Math.max(1,count));
+        const row = y*w;
+        for(let x=horizontalOffset; x<w-1; x+=2){
+          const aIndex = row+x;
+          const bIndex = aIndex+1;
+          const delta = (alpha[bIndex] - alpha[aIndex]) * mix;
+          alpha[aIndex] += delta;
+          alpha[bIndex] -= delta;
         }
       }
 
-      // Mistura muito leve: muda a GEOMETRIA do traço, não a quantidade de névoa.
-      const mix = 0.10;
-      for(let p=0, i=0; p<srcAlpha.length; p++, i+=4){
-        const a = Math.round(srcAlpha[p]*(1-mix) + blurAlpha[p]*mix);
+      // Passo vertical com fase diferente: quebra linhas/círculos reconhecíveis.
+      const verticalOffset = (zenFogDiffuseTick >> 1) & 1;
+      for(let x=0; x<w; x++){
+        for(let y=verticalOffset; y<h-1; y+=2){
+          const aIndex = y*w+x;
+          const bIndex = aIndex+w;
+          const delta = (alpha[bIndex] - alpha[aIndex]) * mix;
+          alpha[aIndex] += delta;
+          alpha[bIndex] -= delta;
+        }
+      }
+
+      // Corrige apenas erro de arredondamento numérico para manter a média
+      // de alpha igual à entrada desta função.
+      let diffusedAlphaSum = 0;
+      for(let p=0; p<alpha.length; p++) diffusedAlphaSum += alpha[p];
+      const correction = alpha.length
+        ? (originalAlphaSum - diffusedAlphaSum) / alpha.length
+        : 0;
+
+      for(let p=0, i=0; p<alpha.length; p++, i+=4){
+        const a = Math.max(0, Math.min(255, Math.round(alpha[p] + correction)));
         data[i] = 255;
         data[i+1] = 255;
         data[i+2] = 255;
@@ -2307,7 +2335,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
 
       zenFogDiffuseCtx.putImageData(imageData,0,0);
 
-      // 3) Reprojeta a máscara suavizada.
+      // Reprojeta a máscara sem adicionar nenhum fill/alpha extra.
       fogMaskCtx.save();
       fogMaskCtx.setTransform(1,0,0,1,0,0);
       fogMaskCtx.globalCompositeOperation = "copy";
@@ -2405,11 +2433,11 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         // a cada 3 aplicações, redistribui suavemente o alpha já existente.
         // Não há fill extra, multiplicador extra ou snap de conclusão.
         zenFogDiffuseTick++;
-        // Anti-marca desacoplado da velocidade da névoa:
-        // roda só 5x/s em uma lógica de 60 Hz e não adiciona alpha.
-        if(zenFogDiffuseTick >= 12){
-          zenFogDiffuseTick = 0;
+        // Anti-marca independente da regeneração: 4x/s.
+        // Ele apenas redistribui alpha; não acrescenta névoa.
+        if(zenFogDiffuseTick >= 15){
           diffuseZenFogMask();
+          zenFogDiffuseTick = 0;
         }
 
         // Segunda parte do ACcompleted mantida exatamente:
