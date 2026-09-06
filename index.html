@@ -1,11 +1,11 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
     <!--
       RAINY SKYLINE V12 — BUILD INTEGRADA
       20 fases + arte exclusiva do Modo Zen incorporadas no próprio arquivo.
       Sem dependência de ZIP para iniciar ou trocar de fase.
       V13: máscaras reais do vidro nas fases de carro, parallax/movimento,
       retrovisor com névoa permanente.
-      ZEN FIX: regeneração simples compatível com Safari iOS, 1.8s idle / 8s restore.
+      ZEN REGEN: lógica de regeneração importada do Rainy Skyline ACcompleted.
     -->
     <html lang="en">
     <head>
@@ -2108,86 +2108,46 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       resetFogMask();
       renderFogFromMask();
       state.fogProgress = 0;
-      zenFogRegenAccumulator = 0;
-      zenFogRegenElapsed = 0;
-      zenFogNeedsRestore = false;
-      zenFogLastInteractionAt = performance.now();
       updateProgress(true);
     }
 
     // =========================================================
-    // ZEN — regeneração orgânica da condensação
+    // ZEN — regeneração da névoa (sistema ACcompleted)
     // =========================================================
-    // A grade continua existindo apenas para score/progresso. O visual NÃO é
-    // reconstruído por células: a máscara é difundida e recebe uma névoa muito
-    // suave até voltar exatamente à opacidade original.
-    const ZEN_FOG_IDLE_DELAY_MS = 1800;
-    const ZEN_FOG_RESTORE_SECONDS = 8;
-    // Atualiza a máscara em poucos passos por segundo: visível, barato no mobile
-    // e sem depender de ctx.filter/blur em canvas offscreen no Safari iOS.
-    const ZEN_FOG_REGEN_INTERVAL = lowPowerDevice ? .16 : .125;
-
-    let zenFogRegenAccumulator = 0;
-    let zenFogRegenElapsed = 0;
-    let zenFogLastInteractionAt = 0;
-    let zenFogNeedsRestore = false;
-
-    function finishZenFogRegeneration() {
-      // Recria a grade para manter score/progresso coerentes mesmo após resize.
-      createFogGrid();
-      resetFogMask();
-      fogClearedCells = 0;
-      state.fogProgress = 0;
-      zenFogRegenElapsed = 0;
-      zenFogRegenAccumulator = 0;
-      zenFogNeedsRestore = false;
-      fogVisualDirty = true;
-      renderFogFromMask();
-      updateProgress();
-    }
-
+    // Mantém o visual/base atuais. Apenas a lógica de retorno da condensação
+    // segue o comportamento aprovado do Rainy Skyline ACcompleted:
+    // uma camada muito leve recompõe a máscara continuamente e a grade lógica
+    // acompanha o retorno com pequenas restaurações aleatórias.
     function regenerateZenFog(dt) {
-      if(!state.isZen || !state.zenAutoFog || !state.started || state.paused || !zenFogNeedsRestore) return;
-      if(state.activePointers.size > 0) return;
+      if(!state.isZen || !state.zenAutoFog || !state.started || state.paused) return;
 
-      const idleFor = performance.now() - zenFogLastInteractionAt;
-      if(idleFor < ZEN_FOG_IDLE_DELAY_MS) return;
+      // Equivalente ao ACcompleted:
+      // rgba(210,225,232, 0.006 + rainIntensity * 0.004) aplicado continuamente.
+      // Como o build atual separa base visual e máscara, recompomos o alpha da
+      // fogMask em vez de pintar diretamente no fogCanvas. Assim preservamos
+      // exatamente o visual atual e somente trocamos a lógica de regeneração.
+      const regenAlpha = 0.006 + getEffectiveRainIntensity() * 0.004;
+      fogMaskCtx.save();
+      fogMaskCtx.globalCompositeOperation = "source-over";
+      fogMaskCtx.globalAlpha = regenAlpha;
+      fogMaskCtx.fillStyle = "#fff";
+      fogMaskCtx.fillRect(0, 0, W, H);
+      fogMaskCtx.restore();
+      fogVisualDirty = true;
 
-      const safeDt = Math.min(.08, Math.max(0, dt));
-      zenFogRegenElapsed += safeDt;
-      zenFogRegenAccumulator += safeDt;
-
-      const progress = Math.min(1, zenFogRegenElapsed / ZEN_FOG_RESTORE_SECONDS);
-      const eased = progress * progress * (3 - 2 * progress);
-
-      // Regeneração simples e compatível com Safari iOS:
-      // apenas recompõe alpha branco da máscara, sem canvas auxiliar e sem blur.
-      if(zenFogRegenAccumulator >= ZEN_FOG_REGEN_INTERVAL){
-        zenFogRegenAccumulator = 0;
-        fogMaskCtx.save();
-        fogMaskCtx.globalCompositeOperation = "source-over";
-        fogMaskCtx.globalAlpha = 0.04 + eased * 0.09;
-        fogMaskCtx.fillStyle = "#fff";
-        fogMaskCtx.fillRect(0,0,W,H);
-        fogMaskCtx.restore();
-        fogVisualDirty = true;
-      }
-
-      // Mantém a grade lógica acompanhando o retorno da névoa.
-      const gridRate = 3.25 / ZEN_FOG_RESTORE_SECONDS;
-      const restoreChance = 1 - Math.exp(-gridRate * safeDt);
-      let restored = 0;
-      for(let index=0; index<fogGrid.length; index++){
-        if(fogGrid[index] !== 1) continue;
-        if(Math.random() < restoreChance){
-          fogGrid[index] = 0;
-          restored++;
+      // Mesma lógica probabilística do ACcompleted para a grade de progresso.
+      if(Math.random() < .22){
+        let restored = 0;
+        for(let index = 0; index < fogGrid.length; index++){
+          if(fogGrid[index] === 1 && Math.random() < .018){
+            fogGrid[index] = 0;
+            restored++;
+          }
+        }
+        if(restored){
+          fogClearedCells = Math.max(0, fogClearedCells - restored);
         }
       }
-      if(restored) fogClearedCells = Math.max(0, fogClearedCells - restored);
-
-      // Aos 8s, força exatamente o mesmo estado inicial: 100% regenerado.
-      if(progress >= 1) finishZenFogRegeneration();
     }
 
     function clearFogStamp(x, y, brush, radius) {
@@ -2342,13 +2302,6 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       state.activePointers.delete(e.pointerId);
       state.pointerBrushes.delete(e.pointerId);
 
-      // No Zen o idle começa quando o gesto termina, não durante o movimento.
-      if(state.isZen && fogClearedCells > 0){
-        zenFogLastInteractionAt = performance.now();
-        zenFogRegenElapsed = 0;
-        zenFogRegenAccumulator = 0;
-        zenFogNeedsRestore = true;
-      }
 
       if(state.started && !state.paused && !state.isZen && state.fogProgress >= getCompletionTarget()) updateProgress();
     }
@@ -2829,13 +2782,6 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     document.getElementById('zenFogToggle').onclick=()=>{
       if(!state.isZen) return;
       state.zenAutoFog=!state.zenAutoFog;
-      if(state.zenAutoFog && fogClearedCells > 0){
-        // Ao religar a regeneração, respeita novamente o período de descanso.
-        zenFogLastInteractionAt = performance.now();
-        zenFogRegenElapsed = 0;
-        zenFogRegenAccumulator = 0;
-        zenFogNeedsRestore = true;
-      }
       syncToggle("zenFogToggle",state.zenAutoFog);
       updatePhaseUI();
       saveGame();
