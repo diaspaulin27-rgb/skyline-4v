@@ -5,7 +5,7 @@
       Sem dependência de ZIP para iniciar ou trocar de fase.
       V13: máscaras reais do vidro nas fases de carro, parallax/movimento,
       retrovisor com névoa permanente.
-      ZEN REGEN: ritmo ACcompleted com opacidade limitada ao padrão original.
+      ZEN REGEN: ritmo ACcompleted restaurando snapshot original, sem acumular branco.
     -->
     <html lang="en">
     <head>
@@ -1144,6 +1144,16 @@ const phases = [
     // Limpar apaga a máscara; no Zen ela volta suavemente sem criar quadrados.
     const fogMaskCanvas = document.createElement("canvas");
     const fogMaskCtx = fogMaskCanvas.getContext("2d");
+
+    // Zen: snapshot imutável da névoa ORIGINAL.
+    // A regeneração nunca cria "mais branco": ela só recupera a visibilidade
+    // desta imagem original através da máscara.
+    const zenFogOriginalCanvas = document.createElement("canvas");
+    const zenFogOriginalCtx = zenFogOriginalCanvas.getContext("2d");
+    let zenFogOriginalReady = false;
+    let zenFogRegenAccumulator = 0;
+    const ZEN_AC_LOGIC_STEP = 1 / 60;
+
     let fogVisualDirty = true;
 
     let W = window.innerWidth; let H = window.innerHeight;
@@ -1303,6 +1313,7 @@ const phases = [
             if(oldValue===1){ fogGrid[index]=1; fogClearedCells++; }
           }
         }
+        if(state.isZen) captureZenFogOriginal();
         fogVisualDirty=true;
         renderFogFromMask();
         updateProgress(true);
@@ -2089,13 +2100,33 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       fogVisualDirty=true;
     }
 
+    function captureZenFogOriginal() {
+      if(!state.isZen) {
+        zenFogOriginalReady = false;
+        return;
+      }
+      zenFogOriginalCanvas.width = fogBaseCanvas.width;
+      zenFogOriginalCanvas.height = fogBaseCanvas.height;
+      zenFogOriginalCtx.setTransform(1,0,0,1,0,0);
+      zenFogOriginalCtx.clearRect(0,0,zenFogOriginalCanvas.width,zenFogOriginalCanvas.height);
+      zenFogOriginalCtx.drawImage(fogBaseCanvas,0,0);
+      zenFogOriginalReady = true;
+    }
+
     function renderFogFromMask() {
       if(!fogVisualDirty) return;
       fogCtx.save();
       fogCtx.globalCompositeOperation="source-over";
       fogCtx.globalAlpha=1;
       fogCtx.clearRect(0,0,W,H);
-      fogCtx.drawImage(fogBaseCanvas,0,0,fogBaseCanvas.width,fogBaseCanvas.height,0,0,W,H);
+
+      // Campanha continua usando fogBaseCanvas.
+      // Zen usa um snapshot IMUTÁVEL da névoa inicial.
+      const sourceFog = state.isZen && zenFogOriginalReady
+        ? zenFogOriginalCanvas
+        : fogBaseCanvas;
+
+      fogCtx.drawImage(sourceFog,0,0,sourceFog.width,sourceFog.height,0,0,W,H);
       fogCtx.globalCompositeOperation="destination-in";
       fogCtx.drawImage(fogMaskCanvas,0,0,fogMaskCanvas.width,fogMaskCanvas.height,0,0,W,H);
       fogCtx.restore();
@@ -2106,47 +2137,64 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       createFogGrid();
       buildFogBase();
       resetFogMask();
+
+      // Captura a névoa cheia ANTES de qualquer limpeza/regeneração.
+      captureZenFogOriginal();
+      zenFogRegenAccumulator = 0;
+
       renderFogFromMask();
       state.fogProgress = 0;
       updateProgress(true);
     }
 
     // =========================================================
-    // ZEN — regeneração da névoa (sistema ACcompleted)
+    // ZEN — regeneração ACcompleted sobre snapshot original
     // =========================================================
-    // Mantém o visual/base atuais. Apenas a lógica de retorno da condensação
-    // segue o comportamento aprovado do Rainy Skyline ACcompleted:
-    // uma camada muito leve recompõe a máscara continuamente e a grade lógica
-    // acompanha o retorno com pequenas restaurações aleatórias.
+    // Mantém exatamente o ritmo numérico aprovado:
+    //   0.006 + (rainIntensity * 0.004) por frame lógico
+    //   22% de chance de verificar a grade
+    //   1.8% de chance por célula limpa
+    //
+    // Diferença necessária: em vez de somar cor no fogCanvas para sempre,
+    // recuperamos a máscara do snapshot ORIGINAL. Resultado:
+    // mesmo "respiro" do ACcompleted, sem a tela ficar cada vez mais branca.
     function regenerateZenFog(dt) {
-      if(!state.isZen || !state.zenAutoFog || !state.started || state.paused) return;
+      if(!state.isZen || !state.zenAutoFog || !state.started || state.paused || !zenFogOriginalReady) return;
 
-      // ACcompleted — MESMOS números e MESMO comportamento por frame:
-      // 0.006 + (rainIntensity * 0.004)
-      //
-      // A única diferença técnica é onde esse alpha acumula:
-      // ele recompõe a MÁSCARA da névoa, não a cor do fogCanvas.
-      // Assim a condensação volta continuamente como no ACcompleted,
-      // mas nunca pode ultrapassar a opacidade/visual original do vidro.
-      fogMaskCtx.save();
-      fogMaskCtx.globalCompositeOperation = "source-over";
-      fogMaskCtx.globalAlpha = 1;
-      fogMaskCtx.fillStyle = `rgba(255,255,255,${0.006 + state.rainIntensity * .004})`;
-      fogMaskCtx.fillRect(0,0,W,H);
-      fogMaskCtx.restore();
-      fogVisualDirty = true;
+      // O ACcompleted foi construído em lógica "por frame".
+      // Fixamos a cadência em 60 Hz para ProMotion/120 Hz não regenerar 2x mais rápido.
+      zenFogRegenAccumulator += Math.min(.10, Math.max(0, dt));
 
-      // ACcompleted — mantido exatamente: 22% por frame para verificar
-      // a grade; cada célula limpa tem 1,8% de chance de voltar.
-      if(Math.random() < .22){
-        let restored = 0;
-        for(let index=0; index<fogGrid.length; index++){
-          if(fogGrid[index] === 1 && Math.random() < .018){
-            fogGrid[index] = 0;
-            restored++;
+      let safety = 0;
+      while(zenFogRegenAccumulator >= ZEN_AC_LOGIC_STEP && safety++ < 8){
+        zenFogRegenAccumulator -= ZEN_AC_LOGIC_STEP;
+
+        // EXATAMENTE a fórmula pedida.
+        const acAlpha = 0.006 + (state.rainIntensity * 0.004);
+
+        // Recupera a visibilidade da névoa original.
+        // Como a máscara é limitada naturalmente a alpha=1, o resultado visual
+        // jamais ultrapassa o snapshot inicial.
+        fogMaskCtx.save();
+        fogMaskCtx.globalCompositeOperation = "source-over";
+        fogMaskCtx.globalAlpha = 1;
+        fogMaskCtx.fillStyle = `rgba(255,255,255,${acAlpha})`;
+        fogMaskCtx.fillRect(0,0,W,H);
+        fogMaskCtx.restore();
+        fogVisualDirty = true;
+
+        // ACcompleted: 22% de chance de processar a grade;
+        // cada célula limpa possui 1,8% de chance de voltar.
+        if(Math.random() < .22){
+          let restored = 0;
+          for(let index=0; index<fogGrid.length; index++){
+            if(fogGrid[index] === 1 && Math.random() < .018){
+              fogGrid[index] = 0;
+              restored++;
+            }
           }
+          if(restored) fogClearedCells = Math.max(0, fogClearedCells - restored);
         }
-        if(restored) fogClearedCells = Math.max(0, fogClearedCells - restored);
       }
     }
 
@@ -2784,6 +2832,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     document.getElementById('zenFogToggle').onclick=()=>{
       if(!state.isZen) return;
       state.zenAutoFog=!state.zenAutoFog;
+      zenFogRegenAccumulator=0;
       syncToggle("zenFogToggle",state.zenAutoFog);
       updatePhaseUI();
       saveGame();
