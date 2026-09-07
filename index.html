@@ -5,7 +5,7 @@
       Sem dependência de ZIP para iniciar ou trocar de fase.
       V13: máscaras reais do vidro nas fases de carro, parallax/movimento,
       retrovisor com névoa permanente.
-      ZEN REGEN: delay 2s + ramp 1.5s + taxa por segundo solicitada; HUD Zen simplificado.
+      ZEN REGEN: delay 2s + ramp 1.5s + fechamento final real em 100%; HUD Zen simplificado.
     -->
     <html lang="en">
     <head>
@@ -1239,6 +1239,7 @@ const phases = [
 
     // Estado auxiliar exclusivo da regeneração automática Zen.
     let zenMaskCleanupTimer = 0.0;
+    let zenFinalSnapTimer = 0.0;
 
     // Zen anti-marca:
     // pequeno canvas auxiliar para redistribuir o alpha da máscara.
@@ -2329,10 +2330,65 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         }
     }
 
+    // Finalização 98% -> 100%:
+    // source-over se aproxima de alfa 1 matematicamente, mas pode nunca chegar
+    // exatamente a 255. Este passe só atua no final da regeneração e transforma
+    // pixels já praticamente restaurados em névoa 100% opaca.
+    function snapZenFogToFullOpacity(dt) {
+      if(isFingerDown) {
+        zenFinalSnapTimer = 0.0;
+        return;
+      }
+
+      zenFinalSnapTimer += Math.max(0, Math.min(.10, dt));
+      if(zenFinalSnapTimer < .18) return;
+      zenFinalSnapTimer = 0.0;
+
+      ensureZenMaskCleanupCanvas();
+
+      zenFogDiffuseCtx.save();
+      zenFogDiffuseCtx.setTransform(1,0,0,1,0,0);
+      zenFogDiffuseCtx.globalCompositeOperation = "copy";
+      zenFogDiffuseCtx.globalAlpha = 1;
+      zenFogDiffuseCtx.clearRect(0,0,zenFogDiffuseCanvas.width,zenFogDiffuseCanvas.height);
+      zenFogDiffuseCtx.drawImage(fogMaskCanvas,0,0);
+      zenFogDiffuseCtx.restore();
+
+      const image = zenFogDiffuseCtx.getImageData(
+        0,0,zenFogDiffuseCanvas.width,zenFogDiffuseCanvas.height
+      );
+      const data = image.data;
+
+      // Só fecha o último ~2% visual. Não interfere no início/meio da regeneração.
+      const fullThreshold = Math.round(0.98 * 255);
+      let changed = false;
+
+      for(let i=3;i<data.length;i+=4) {
+        if(data[i] >= fullThreshold && data[i] < 255) {
+          data[i] = 255;
+          changed = true;
+        }
+      }
+
+      if(!changed) return;
+
+      zenFogDiffuseCtx.putImageData(image,0,0);
+
+      fogMaskCtx.save();
+      fogMaskCtx.setTransform(1,0,0,1,0,0);
+      fogMaskCtx.globalCompositeOperation = "copy";
+      fogMaskCtx.globalAlpha = 1;
+      fogMaskCtx.drawImage(zenFogDiffuseCanvas,0,0);
+      fogMaskCtx.restore();
+      fogMaskCtx.setTransform(DPR,0,0,DPR,0,0);
+      fogVisualDirty = true;
+    }
+
     function regenerateZenFog(dt) {
       if(!state.isZen || !state.zenAutoFog || !state.started || state.paused || !zenFogOriginalReady) return;
 
       updateFog(dt, state.rainIntensity);
+      snapZenFogToFullOpacity(dt);
 
       // Mantém o progresso lógico sincronizado com a regeneração visual.
       if(!isFingerDown) {
@@ -2384,6 +2440,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       touchStartTime = null;
       isFingerDown = false;
       zenMaskCleanupTimer = 0.0;
+      zenFinalSnapTimer = 0.0;
 
       renderFogFromMask();
       state.fogProgress = 0;
@@ -3044,6 +3101,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       touchStartTime=null;
       isFingerDown=false;
       zenMaskCleanupTimer=0.0;
+      zenFinalSnapTimer=0.0;
       syncToggle("zenFogToggle",state.zenAutoFog);
       updatePhaseUI();
       saveGame();
