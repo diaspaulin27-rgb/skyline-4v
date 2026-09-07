@@ -1,11 +1,11 @@
-  <!DOCTYPE html>
+ <!DOCTYPE html>
     <!--
       RAINY SKYLINE V12 — BUILD INTEGRADA
       20 fases + arte exclusiva do Modo Zen incorporadas no próprio arquivo.
       Sem dependência de ZIP para iniciar ou trocar de fase.
       V13: máscaras reais do vidro nas fases de carro, parallax/movimento,
       retrovisor com névoa permanente.
-      ZEN REGEN: delay 2s + ramp 1.5s + fechamento final real em 100%; chuva 2D escalável por fase.
+      ZEN REGEN: delay 2s + ramp 1.5s + fechamento final real em 100%; chuva com 65/28/7 de profundidade e personalidade por fase.
     -->
     <html lang="en">
     <head>
@@ -1685,6 +1685,31 @@ const phases = [
       return Math.max(0, Math.min(1, getEffectiveRainIntensity()));
     }
 
+    // Cada mapa mantém a mesma identidade visual de chuva, mas com uma
+    // "personalidade" própria: quantidade, velocidade, comprimento, presença e vento.
+    const RAIN_STYLE_PROFILE = Object.freeze({
+      light:       { density:.62, speed:.78, length:.78, opacity:.82, thickness:.82, wind:.75 },
+      steady:      { density:.78, speed:.88, length:.92, opacity:.90, thickness:.90, wind:.90 },
+      heavy:       { density:.88, speed:1.05, length:1.08, opacity:1.00, thickness:.98, wind:.95 },
+      neon:        { density:.84, speed:1.10, length:.95, opacity:1.08, thickness:.90, wind:1.00 },
+      soft:        { density:.52, speed:.68, length:.72, opacity:.75, thickness:.76, wind:.55 },
+      storm:       { density:1.00, speed:1.20, length:1.15, opacity:1.00, thickness:1.05, wind:1.35 },
+      breeze:      { density:.44, speed:.74, length:.76, opacity:.76, thickness:.78, wind:1.15 },
+      memory:      { density:.64, speed:.82, length:.90, opacity:.86, thickness:.86, wind:.70 },
+      drizzle:     { density:.34, speed:.58, length:.55, opacity:.62, thickness:.68, wind:.45 },
+      clearing:    { density:.24, speed:.52, length:.58, opacity:.58, thickness:.65, wind:.40 },
+      carRain:     { density:.72, speed:1.05, length:1.00, opacity:.95, thickness:.92, wind:1.00 },
+      highwayRain: { density:.95, speed:1.22, length:1.12, opacity:1.00, thickness:.98, wind:1.35 },
+      sunShower:   { density:.57, speed:1.00, length:.78, opacity:.88, thickness:.78, wind:.95 },
+      tunnelRain:  { density:.66, speed:1.12, length:1.00, opacity:.90, thickness:.90, wind:1.10 },
+      goldenRain:  { density:.48, speed:.78, length:.72, opacity:.78, thickness:.74, wind:.60 },
+      finalRain:   { density:.20, speed:.50, length:.52, opacity:.58, thickness:.62, wind:.35 }
+    });
+
+    function getRainStyleProfile(phase = getActivePhase()) {
+      return RAIN_STYLE_PROFILE[phase?.rainStyle] || RAIN_STYLE_PROFILE.steady;
+    }
+
     class Particle {
       constructor() { this.reset(true); }
 
@@ -1724,34 +1749,48 @@ const phases = [
 
         // -----------------------------------------------------
         // CHUVA — BASE PESADA RECEBIDA
+        // PROFUNDIDADE: 65% fundo / 28% médio / 7% primeiro plano
         // -----------------------------------------------------
-        const depth = Math.random();
+        const depthRoll = Math.random();
+        let depth;
+
+        if (depthRoll < .65) {
+          this.layer = 0;                    // FUNDO — 65%
+          depth = .08 + Math.random() * .30;
+        } else if (depthRoll < .93) {
+          this.layer = 1;                    // PLANO MÉDIO — 28%
+          depth = .42 + Math.random() * .30;
+        } else {
+          this.layer = 2;                    // PRIMEIRO PLANO — 7%
+          depth = .82 + Math.random() * .18;
+        }
+
         const intensity = getRainVisualIntensity();
+        const profile = getRainStyleProfile(phase);
 
         this.z = depth;
-        this.layer = depth < .40 ? 0 : depth < .78 ? 1 : 2;
-
         this.x = Math.random() * W;
         this.y = initial ? Math.random() * H : -Math.random() * 150;
 
-        // Valores máximos seguem a chuva pesada fornecida.
+        // A profundidade altera a leitura física da mesma chuva.
+        // Fundo: menor, mais fino, mais discreto e mais lento.
+        // Primeiro plano: raro, comprido, rápido e mais presente.
         const baseLength = 8 + depth * 22 + Math.random() * 8;
         const baseSpeedFrame = 7 + depth * 15 + Math.random() * 5;
         const baseOpacity = 0.15 + depth * 0.4;
         const baseThickness = 0.5 + depth * 1.2;
         const baseWindFrame = -0.7 - Math.random() * 0.5;
 
-        // A MESMA chuva fica mais leve conforme phase.rain diminui.
-        // Storm / rain=1 mantém praticamente a configuração original.
-        const lengthScale = .46 + intensity * .54;
-        const speedScale = .52 + intensity * .48;
-        const opacityScale = .34 + intensity * .66;
-        const thicknessScale = .58 + intensity * .42;
-        const windScale = .58 + intensity * .42;
+        // Intensidade geral do mapa + personalidade individual da fase.
+        const lengthScale = (.46 + intensity * .54) * profile.length;
+        const speedScale = (.52 + intensity * .48) * profile.speed;
+        const opacityScale = (.34 + intensity * .66) * profile.opacity;
+        const thicknessScale = (.58 + intensity * .42) * profile.thickness;
+        const windScale = (.58 + intensity * .42) * profile.wind;
 
         this.len = baseLength * lengthScale;
         this.vy = baseSpeedFrame * 60 * speedScale;       // px/s, independente do FPS
-        this.alpha = baseOpacity * opacityScale;
+        this.alpha = Math.min(.58, baseOpacity * opacityScale);
         this.width = baseThickness * thicknessScale;
         this.wind = baseWindFrame * 60 * windScale;       // px/s, independente do FPS
 
@@ -2979,11 +3018,8 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         const zenIntensity = getEffectiveRainIntensity();
         const climate = state.isZen ? getZenClimate() : null;
 
-        // A quantidade de gotas agora nasce diretamente da intensidade do mapa.
-        // 1.0 = chuva pesada completa; valores menores reduzem progressivamente
-        // a densidade mantendo exatamente o mesmo estilo visual.
-        const rainDensityCurve = Math.pow(Math.max(0, Math.min(1, zenIntensity)), 1.12);
-
+        // Cada chuva agora tem quantidade própria. A intensidade (phase.rain)
+        // continua importando, mas rainStyle passa a definir a personalidade do mapa.
         let activeRainCount;
         if(phase.type === "snow" || phase.type === "car_snow"){
           // Neve permanece com a densidade anterior aproximada.
@@ -2992,7 +3028,13 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
             Math.round((8 + zenIntensity * (rainParticles.length - 8)) * snowDensity)
           ));
         } else {
-          const minimumDrops = zenIntensity <= .18 ? 18 : 26;
+          const rainProfile = getRainStyleProfile(phase);
+          const intensityDensity = .32 + Math.max(0, Math.min(1, zenIntensity)) * .68;
+          const combinedDensity = Math.max(.04, Math.min(1, rainProfile.density * intensityDensity));
+          const rainDensityCurve = Math.pow(combinedDensity, 1.08);
+
+          // Fases quase sem chuva continuam vivas, sem virar uma cortina.
+          const minimumDrops = combinedDensity < .18 ? 14 : 20;
           activeRainCount = Math.max(minimumDrops, Math.min(rainParticles.length,
             Math.round(minimumDrops + rainDensityCurve * (rainParticles.length - minimumDrops))
           ));
