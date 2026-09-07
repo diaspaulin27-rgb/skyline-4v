@@ -4,7 +4,7 @@
       20 fases + arte exclusiva do Modo Zen incorporadas no próprio arquivo.
       Sem dependência de ZIP para iniciar ou trocar de fase.
       V13: máscaras reais do vidro nas fases de carro, parallax/movimento,
-      retrovisor com névoa permanente. Fase 11 com protótipo de movimento lateral contínuo.
+      retrovisor com névoa permanente. Fase 11: cenário externo em camadas móveis + retrovisor fixo desfocado com gotas.
       ZEN REGEN: delay 2s + ramp 1.5s + fechamento final real em 100%; chuva e neve com 65/28/7 de profundidade e personalidade por fase.
     -->
     <html lang="en">
@@ -1110,25 +1110,56 @@ const phases = [
       ctx.save();
       ctx.translate(mirror.cx,mirror.cy);
       ctx.rotate(mirror.rotation);
-      // Névoa propositalmente discreta: o retrovisor fica do lado de fora
-      // e nunca participa da limpeza do vidro da cabine.
+
+      // Retrovisor externo: permanece embaçado/desfocado e nunca participa da
+      // limpeza do vidro interno. Na Fase 11 o efeito é um pouco mais presente.
+      const isPhase11=!state.isZen && state.currentPhase===10;
       const gradient=ctx.createRadialGradient(
         -mirror.rx*.18,-mirror.ry*.18,mirror.ry*.08,
         0,0,mirror.rx
       );
-      gradient.addColorStop(0,"rgba(220,232,238,.16)");
-      gradient.addColorStop(.62,"rgba(194,210,220,.115)");
-      gradient.addColorStop(1,"rgba(170,190,205,.055)");
+      gradient.addColorStop(0,isPhase11 ? "rgba(220,232,238,.20)" : "rgba(220,232,238,.16)");
+      gradient.addColorStop(.62,isPhase11 ? "rgba(194,210,220,.145)" : "rgba(194,210,220,.115)");
+      gradient.addColorStop(1,isPhase11 ? "rgba(170,190,205,.075)" : "rgba(170,190,205,.055)");
       ctx.fillStyle=gradient;
       ctx.beginPath();
       ctx.ellipse(0,0,mirror.rx*.86,mirror.ry*.74,0,0,Math.PI*2);
       ctx.fill();
-      ctx.globalAlpha=.24;
-      ctx.filter="blur(2.2px)";
+
+      ctx.globalAlpha=isPhase11 ? .30 : .24;
+      ctx.filter=isPhase11 ? "blur(2.8px)" : "blur(2.2px)";
       ctx.fillStyle="rgba(232,240,244,.16)";
       ctx.beginPath();
       ctx.ellipse(-mirror.rx*.08,-mirror.ry*.03,mirror.rx*.70,mirror.ry*.50,0,0,Math.PI*2);
       ctx.fill();
+      ctx.filter="none";
+
+      // Fase 11: gotas FIXAS no retrovisor. São desenhadas sempre nas mesmas
+      // coordenadas para parecer água presa ao espelho do lado de fora.
+      if(isPhase11){
+        const fixedDrops=[
+          [-.52,-.28,.050],[-.31,.18,.038],[-.08,-.36,.030],[.16,.20,.044],
+          [.39,-.15,.034],[.56,.26,.028],[-.58,.34,.026],[.02,.02,.023],
+          [.29,-.38,.022],[-.22,-.05,.020],[.48,.05,.018],[-.43,-.02,.016]
+        ];
+        ctx.globalAlpha=1;
+        for(const [nx,ny,s] of fixedDrops){
+          const x=nx*mirror.rx*.82;
+          const y=ny*mirror.ry*1.12;
+          const r=Math.max(1.1,mirror.rx*s);
+          const g=ctx.createRadialGradient(x-r*.30,y-r*.38,r*.10,x,y,r);
+          g.addColorStop(0,"rgba(255,255,255,.48)");
+          g.addColorStop(.35,"rgba(220,236,244,.22)");
+          g.addColorStop(1,"rgba(150,178,192,.08)");
+          ctx.fillStyle=g;
+          ctx.beginPath();
+          ctx.ellipse(x,y,r*.72,r,0,0,Math.PI*2);
+          ctx.fill();
+          ctx.strokeStyle="rgba(238,247,251,.24)";
+          ctx.lineWidth=Math.max(.45,r*.10);
+          ctx.stroke();
+        }
+      }
       ctx.restore();
     }
 
@@ -1493,105 +1524,85 @@ const phases = [
       bgCtx.restore();
     }
 
+    function drawPhase11FixedMirror(image, transform, profile) {
+      const mirror=getMirrorScreenGeometry(profile,transform);
+      if(!mirror) return;
+
+      // Retrovisor pertence ao carro: fica 100% imóvel. Como ele está do lado de
+      // fora da cabine, a imagem refletida fica suavemente desfocada.
+      bgCtx.save();
+      bgCtx.beginPath();
+      bgCtx.ellipse(
+        mirror.cx,mirror.cy,
+        mirror.rx*1.16,mirror.ry*1.28,
+        mirror.rotation,0,Math.PI*2
+      );
+      bgCtx.clip();
+      bgCtx.filter="blur(3.2px)";
+      drawImageCover(bgCtx,image,transform,0,0,1.012);
+      bgCtx.filter="none";
+
+      // Película fria discreta para separar visualmente o vidro externo.
+      bgCtx.fillStyle="rgba(155,180,188,.075)";
+      bgCtx.fillRect(
+        mirror.cx-mirror.rx*1.25,
+        mirror.cy-mirror.ry*1.45,
+        mirror.rx*2.5,
+        mirror.ry*2.9
+      );
+      bgCtx.restore();
+    }
+
     function drawMovingCarPhase11(image, transform) {
       const profile=getCarGlassProfile();
       if(!profile) return;
 
       const travel=state.carOffset;
-      const t=state.elapsed;
 
-      // 1) FUNDO DISTANTE — quase parado, mas sempre avançando na mesma direção.
+      // ================================================================
+      // FASE 11 — MOVIMENTO MAPEADO PELA ARTE
+      // Tudo que está FORA do carro e visível pela janela se desloca.
+      // Porta/pilar/moldura ficam na imagem-base, completamente imóveis.
+      // ================================================================
+
+      // CÉU / NUVENS — quase estático. Ainda se move continuamente para que o
+      // cenário nunca pareça um wallpaper preso ao carro.
       drawWrappedCarBand(
         image,transform,
-        .00,.47,
-        travel*.055,
-        {scaleBoost:1.045, blurPx:0, alpha:.995, bob:Math.sin(t*.72)*.28}
+        .00,.485,
+        travel*.035,
+        {scaleBoost:1.035, blurPx:0, alpha:1, bob:0}
       );
 
-      // 2) PLANO MÉDIO — prédios/vegetação com deslocamento claramente perceptível.
+      // CIDADE / HORIZONTE — movimento médio. É a camada que mais comunica
+      // que o carro realmente está atravessando a paisagem.
       drawWrappedCarBand(
         image,transform,
-        .39,.605,
-        travel*.155,
-        {scaleBoost:1.060, blurPx:.12, alpha:1, bob:Math.sin(t*.92+1.2)*.48}
+        .405,.605,
+        travel*.120,
+        {scaleBoost:1.050, blurPx:.10, alpha:1, bob:0}
       );
 
-      // 3) PRIMEIRO PLANO — estrada/guard rail passam muito mais rápido.
+      // ÁGUA / REFLEXOS — um pouco mais rápida que a cidade por estar mais perto.
       drawWrappedCarBand(
         image,transform,
-        .545,.725,
-        travel*.365,
-        {scaleBoost:1.085, blurPx:.42, alpha:1, bob:Math.sin(t*1.18+2.1)*.85}
+        .565,.655,
+        travel*.205,
+        {scaleBoost:1.060, blurPx:.28, alpha:1, bob:0}
       );
 
-      // Elementos próximos passando pela janela. Eles reforçam a velocidade
-      // sem alterar a arte original e ficam restritos ao vidro.
-      bgCtx.save();
-      traceCarGlassPolygon(bgCtx,profile,transform);
-      bgCtx.clip();
+      // GUARDA-RAIL / ESTRADA — primeiro plano. Movimento rápido e leve motion
+      // blur horizontal; é a principal referência de velocidade para o jogador.
+      drawWrappedCarBand(
+        image,transform,
+        .620,.725,
+        travel*.455,
+        {scaleBoost:1.075, blurPx:.78, alpha:1, bob:0}
+      );
 
-      const roadTop=transform.dy+transform.dh*.555;
-      const roadBottom=transform.dy+transform.dh*.705;
-      const span=W+260;
-
-      // Postes/guard-rail próximos: raros, rápidos e levemente desfocados.
-      bgCtx.filter="blur(.65px)";
-      for(let i=0;i<6;i++){
-        let x=(i*183-travel*.62)%span;
-        if(x<-120) x+=span;
-        const depth=i/5;
-        const y=roadTop+(roadBottom-roadTop)*(.20+.72*depth);
-        const h=20+42*depth;
-        bgCtx.strokeStyle=`rgba(198,216,228,${.055+.035*depth})`;
-        bgCtx.lineWidth=1.0+1.6*depth;
-        bgCtx.beginPath();
-        bgCtx.moveTo(x,y-h*.45);
-        bgCtx.lineTo(x-7-10*depth,y+h*.55);
-        bgCtx.stroke();
-      }
-
-      // Reflexos horizontais no asfalto: mais rápidos que o cenário médio.
-      for(let i=0;i<10;i++){
-        const localSpeed=.78+i*.025;
-        let x=(i*127-travel*localSpeed)%span;
-        if(x<-180) x+=span;
-        const p=i/9;
-        const y=roadTop+(roadBottom-roadTop)*(.28+.68*p);
-        const len=38+88*p;
-        bgCtx.strokeStyle=`rgba(210,229,240,${.025+.040*p})`;
-        bgCtx.lineWidth=.65+1.25*p;
-        bgCtx.beginPath();
-        bgCtx.moveTo(x,y);
-        bgCtx.lineTo(x+len,y+.8);
-        bgCtx.stroke();
-      }
-      bgCtx.filter="none";
-      bgCtx.restore();
-
-      // Microvibração visual extremamente sutil, simulando suspensão/rodagem.
-      // Não mexe no interior; apenas pequenas cintilações na área de paisagem.
-      bgCtx.save();
-      traceCarGlassPolygon(bgCtx,profile,transform);
-      bgCtx.clip();
-      const shimmerY=roadTop+Math.sin(t*8.5)*1.1;
-      bgCtx.fillStyle="rgba(220,235,244,.018)";
-      bgCtx.fillRect(0,shimmerY,W,1.2);
-      bgCtx.restore();
-
-      // O retrovisor pertence ao carro e deve continuar absolutamente fixo.
-      const mirror=getMirrorScreenGeometry(profile,transform);
-      if(mirror){
-        bgCtx.save();
-        bgCtx.beginPath();
-        bgCtx.ellipse(
-          mirror.cx,mirror.cy,
-          mirror.rx*1.16,mirror.ry*1.28,
-          mirror.rotation,0,Math.PI*2
-        );
-        bgCtx.clip();
-        drawImageCover(bgCtx,image,transform,0,0,1);
-        bgCtx.restore();
-      }
+      // O retrovisor NÃO acompanha nenhuma camada acima. Ele é redesenhado por
+      // último, fixo, e com a reflexão desfocada.
+      drawPhase11FixedMirror(image,transform,profile);
     }
 
     function drawSideCarParallax(image, transform) {
@@ -3444,7 +3455,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         if(movingPhase) {
           // Fase 11 usa uma base um pouco mais rápida para o protótipo de
           // deslocamento lateral contínuo. As demais fases ficam como estavam.
-          state.carOffset += dt * (state.currentPhase===10 ? 360 : 300);
+          state.carOffset += dt * (state.currentPhase===10 ? 420 : 300);
         }
         // Fases estáticas só redesenham quando necessário. Fases de carro,
         // inclusive com arte incorporada, redesenham para o parallax funcionar.
