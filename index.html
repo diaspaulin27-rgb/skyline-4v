@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+  <!DOCTYPE html>
     <!--
       RAINY SKYLINE V12 — BUILD INTEGRADA
       20 fases + arte exclusiva do Modo Zen incorporadas no próprio arquivo.
@@ -2237,6 +2237,14 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     function onTouchEnd() {
         isFingerDown = false;
         touchStartTime = null;
+    }
+
+    function ensureZenMaskCleanupCanvas() {
+        if (zenFogDiffuseCanvas.width !== fogMaskCanvas.width ||
+            zenFogDiffuseCanvas.height !== fogMaskCanvas.height) {
+            zenFogDiffuseCanvas.width = fogMaskCanvas.width;
+            zenFogDiffuseCanvas.height = fogMaskCanvas.height;
+        }
     }
 
     // Função de atualização chamada a cada frame (Game Loop / requestAnimationFrame)
