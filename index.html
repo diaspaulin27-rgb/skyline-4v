@@ -1,11 +1,11 @@
- <!DOCTYPE html>
+  <!DOCTYPE html>
     <!--
       RAINY SKYLINE V12 — BUILD INTEGRADA
       20 fases + arte exclusiva do Modo Zen incorporadas no próprio arquivo.
       Sem dependência de ZIP para iniciar ou trocar de fase.
       V13: máscaras reais do vidro nas fases de carro, parallax/movimento,
       retrovisor com névoa permanente.
-      ZEN REGEN: delay 2s + ramp 1.5s + fechamento final real em 100%; chuva com 65/28/7 de profundidade e personalidade por fase.
+      ZEN REGEN: delay 2s + ramp 1.5s + fechamento final real em 100%; chuva e neve com 65/28/7 de profundidade e personalidade por fase.
     -->
     <html lang="en">
     <head>
@@ -1870,6 +1870,292 @@ const phases = [
     const rainParticles = Array.from({ length: MAX_RAIN_DROPS }, () => new Particle());
 
     // ============================================================
+    // NEVE ❄️ — SISTEMA DEDICADO
+    // Baseado no código fornecido pelo usuário.
+    // Profundidade fixa: 65% fundo / 28% médio / 7% primeiro plano.
+    // Cada fase de neve possui quantidade e velocidade próprias.
+    // ============================================================
+
+    const MAX_SNOW_FLAKES = lowPowerDevice ? 195 : 300;
+
+    const SNOW_STYLE_PROFILE = Object.freeze({
+      // 12 — Snowfall: neve calma/moderada
+      snowSoft: {
+        count: 170,
+        speed: .92,
+        size: 1.00,
+        opacity: .95,
+        sway: 1.00,
+        drift: 1.00,
+        wind: 0,
+        rotation: 1.00,
+        carMotion: 0
+      },
+
+      // 14 — Morning Frost: poucos flocos, muito delicados e lentos
+      snowLight: {
+        count: 88,
+        speed: .64,
+        size: .88,
+        opacity: .78,
+        sway: .78,
+        drift: .72,
+        wind: -1,
+        rotation: .72,
+        carMotion: 0
+      },
+
+      // 16 — Midnight Blizzard: maior quantidade, queda rápida e vento forte
+      blizzard: {
+        count: 300,
+        speed: 1.72,
+        size: 1.05,
+        opacity: 1.08,
+        sway: 1.55,
+        drift: 1.65,
+        wind: -68,
+        rotation: 1.55,
+        carMotion: 0
+      },
+
+      // 19 — Snowy Drive: neve média/alta, rápida e puxada pelo carro
+      snowDrive: {
+        count: 220,
+        speed: 1.24,
+        size: .98,
+        opacity: .96,
+        sway: 1.18,
+        drift: 1.32,
+        wind: -14,
+        rotation: 1.18,
+        carMotion: 118
+      }
+    });
+
+    function getSnowStyleProfile(phase = getActivePhase()) {
+      return SNOW_STYLE_PROFILE[phase?.rainStyle] || SNOW_STYLE_PROFILE.snowSoft;
+    }
+
+    function getSnowActiveCount(phase = getActivePhase()) {
+      const profile = getSnowStyleProfile(phase);
+      const deviceScale = lowPowerDevice ? .65 : 1;
+      return Math.max(18, Math.min(
+        MAX_SNOW_FLAKES,
+        Math.round(profile.count * deviceScale)
+      ));
+    }
+
+    function chooseSnowLayer() {
+      const random = Math.random();
+
+      // 65% FUNDO
+      if (random < .65) return 0;
+
+      // 28% PLANO MÉDIO
+      if (random < .93) return 1;
+
+      // 7% PRIMEIRO PLANO
+      return 2;
+    }
+
+    class SnowFlake {
+      constructor() {
+        this.reset(true);
+      }
+
+      reset(initial = false) {
+        this.layer = chooseSnowLayer();
+
+        let size;
+        let speedFrame;
+        let opacity;
+        let swayAmount;
+        let swaySpeedFrame;
+        let driftFrame;
+        let blur;
+
+        // =================================================
+        // FUNDO — 65%
+        // =================================================
+        if (this.layer === 0) {
+          size = 1 + Math.random() * 1.6;
+          speedFrame = .25 + Math.random() * .45;
+          opacity = .15 + Math.random() * .20;
+          swayAmount = .15 + Math.random() * .35;
+          swaySpeedFrame = .004 + Math.random() * .005;
+          driftFrame = (Math.random() - .5) * .12;
+          blur = 0;
+          this.depth = .08 + Math.random() * .30;
+        }
+
+        // =================================================
+        // PLANO MÉDIO — 28%
+        // =================================================
+        else if (this.layer === 1) {
+          size = 3 + Math.random() * 2.5;
+          speedFrame = .7 + Math.random() * .9;
+          opacity = .40 + Math.random() * .30;
+          swayAmount = .8 + Math.random() * 1.5;
+          swaySpeedFrame = .008 + Math.random() * .008;
+          driftFrame = (Math.random() - .5) * .25;
+          blur = 0;
+          this.depth = .42 + Math.random() * .30;
+        }
+
+        // =================================================
+        // PRIMEIRO PLANO — 7%
+        // =================================================
+        else {
+          size = 6 + Math.random() * 5;
+          speedFrame = 1.3 + Math.random() * 1.3;
+          opacity = .50 + Math.random() * .30;
+          swayAmount = 1.5 + Math.random() * 2.5;
+          swaySpeedFrame = .007 + Math.random() * .008;
+          driftFrame = (Math.random() - .5) * .45;
+          blur = .8 + Math.random() * 1.2;
+          this.depth = .82 + Math.random() * .18;
+        }
+
+        this.x = Math.random() * W;
+        this.y = initial ? Math.random() * H : -Math.random() * 100;
+
+        this.baseSize = size;
+
+        // O código fornecido era frame-based. Convertemos para px/s / rad/s
+        // para manter a mesma sensação independentemente de 30/60/120 Hz.
+        this.baseSpeed = speedFrame * 60;
+        this.baseOpacity = opacity;
+        this.baseSwayAmount = swayAmount;
+        this.baseSwaySpeed = swaySpeedFrame * 60;
+        this.baseDrift = driftFrame * 60;
+        this.baseBlur = blur;
+
+        this.swayAngle = Math.random() * Math.PI * 2;
+        this.rotation = Math.random() * Math.PI * 2;
+        this.rotationSpeed = (Math.random() - .5) * .012 * 60;
+
+        this.drawX = this.x;
+        this.currentSize = this.baseSize;
+        this.currentOpacity = this.baseOpacity;
+        this.currentBlur = this.baseBlur;
+      }
+
+      update(dt, phase = getActivePhase()) {
+        const profile = getSnowStyleProfile(phase);
+
+        this.swayAngle += this.baseSwaySpeed * profile.sway * dt;
+        this.rotation += this.rotationSpeed * profile.rotation * dt;
+
+        const swayX =
+          Math.sin(this.swayAngle) *
+          this.baseSwayAmount *
+          profile.sway;
+
+        this.drawX = this.x + swayX;
+
+        const speed = this.baseSpeed * profile.speed;
+
+        let horizontalSpeed =
+          this.baseDrift * profile.drift +
+          profile.wind;
+
+        // Na fase 19, a trajetória recebe influência clara do carro em movimento.
+        if (phase.type === "car_snow") {
+          horizontalSpeed +=
+            profile.carMotion *
+            (.35 + this.depth * .95);
+        }
+
+        this.y += speed * dt;
+        this.x += horizontalSpeed * dt;
+
+        this.currentSize = this.baseSize * profile.size;
+        this.currentOpacity = Math.min(.88, this.baseOpacity * profile.opacity);
+        this.currentBlur = this.baseBlur;
+
+        if (
+          this.y > H + 40 ||
+          this.x < -80 ||
+          this.x > W + 120
+        ) {
+          this.reset(false);
+        }
+      }
+
+      draw() {
+        const x = this.drawX;
+        const y = this.y;
+        const size = this.currentSize;
+        const opacity = this.currentOpacity;
+        const blur = this.currentBlur;
+
+        rainCtx.save();
+        rainCtx.translate(x, y);
+        rainCtx.rotate(this.rotation);
+
+        // Apenas os raros flocos de primeiro plano recebem leve desfoque.
+        rainCtx.filter = blur > 0 ? `blur(${blur}px)` : "none";
+
+        rainCtx.strokeStyle =
+          `rgba(245, 248, 255, ${opacity})`;
+
+        rainCtx.lineWidth =
+          Math.max(.35, size * .10);
+
+        rainCtx.lineCap = "round";
+
+        // 6 braços do floco, iguais à referência fornecida.
+        for (let i = 0; i < 6; i++) {
+          rainCtx.save();
+          rainCtx.rotate(i * Math.PI / 3);
+          rainCtx.beginPath();
+
+          // braço central
+          rainCtx.moveTo(0, 0);
+          rainCtx.lineTo(0, -size);
+
+          // primeira ramificação
+          rainCtx.moveTo(0, -size * .50);
+          rainCtx.lineTo(-size * .23, -size * .68);
+
+          rainCtx.moveTo(0, -size * .50);
+          rainCtx.lineTo(size * .23, -size * .68);
+
+          // segunda ramificação
+          rainCtx.moveTo(0, -size * .72);
+          rainCtx.lineTo(-size * .17, -size * .85);
+
+          rainCtx.moveTo(0, -size * .72);
+          rainCtx.lineTo(size * .17, -size * .85);
+
+          rainCtx.stroke();
+          rainCtx.restore();
+        }
+
+        // centro
+        rainCtx.beginPath();
+        rainCtx.arc(
+          0,
+          0,
+          Math.max(.4, size * .08),
+          0,
+          Math.PI * 2
+        );
+        rainCtx.fillStyle =
+          `rgba(250, 252, 255, ${opacity})`;
+        rainCtx.fill();
+
+        rainCtx.filter = "none";
+        rainCtx.restore();
+      }
+    }
+
+    const snowFlakes = Array.from(
+      { length: MAX_SNOW_FLAKES },
+      () => new SnowFlake()
+    );
+
+    // ============================================================
     // GOTAS NO VIDRO — V8 DETALHE SUTIL
     // O toque apenas remove. Poucas gotas escorrem naturalmente e só elas
     // incorporam gotas abaixo, ficando maiores e um pouco mais rápidas.
@@ -3018,58 +3304,105 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         const zenIntensity = getEffectiveRainIntensity();
         const climate = state.isZen ? getZenClimate() : null;
 
-        // Cada chuva agora tem quantidade própria. A intensidade (phase.rain)
-        // continua importando, mas rainStyle passa a definir a personalidade do mapa.
-        let activeRainCount;
-        if(phase.type === "snow" || phase.type === "car_snow"){
-          // Neve permanece com a densidade anterior aproximada.
-          const snowDensity = climate ? climate.density : 1;
-          activeRainCount = Math.max(8, Math.min(rainParticles.length,
-            Math.round((8 + zenIntensity * (rainParticles.length - 8)) * snowDensity)
-          ));
-        } else {
-          const rainProfile = getRainStyleProfile(phase);
-          const intensityDensity = .32 + Math.max(0, Math.min(1, zenIntensity)) * .68;
-          const combinedDensity = Math.max(.04, Math.min(1, rainProfile.density * intensityDensity));
-          const rainDensityCurve = Math.pow(combinedDensity, 1.08);
+        const isSnowPhase =
+          phase.type === "snow" ||
+          phase.type === "car_snow";
 
-          // Fases quase sem chuva continuam vivas, sem virar uma cortina.
-          const minimumDrops = combinedDensity < .18 ? 14 : 20;
-          activeRainCount = Math.max(minimumDrops, Math.min(rainParticles.length,
-            Math.round(minimumDrops + rainDensityCurve * (rainParticles.length - minimumDrops))
-          ));
-        }
+        // =====================================================
+        // NEVE — pool dedicado. Não altera a chuva aprovada.
+        // =====================================================
+        if (isSnowPhase) {
+          const activeSnowCount = getSnowActiveCount(phase);
 
-        // Em carro, chuva e gotas só existem sobre o vidro — nunca sobre porta,
-        // acabamento interno ou retrovisor.
-        const rainClipped=clipToCarGlass(rainCtx);
-        // Desenha de trás para frente para a profundidade continuar legível.
-        for(let depthLayer=0;depthLayer<3;depthLayer++){
-          for(let i=0;i<activeRainCount;i++){
-            const p = rainParticles[i];
-            if(p.layer!==depthLayer) continue;
-            const baseVy = p.vy;
-            const baseLen = p.len;
-            const baseWidth = p.width;
-            if(climate && p.isSnow){
-              p.vy = baseVy * climate.speed;
-              p.len = baseLen * climate.length;
-              p.width = baseWidth * climate.width;
+          const snowClipped = clipToCarGlass(rainCtx);
+
+          // Fundo -> médio -> primeiro plano.
+          for (let depthLayer = 0; depthLayer < 3; depthLayer++) {
+            for (let i = 0; i < activeSnowCount; i++) {
+              const f = snowFlakes[i];
+              if (f.layer !== depthLayer) continue;
+
+              f.update(dt, phase);
+              f.draw();
             }
-            p.update(dt);
-            p.draw();
-            if(climate && p.isSnow){
-              p.vy = baseVy;
-              p.len = baseLen;
-              p.width = baseWidth;
+          }
+
+          if (snowClipped) rainCtx.restore();
+          if (isCarPhase()) eraseMirrorFromContext(rainCtx);
+
+          // Mantém os flocos fora da área ativa prontos para entrar depois.
+          for (let i = activeSnowCount; i < snowFlakes.length; i++) {
+            const f = snowFlakes[i];
+            if (
+              f.y > H + 80 ||
+              f.x < -100 ||
+              f.x > W + 140
+            ) {
+              f.reset(false);
             }
           }
         }
-        if(rainClipped) rainCtx.restore();
-        if(isCarPhase()) eraseMirrorFromContext(rainCtx);
 
-        for(let i=activeRainCount;i<rainParticles.length;i++){
-          if(rainParticles[i].y > H + 80) rainParticles[i].reset();
+        // =====================================================
+        // CHUVA — BLOCO APROVADO, preservado.
+        // =====================================================
+        else {
+          // Cada chuva agora tem quantidade própria. A intensidade (phase.rain)
+          // continua importando, mas rainStyle passa a definir a personalidade do mapa.
+          const rainProfile = getRainStyleProfile(phase);
+          const intensityDensity =
+            .32 +
+            Math.max(0, Math.min(1, zenIntensity)) * .68;
+
+          const combinedDensity =
+            Math.max(
+              .04,
+              Math.min(
+                1,
+                rainProfile.density * intensityDensity
+              )
+            );
+
+          const rainDensityCurve =
+            Math.pow(combinedDensity, 1.08);
+
+          const minimumDrops =
+            combinedDensity < .18 ? 14 : 20;
+
+          const activeRainCount =
+            Math.max(
+              minimumDrops,
+              Math.min(
+                rainParticles.length,
+                Math.round(
+                  minimumDrops +
+                  rainDensityCurve *
+                  (rainParticles.length - minimumDrops)
+                )
+              )
+            );
+
+          const rainClipped = clipToCarGlass(rainCtx);
+
+          // Desenha de trás para frente para a profundidade continuar legível.
+          for (let depthLayer = 0; depthLayer < 3; depthLayer++) {
+            for (let i = 0; i < activeRainCount; i++) {
+              const p = rainParticles[i];
+              if (p.layer !== depthLayer) continue;
+
+              p.update(dt);
+              p.draw();
+            }
+          }
+
+          if (rainClipped) rainCtx.restore();
+          if (isCarPhase()) eraseMirrorFromContext(rainCtx);
+
+          for (let i = activeRainCount; i < rainParticles.length; i++) {
+            if (rainParticles[i].y > H + 80) {
+              rainParticles[i].reset();
+            }
+          }
         }
 
         glassDropsSystem.update(dt);
