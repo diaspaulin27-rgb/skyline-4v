@@ -1,11 +1,11 @@
- <!DOCTYPE html>
+  <!DOCTYPE html>
     <!--
       RAINY SKYLINE V12 — BUILD INTEGRADA
       20 fases + arte exclusiva do Modo Zen incorporadas no próprio arquivo.
       Sem dependência de ZIP para iniciar ou trocar de fase.
       V13: máscaras reais do vidro nas fases de carro, parallax/movimento,
       retrovisor com névoa permanente.
-      ZEN REGEN: regeneração ACcompleted do arquivo anterior; HUD Zen simplificado.
+      ZEN REGEN: delay de toque + ease-in + blur/threshold sobre a regeneração anterior; HUD Zen simplificado.
     -->
     <html lang="en">
     <head>
@@ -1237,6 +1237,12 @@ const phases = [
     let zenFogRegenAccumulator = 0;
     const ZEN_AC_LOGIC_STEP = 1 / 60;
 
+    // Controle temporal exclusivo da regeneração automática Zen.
+    let zenRegenRate = 1.0;
+    let zenTouchTimer = 0.0;
+    let zenFingerDown = false;
+    let zenMaskCleanupTimer = 0.0;
+
     // Zen anti-marca:
     // pequeno canvas auxiliar para redistribuir o alpha da máscara.
     // Não usa ctx.filter/blur (Safari iOS safe) e NÃO adiciona opacidade;
@@ -2213,22 +2219,119 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       zenFogOriginalReady = true;
     }
 
-    // Regeneração automática Zen — comportamento do arquivo anterior.
-    // Mantém o ritmo original, adaptado à máscara desta build para não alterar
-    // nenhuma outra mecânica do jogo.
+    // =========================================================
+    // ZEN — REGENERAÇÃO AUTOMÁTICA COM DELAY DE TOQUE
+    // =========================================================
+    function smoothStep01(v) {
+      const x = Math.max(0, Math.min(1, v));
+      return x * x * (3 - 2 * x);
+    }
+
+    function updateZenRegenRate(dt) {
+      const delta = Math.max(0, Math.min(.10, dt));
+
+      if(zenFingerDown) {
+        zenTouchTimer += delta;
+
+        // Primeiros 2 segundos: regeneração totalmente bloqueada.
+        if(zenTouchTimer < 2.0) {
+          zenRegenRate = 0.0;
+          return;
+        }
+
+        // Depois de 2s: ease-in suave enquanto o dedo continua pressionado.
+        const rampUpDuration = 3.0;
+        const evolve = smoothStep01((zenTouchTimer - 2.0) / rampUpDuration);
+        zenRegenRate = evolve;
+        return;
+      }
+
+      // Ao soltar: volta continuamente ao fluxo normal do Zen.
+      zenTouchTimer = 0.0;
+      const fadeSpeed = 1.35; // unidades por segundo
+      if(zenRegenRate < 1.0) {
+        zenRegenRate = Math.min(1.0, zenRegenRate + fadeSpeed * delta);
+      } else if(zenRegenRate > 1.0) {
+        zenRegenRate = Math.max(1.0, zenRegenRate - fadeSpeed * delta);
+      }
+    }
+
+    function ensureZenMaskCleanupCanvas() {
+      if(zenFogDiffuseCanvas.width !== fogMaskCanvas.width ||
+         zenFogDiffuseCanvas.height !== fogMaskCanvas.height) {
+        zenFogDiffuseCanvas.width = fogMaskCanvas.width;
+        zenFogDiffuseCanvas.height = fogMaskCanvas.height;
+      }
+    }
+
+    function blurAndThresholdZenFogMask() {
+      ensureZenMaskCleanupCanvas();
+
+      // Blur Gaussiano leve, equivalente visual a um passe 3x3.
+      // A máscara continua em resolução total; não há downscale.
+      zenFogDiffuseCtx.save();
+      zenFogDiffuseCtx.setTransform(1,0,0,1,0,0);
+      zenFogDiffuseCtx.globalCompositeOperation = "copy";
+      zenFogDiffuseCtx.globalAlpha = 1;
+      zenFogDiffuseCtx.clearRect(0,0,zenFogDiffuseCanvas.width,zenFogDiffuseCanvas.height);
+      zenFogDiffuseCtx.filter = "blur(0.65px)";
+      zenFogDiffuseCtx.drawImage(fogMaskCanvas,0,0);
+      zenFogDiffuseCtx.filter = "none";
+      zenFogDiffuseCtx.restore();
+
+      // Threshold de alfa: elimina resíduos abaixo de 0.05.
+      const image = zenFogDiffuseCtx.getImageData(
+        0, 0, zenFogDiffuseCanvas.width, zenFogDiffuseCanvas.height
+      );
+      const data = image.data;
+      const threshold = Math.round(0.05 * 255);
+
+      for(let i=3;i<data.length;i+=4) {
+        if(data[i] < threshold) data[i] = 0;
+      }
+
+      zenFogDiffuseCtx.putImageData(image,0,0);
+
+      fogMaskCtx.save();
+      fogMaskCtx.setTransform(1,0,0,1,0,0);
+      fogMaskCtx.globalCompositeOperation = "copy";
+      fogMaskCtx.globalAlpha = 1;
+      fogMaskCtx.drawImage(zenFogDiffuseCanvas,0,0);
+      fogMaskCtx.restore();
+      fogMaskCtx.setTransform(DPR,0,0,DPR,0,0);
+      fogVisualDirty = true;
+    }
+
     function regenerateZenFog(dt) {
       if(!state.isZen || !state.zenAutoFog || !state.started || state.paused || !zenFogOriginalReady) return;
 
-      // O arquivo anterior trabalhava quadro a quadro em ~60 Hz.
+      updateZenRegenRate(dt);
+
+      // Com taxa zerada, não alteramos absolutamente nada na máscara.
+      if(zenRegenRate <= 0.0001) {
+        updateProgress();
+        return;
+      }
+
+      // Blur + threshold em cadência controlada para evitar custo excessivo no iPhone.
+      zenMaskCleanupTimer += Math.min(.10, Math.max(0, dt));
+      if(zenMaskCleanupTimer >= (1/10)) {
+        zenMaskCleanupTimer %= (1/10);
+        blurAndThresholdZenFogMask();
+      }
+
+      // Mantém a base da regeneração anterior, agora modulada pela taxa temporal.
       zenFogRegenAccumulator += Math.min(.10, Math.max(0, dt));
       const ZEN_AC_STEP = 1 / 60;
 
       let safety = 0;
-      while(zenFogRegenAccumulator >= ZEN_AC_STEP && safety++ < 8){
+      while(zenFogRegenAccumulator >= ZEN_AC_STEP && safety++ < 8) {
         zenFogRegenAccumulator -= ZEN_AC_STEP;
 
-        // Mesma fórmula de regeneração do arquivo anterior.
-        const acAlpha = 0.006 + state.rainIntensity * 0.004;
+        const baseAlpha = 0.006 + state.rainIntensity * 0.004;
+
+        // Escala correta de alfa para manter transição suave da taxa 0..1.
+        const acAlpha = 1 - Math.pow(1 - baseAlpha, zenRegenRate);
 
         fogMaskCtx.save();
         fogMaskCtx.setTransform(1,0,0,1,0,0);
@@ -2239,10 +2342,10 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         fogMaskCtx.setTransform(DPR,0,0,DPR,0,0);
         fogVisualDirty = true;
 
-        // Mesmas probabilidades do arquivo anterior: 22% / 1.8%.
-        if(Math.random() < .22){
-          for(let i=0;i<fogGrid.length;i++){
-            if(fogGrid[i] === 1 && Math.random() < .018){
+        // Recuperação lógica acompanha a mesma taxa visual.
+        if(Math.random() < .22 * zenRegenRate) {
+          for(let i=0;i<fogGrid.length;i++) {
+            if(fogGrid[i] === 1 && Math.random() < .018 * zenRegenRate) {
               fogGrid[i] = 0;
               fogClearedCells = Math.max(0, fogClearedCells - 1);
             }
@@ -2282,6 +2385,10 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       captureZenFogOriginal();
       zenFogRegenAccumulator = 0;
       zenFogDiffuseTick = 0;
+      zenRegenRate = 1.0;
+      zenTouchTimer = 0.0;
+      zenFingerDown = false;
+      zenMaskCleanupTimer = 0.0;
 
       renderFogFromMask();
       state.fogProgress = 0;
@@ -2411,6 +2518,15 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       e.preventDefault();
       initAudio();
       fogCanvas.setPointerCapture?.(e.pointerId);
+
+      // Primeiro toque no Zen: trava a regeneração e inicia o delay de 2s.
+      if(state.isZen && state.zenAutoFog && state.activePointers.size === 0) {
+        zenFingerDown = true;
+        zenTouchTimer = 0.0;
+        zenRegenRate = 0.0;
+        zenFogRegenAccumulator = 0.0;
+      }
+
       const key = getPointerBrushKey(e.pointerId);
       state.activePointers.set(e.pointerId, {x:e.clientX, y:e.clientY, key});
       clearFogLine(e.clientX, e.clientY, e.clientX, e.clientY, brushes[key]);
@@ -2437,6 +2553,11 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       state.activePointers.delete(e.pointerId);
       state.pointerBrushes.delete(e.pointerId);
 
+      // Quando o último dedo sai, a taxa volta suavemente ao fluxo normal.
+      if(state.isZen && state.zenAutoFog && state.activePointers.size === 0) {
+        zenFingerDown = false;
+        zenTouchTimer = 0.0;
+      }
 
       if(state.started && !state.paused && !state.isZen && state.fogProgress >= getCompletionTarget()) updateProgress();
     }
@@ -2928,6 +3049,10 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       state.zenAutoFog=!state.zenAutoFog;
       zenFogRegenAccumulator=0;
       zenFogDiffuseTick=0;
+      zenRegenRate=1.0;
+      zenTouchTimer=0.0;
+      zenFingerDown=false;
+      zenMaskCleanupTimer=0.0;
       syncToggle("zenFogToggle",state.zenAutoFog);
       updatePhaseUI();
       saveGame();
