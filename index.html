@@ -1,4 +1,4 @@
-  <!DOCTYPE html>
+<!DOCTYPE html>
     <!--
       RAINY SKYLINE V12 — BUILD INTEGRADA
       20 fases + arte exclusiva do Modo Zen incorporadas no próprio arquivo.
@@ -1027,6 +1027,40 @@ const phases = [
       ]
     });
 
+    // FASE 11 — vidro do retrovisor, traçado a partir da área VERDE
+    // marcada pelo usuário. É uma área separada da janela principal:
+    // recebe névoa leve + gotas fixas e nunca participa da limpeza.
+    const PHASE11_MIRROR_PROFILE = Object.freeze({
+      polygon:[
+        [.186198,.600733],
+        [.182292,.608059],
+        [.186198,.650549],
+        [.196615,.690110],
+        [.205729,.706227],
+        [.270833,.707692],
+        [.333333,.704029],
+        [.363281,.700366],
+        [.382813,.693040],
+        [.390625,.681319],
+        [.388021,.663004],
+        [.373698,.634432],
+        [.355469,.619780],
+        [.315104,.609524],
+        [.256510,.600733],
+        [.197917,.596337]
+      ],
+      drops:[
+        [.224,.622,.0042,.0080,.22],
+        [.274,.632,.0034,.0068,.18],
+        [.327,.641,.0040,.0076,.20],
+        [.205,.657,.0033,.0063,.17],
+        [.253,.675,.0044,.0084,.21],
+        [.312,.674,.0031,.0062,.17],
+        [.349,.666,.0036,.0070,.18],
+        [.291,.697,.0028,.0054,.16]
+      ]
+    });
+
     function isCarPhase(phase = getActivePhase()) {
       return !state.isZen && (phase?.type === "car" || phase?.type === "car_snow");
     }
@@ -1037,6 +1071,10 @@ const phases = [
 
     function getPhase11WindowProfile() {
       return (!state.isZen && state.currentPhase === 10) ? PHASE11_WINDOW_PROFILE : null;
+    }
+
+    function getPhase11MirrorProfile() {
+      return (!state.isZen && state.currentPhase === 10) ? PHASE11_MIRROR_PROFILE : null;
     }
 
     function getPlayableGlassProfile() {
@@ -1089,6 +1127,11 @@ const phases = [
       if(!profile) return true;
       const p=screenToArtwork(x,y);
       if(!pointInPolygon(p.x,p.y,profile.polygon)) return false;
+
+      // Na Fase 11, o vidro do retrovisor é externo e não pode ser limpo.
+      const phase11Mirror=getPhase11MirrorProfile();
+      if(phase11Mirror && pointInPolygon(p.x,p.y,phase11Mirror.polygon)) return false;
+
       if(profile.mirror && pointInRotatedEllipse(p.x,p.y,profile.mirror)) return false;
       return true;
     }
@@ -1143,6 +1186,97 @@ const phases = [
       traceCarGlassPolygon(ctx,profile);
       ctx.clip();
       return true;
+    }
+
+    function tracePhase11MirrorPolygon(ctx, transform = getArtworkTransform()) {
+      const profile=getPhase11MirrorProfile();
+      if(!profile?.polygon?.length) return false;
+      ctx.beginPath();
+      profile.polygon.forEach(([nx,ny],index)=>{
+        const p=artworkPoint(nx,ny,transform);
+        if(index===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
+      });
+      ctx.closePath();
+      return true;
+    }
+
+    function erasePhase11MirrorFromContext(ctx) {
+      if(!getPhase11MirrorProfile()) return;
+      ctx.save();
+      ctx.globalCompositeOperation='destination-out';
+      tracePhase11MirrorPolygon(ctx);
+      ctx.fillStyle='#000';
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawPhase11PermanentMirrorEffect(ctx) {
+      const profile=getPhase11MirrorProfile();
+      if(!profile) return;
+      const transform=getArtworkTransform();
+
+      ctx.save();
+      tracePhase11MirrorPolygon(ctx,transform);
+      ctx.clip();
+
+      // Embaçado leve e permanente — propositalmente discreto.
+      const p0=artworkPoint(.185,.598,transform);
+      const p1=artworkPoint(.392,.710,transform);
+      const cx=(p0.x+p1.x)*.5;
+      const cy=(p0.y+p1.y)*.5;
+      const rx=Math.max(1,(p1.x-p0.x)*.58);
+      const ry=Math.max(1,(p1.y-p0.y)*.72);
+
+      const haze=ctx.createRadialGradient(
+        cx-rx*.18,cy-ry*.20,Math.max(1,ry*.08),
+        cx,cy,Math.max(rx,ry)
+      );
+      haze.addColorStop(0,'rgba(224,234,239,.145)');
+      haze.addColorStop(.58,'rgba(196,211,220,.105)');
+      haze.addColorStop(1,'rgba(171,190,202,.060)');
+      ctx.fillStyle=haze;
+      ctx.fillRect(p0.x-8,p0.y-8,(p1.x-p0.x)+16,(p1.y-p0.y)+16);
+
+      // Halo muito suave para quebrar a nitidez sem esconder a reflexão.
+      ctx.save();
+      ctx.filter='blur(2px)';
+      ctx.globalAlpha=.22;
+      ctx.fillStyle='rgba(229,238,243,.16)';
+      ctx.beginPath();
+      ctx.ellipse(cx-rx*.06,cy-ry*.04,rx*.72,ry*.55,0,0,Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+
+      // Gotas fixas: posições determinísticas, discretas e não limpáveis.
+      for(const [nx,ny,nrx,nry,alpha] of profile.drops){
+        const p=artworkPoint(nx,ny,transform);
+        const dropRx=Math.max(1.05,nrx*transform.dw);
+        const dropRy=Math.max(1.8,nry*transform.dh);
+
+        ctx.save();
+        ctx.globalAlpha=alpha;
+        const grad=ctx.createRadialGradient(
+          p.x-dropRx*.25,p.y-dropRy*.28,Math.max(.4,dropRx*.10),
+          p.x,p.y,Math.max(dropRx,dropRy)
+        );
+        grad.addColorStop(0,'rgba(255,255,255,.58)');
+        grad.addColorStop(.34,'rgba(214,230,240,.20)');
+        grad.addColorStop(.72,'rgba(175,203,220,.10)');
+        grad.addColorStop(1,'rgba(120,155,178,.04)');
+        ctx.fillStyle=grad;
+        ctx.beginPath();
+        ctx.ellipse(p.x,p.y,dropRx,dropRy,-.08,0,Math.PI*2);
+        ctx.fill();
+
+        ctx.strokeStyle='rgba(245,251,255,.20)';
+        ctx.lineWidth=Math.max(.55,transform.scale*.55);
+        ctx.beginPath();
+        ctx.arc(p.x-dropRx*.12,p.y-dropRy*.18,Math.max(.45,dropRx*.38),Math.PI*1.05,Math.PI*1.72);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      ctx.restore();
     }
 
     function drawPermanentMirrorFog(ctx) {
@@ -2556,6 +2690,9 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       fogMaskCtx.fill();
       fogMaskCtx.restore();
 
+      // Fase 11: remove o vidro do retrovisor da névoa limpável.
+      erasePhase11MirrorFromContext(fogMaskCtx);
+
       // Retrovisor é deliberadamente removido da máscara de limpeza.
       // A névoa leve dele é desenhada separadamente e nunca pode ser apagada.
       const mirror=getMirrorScreenGeometry(profile);
@@ -2578,6 +2715,10 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       if(profile){
         traceCarGlassPolygon(fogMaskCtx,profile);
         fogMaskCtx.fill();
+
+        // Fase 11: o vidro do retrovisor não recebe a névoa limpável.
+        erasePhase11MirrorFromContext(fogMaskCtx);
+
         const mirror=getMirrorScreenGeometry(profile);
         if(mirror){
           fogMaskCtx.save();
@@ -3437,6 +3578,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
           }
 
           if (rainClipped) rainCtx.restore();
+          erasePhase11MirrorFromContext(rainCtx);
           if (isCarPhase()) eraseMirrorFromContext(rainCtx);
 
           for (let i = activeRainCount; i < rainParticles.length; i++) {
@@ -3450,6 +3592,12 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         const glassClipped=clipToPlayableGlass(glassCtx);
         glassDropsSystem.draw(glassCtx);
         if(glassClipped) glassCtx.restore();
+
+        // Fase 11: limpa qualquer gota dinâmica do retrovisor e desenha
+        // o efeito externo permanente (névoa leve + gotas fixas).
+        erasePhase11MirrorFromContext(glassCtx);
+        drawPhase11PermanentMirrorEffect(glassCtx);
+
         if(isCarPhase()){
           eraseMirrorFromContext(glassCtx);
           drawPermanentMirrorFog(glassCtx);
