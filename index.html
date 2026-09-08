@@ -987,8 +987,17 @@ const phases = [
     // #region 06 — CARRO: VIDRO REAL / RETROVISOR / ÁREA LIMPÁVEL
     const CAR_GLASS_PROFILES = Object.freeze({
       10: { // 11 — Moving Car (janela lateral)
-        polygon:[[.18,.00],[1,.00],[1,.690],[.58,.682],[.22,.666],[.10,.620],[.050,.535],[.046,.405],[.085,.285]],
-        mirror:{cx:.245,cy:.600,rx:.145,ry:.055,rotation:.055}
+        // Contorno redesenhado com base na marcação vermelha enviada pelo usuário.
+        // A chuva e a névoa devem existir somente dentro desta área da janela.
+        polygon:[
+          [.635,.000],[1.000,.000],[1.000,.801],
+          [.935,.796],[.830,.787],[.721,.779],[.621,.771],[.520,.762],
+          [.417,.753],[.314,.741],[.205,.728],[.104,.716],
+          [.098,.667],[.092,.612],[.088,.557],[.083,.500],[.070,.450],
+          [.056,.402],[.055,.367],[.061,.333],[.073,.295],[.094,.254],
+          [.123,.213],[.157,.174],[.198,.141],[.242,.107],[.292,.073],
+          [.347,.041],[.403,.009]
+        ]
       },
       12: { // 13 — Highway Rain (janela lateral)
         polygon:[[.18,.00],[1,.00],[1,.700],[.60,.695],[.22,.680],[.095,.630],[.045,.545],[.043,.405],[.085,.285]],
@@ -1003,24 +1012,14 @@ const phases = [
       }
     });
 
-    // Fase 11: a chuva deve aparecer somente na área externa visível da janela,
-    // sem mexer em névoa, limpeza, retrovisor ou qualquer outro sistema.
-    const PHASE11_RAIN_WINDOW_PROFILE = Object.freeze({
-      // Ajuste mais interno: a chuva fica estritamente dentro da área
-      // do vidro da janela lateral da Fase 11.
-      polygon:[
-        [.485,.000],[1.000,.000],[1.000,.795],
-        [.865,.790],[.700,.780],[.515,.760],[.335,.735],[.190,.705],
-        [.095,.675],[.072,.615],[.065,.545],[.065,.468],[.082,.388]
-      ],
-      mirror:{cx:.245,cy:.600,rx:.145,ry:.055,rotation:.055}
-    });
-
     function isCarPhase(phase = getActivePhase()) {
       return !state.isZen && (phase?.type === "car" || phase?.type === "car_snow");
     }
 
     function getCarGlassProfile() {
+      // Fase 11 usa a máscara da janela mesmo sem reativar outros efeitos especiais.
+      // Isso restringe apenas chuva/névoa ao vidro, mantendo o restante do comportamento atual.
+      if(!state.isZen && state.currentPhase === 10) return CAR_GLASS_PROFILES[10] || null;
       return isCarPhase() ? (CAR_GLASS_PROFILES[state.currentPhase] || null) : null;
     }
 
@@ -1115,33 +1114,6 @@ const phases = [
       traceCarGlassPolygon(ctx,profile);
       ctx.clip();
       return true;
-    }
-
-    function getRainOnlyClipProfile() {
-      if(state.isZen) return null;
-      if(state.currentPhase === 10) return PHASE11_RAIN_WINDOW_PROFILE;
-      return isCarPhase() ? getCarGlassProfile() : null;
-    }
-
-    function clipRainToPhaseWindow(ctx) {
-      const profile=getRainOnlyClipProfile();
-      if(!profile) return false;
-      ctx.save();
-      traceCarGlassPolygon(ctx,profile);
-      ctx.clip();
-      return true;
-    }
-
-    function eraseMirrorFromContextProfile(ctx, profile) {
-      const mirror=getMirrorScreenGeometry(profile);
-      if(!mirror) return;
-      ctx.save();
-      ctx.globalCompositeOperation="destination-out";
-      ctx.beginPath();
-      ctx.ellipse(mirror.cx,mirror.cy,mirror.rx,mirror.ry,mirror.rotation,0,Math.PI*2);
-      ctx.fillStyle="#000";
-      ctx.fill();
-      ctx.restore();
     }
 
     function drawPermanentMirrorFog(ctx) {
@@ -3422,8 +3394,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
               )
             );
 
-          const rainClipProfile = getRainOnlyClipProfile();
-          const rainClipped = clipRainToPhaseWindow(rainCtx);
+          const rainClipped = clipToCarGlass(rainCtx);
 
           // Desenha de trás para frente para a profundidade continuar legível.
           for (let depthLayer = 0; depthLayer < 3; depthLayer++) {
@@ -3437,7 +3408,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
           }
 
           if (rainClipped) rainCtx.restore();
-          if (rainClipProfile?.mirror) eraseMirrorFromContextProfile(rainCtx, rainClipProfile);
+          if (isCarPhase()) eraseMirrorFromContext(rainCtx);
 
           for (let i = activeRainCount; i < rainParticles.length; i++) {
             if (rainParticles[i].y > H + 80) {
