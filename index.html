@@ -939,15 +939,15 @@ const phases = [
       { name:{en:"Memories",pt:"Memórias",es:"Recuerdos"}, feeling:{en:"Longing",pt:"Saudade",es:"Añoranza"}, hue:260, sky:["#090613","#2b183b"], lights:["#c4b5fd","#f9a8d4","#fef3c7"], rain:.54, thunder:.05, type:"rain", rainStyle:"memory", fog:.43, target:.78 },
       { name:{en:"Silence",pt:"Silêncio",es:"Silencio"}, feeling:{en:"Peace",pt:"Paz",es:"Paz"}, hue:175, sky:["#020d0d","#123638"], lights:["#5eead4","#99f6e4","#fef9c3"], rain:.20, thunder:0, type:"rain", rainStyle:"drizzle", fog:.30, target:.73 },
       { name:{en:"Clearing Sky",pt:"O Céu Clareia",es:"El Cielo se Abre"}, feeling:{en:"Renewal",pt:"Renovação",es:"Renovación"}, hue:35, sky:["#17100a","#513b20"], lights:["#fde68a","#fb923c","#fef3c7"], rain:.16, thunder:0, type:"rain", rainStyle:"clearing", fog:.28, target:.72 },
-      { name:{en:"Moving Car",pt:"Carro em Movimento",es:"Coche en Marcha"}, feeling:{en:"Journey",pt:"Jornada",es:"Viaje"}, hue:200, sky:["#0a0a0a","#1a1a1a"], lights:["#ef4444","#f59e0b"], rain:.66, thunder:.06, type:"rain", rainStyle:"carRain", fog:.42, target:.78 },
+      { name:{en:"Moving Car",pt:"Carro em Movimento",es:"Coche en Marcha"}, feeling:{en:"Journey",pt:"Jornada",es:"Viaje"}, hue:200, sky:["#0a0a0a","#1a1a1a"], lights:["#ef4444","#f59e0b"], rain:.66, thunder:.06, type:"car", rainStyle:"carRain", fog:.42, target:.78 },
       { name:{en:"Snowfall",pt:"Queda de Neve",es:"Nevada"}, feeling:{en:"Stillness",pt:"Quietude",es:"Quietud"}, hue:200, sky:["#2d3748","#4a5568"], lights:["#e2e8f0","#cbd5e0"], rain:.34, thunder:0, type:"snow", rainStyle:"snowSoft", fog:.38, target:.75 },
-      { name:{en:"Highway Rain",pt:"Chuva na Rodovia",es:"Lluvia en la Autopista"}, feeling:{en:"Speed",pt:"Velocidade",es:"Velocidad"}, hue:220, sky:["#050510","#151530"], lights:["#ffffff","#ef4444","#22d3ee"], rain:.92, thunder:.30, type:"rain", rainStyle:"highwayRain", fog:.51, target:.80 },
+      { name:{en:"Highway Rain",pt:"Chuva na Rodovia",es:"Lluvia en la Autopista"}, feeling:{en:"Speed",pt:"Velocidade",es:"Velocidad"}, hue:220, sky:["#050510","#151530"], lights:["#ffffff","#ef4444","#22d3ee"], rain:.92, thunder:.30, type:"car", rainStyle:"highwayRain", fog:.51, target:.80 },
       { name:{en:"Morning Frost",pt:"Geada Matinal",es:"Escarcha Matinal"}, feeling:{en:"Clarity",pt:"Claridade",es:"Claridad"}, hue:190, sky:["#4a5568","#a0aec0"], lights:["#ffffff","#e2e8f0"], rain:.24, thunder:0, type:"snow", rainStyle:"snowLight", fog:.47, target:.78 },
       { name:{en:"Summer Sun Shower",pt:"Chuva de Verão",es:"Lluvia de Verano"}, feeling:{en:"Warmth",pt:"Calor",es:"Calidez"}, hue:50, sky:["#ecc94b","#f6e05e"], lights:["#ffffff"], rain:.46, thunder:.10, type:"rain", rainStyle:"sunShower", fog:.30, target:.74 },
       { name:{en:"Midnight Blizzard",pt:"Nevasca à Meia-Noite",es:"Ventisca de Medianoche"}, feeling:{en:"Isolation",pt:"Isolamento",es:"Aislamiento"}, hue:230, sky:["#000000","#111827"], lights:["#718096","#a0aec0"], rain:.86, thunder:.18, type:"snow", rainStyle:"blizzard", fog:.58, target:.81 },
-      { name:{en:"City Tunnel",pt:"Túnel da Cidade",es:"Túnel de la Ciudad"}, feeling:{en:"Echo",pt:"Eco",es:"Eco"}, hue:30, sky:["#1a1005","#3a2010"], lights:["#f6ad55","#ed8936"], rain:.48, thunder:0, type:"rain", rainStyle:"tunnelRain", fog:.40, target:.77 },
+      { name:{en:"City Tunnel",pt:"Túnel da Cidade",es:"Túnel de la Ciudad"}, feeling:{en:"Echo",pt:"Eco",es:"Eco"}, hue:30, sky:["#1a1005","#3a2010"], lights:["#f6ad55","#ed8936"], rain:.48, thunder:0, type:"car", rainStyle:"tunnelRain", fog:.40, target:.77 },
       { name:{en:"Golden Hour Drops",pt:"Gotas Douradas",es:"Gotas Doradas"}, feeling:{en:"Beauty",pt:"Beleza",es:"Belleza"}, hue:20, sky:["#c53030","#ed8936"], lights:["#fefcbf","#fbd38d"], rain:.38, thunder:0, type:"rain", rainStyle:"goldenRain", fog:.31, target:.74 },
-      { name:{en:"Snowy Drive",pt:"Passeio na Neve",es:"Viaje Nevado"}, feeling:{en:"Comfort",pt:"Aconchego",es:"Abrigo"}, hue:210, sky:["#1a202c","#2d3748"], lights:["#e2e8f0","#ef4444"], rain:.52, thunder:0, type:"snow", rainStyle:"snowDrive", fog:.45, target:.78 },
+      { name:{en:"Snowy Drive",pt:"Passeio na Neve",es:"Viaje Nevado"}, feeling:{en:"Comfort",pt:"Aconchego",es:"Abrigo"}, hue:210, sky:["#1a202c","#2d3748"], lights:["#e2e8f0","#ef4444"], rain:.52, thunder:0, type:"car_snow", rainStyle:"snowDrive", fog:.45, target:.78 },
       { name:{en:"The Last Wipe",pt:"A Última Limpeza",es:"La Última Limpieza"}, feeling:{en:"Closure",pt:"Despedida",es:"Despedida"}, hue:200, sky:["#2b6cb0","#4299e1"], lights:["#ffffff","#bee3f8"], rain:.12, thunder:0, type:"rain", rainStyle:"finalRain", fog:.25, target:.70 }
     ];
 
@@ -987,7 +987,13 @@ const phases = [
     // #region 06 — CARRO: VIDRO REAL / RETROVISOR / ÁREA LIMPÁVEL
     const CAR_GLASS_PROFILES = Object.freeze({
       10: { // 11 — Moving Car (janela lateral)
-        polygon:[[.18,.00],[1,.00],[1,.690],[.58,.682],[.22,.666],[.10,.620],[.050,.535],[.046,.405],[.085,.285]],
+        // Ajustado para a área externa visível pela janela.
+        // A chuva não deve aparecer no interior do carro.
+        polygon:[
+          [.185,.000],[1.000,.000],
+          [1.000,.662],[.860,.659],[.705,.655],[.550,.649],[.385,.644],[.245,.638],
+          [.140,.625],[.075,.595],[.048,.548],[.040,.470],[.040,.385],[.082,.292]
+        ],
         mirror:{cx:.245,cy:.600,rx:.145,ry:.055,rotation:.055}
       },
       12: { // 13 — Highway Rain (janela lateral)
