@@ -987,17 +987,8 @@ const phases = [
     // #region 06 — CARRO: VIDRO REAL / RETROVISOR / ÁREA LIMPÁVEL
     const CAR_GLASS_PROFILES = Object.freeze({
       10: { // 11 — Moving Car (janela lateral)
-        // Contorno redesenhado com base na marcação vermelha enviada pelo usuário.
-        // A chuva e a névoa devem existir somente dentro desta área da janela.
-        polygon:[
-          [.635,.000],[1.000,.000],[1.000,.801],
-          [.935,.796],[.830,.787],[.721,.779],[.621,.771],[.520,.762],
-          [.417,.753],[.314,.741],[.205,.728],[.104,.716],
-          [.098,.667],[.092,.612],[.088,.557],[.083,.500],[.070,.450],
-          [.056,.402],[.055,.367],[.061,.333],[.073,.295],[.094,.254],
-          [.123,.213],[.157,.174],[.198,.141],[.242,.107],[.292,.073],
-          [.347,.041],[.403,.009]
-        ]
+        polygon:[[.18,.00],[1,.00],[1,.690],[.58,.682],[.22,.666],[.10,.620],[.050,.535],[.046,.405],[.085,.285]],
+        mirror:{cx:.245,cy:.600,rx:.145,ry:.055,rotation:.055}
       },
       12: { // 13 — Highway Rain (janela lateral)
         polygon:[[.18,.00],[1,.00],[1,.700],[.60,.695],[.22,.680],[.095,.630],[.045,.545],[.043,.405],[.085,.285]],
@@ -1012,15 +1003,44 @@ const phases = [
       }
     });
 
+    // FASE 11 — máscara exclusiva da janela, traçada a partir dos modelos
+    // enviados pelo usuário (verde = permitido; vermelho = proibido).
+    // Esta máscara NÃO reativa parallax nem qualquer outro efeito especial de carro.
+    const PHASE11_WINDOW_PROFILE = Object.freeze({
+      polygon:[
+        [.637549,.000000],
+        [.636245,.003666],
+        [.563233,.038856],
+        [.466754,.091642],
+        [.345502,.167889],
+        [.203390,.269795],
+        [.139505,.320381],
+        [.069100,.381965],
+        [.058670,.398827],
+        [.056063,.425953],
+        [.075619,.535191],
+        [.099087,.714076],
+        [.104302,.717742],
+        [.739244,.780792],
+        [1.000000,.810850],
+        [1.000000,.000000]
+      ]
+    });
+
     function isCarPhase(phase = getActivePhase()) {
       return !state.isZen && (phase?.type === "car" || phase?.type === "car_snow");
     }
 
     function getCarGlassProfile() {
-      // Fase 11 usa a máscara da janela mesmo sem reativar outros efeitos especiais.
-      // Isso restringe apenas chuva/névoa ao vidro, mantendo o restante do comportamento atual.
-      if(!state.isZen && state.currentPhase === 10) return CAR_GLASS_PROFILES[10] || null;
       return isCarPhase() ? (CAR_GLASS_PROFILES[state.currentPhase] || null) : null;
+    }
+
+    function getPhase11WindowProfile() {
+      return (!state.isZen && state.currentPhase === 10) ? PHASE11_WINDOW_PROFILE : null;
+    }
+
+    function getPlayableGlassProfile() {
+      return getPhase11WindowProfile() || getCarGlassProfile();
     }
 
     function getArtworkTransform(image = currentBackgroundImage) {
@@ -1065,7 +1085,7 @@ const phases = [
     }
 
     function isPointInPlayableGlass(x, y) {
-      const profile=getCarGlassProfile();
+      const profile=getPlayableGlassProfile();
       if(!profile) return true;
       const p=screenToArtwork(x,y);
       if(!pointInPolygon(p.x,p.y,profile.polygon)) return false;
@@ -1109,6 +1129,15 @@ const phases = [
 
     function clipToCarGlass(ctx) {
       const profile=getCarGlassProfile();
+      if(!profile) return false;
+      ctx.save();
+      traceCarGlassPolygon(ctx,profile);
+      ctx.clip();
+      return true;
+    }
+
+    function clipToPlayableGlass(ctx) {
+      const profile=getPlayableGlassProfile();
       if(!profile) return false;
       ctx.save();
       traceCarGlassPolygon(ctx,profile);
@@ -1402,9 +1431,6 @@ const phases = [
       setupFogMaskCanvas();
       if (typeof glassDropsSystem !== "undefined") glassDropsSystem.resize();
       generateCity(); drawCityBackground();
-      if(!state.isZen && state.currentPhase === 10 && typeof initPhase11PrototypeRain === "function") {
-        initPhase11PrototypeRain();
-      }
 
       if(preserveFog && maskSnapshot && previousGrid?.length){
         buildFogBase();
@@ -1883,72 +1909,6 @@ const phases = [
     }
 
     const rainParticles = Array.from({ length: MAX_RAIN_DROPS }, () => new Particle());
-
-    // ============================================================
-    // FASE 11 — PROTÓTIPO DE CHUVA ADAPTADO
-    // Baseado no código enviado pelo usuário. Só é usado na Fase 11.
-    // As demais fases continuam usando o sistema de chuva aprovado.
-    // ============================================================
-    const phase11PrototypeWeather = {
-      rainIntensity: 2, // leve/moderada para Moving Car
-      fogDensity: .35,
-      raindrops: []
-    };
-
-    function initPhase11PrototypeRain() {
-      const baseCount = Math.max(18, Math.floor((W * H) / 3000));
-      const count = Math.min(
-        MAX_RAIN_DROPS,
-        baseCount * phase11PrototypeWeather.rainIntensity
-      );
-
-      phase11PrototypeWeather.raindrops = [];
-      for(let i=0;i<count;i++){
-        phase11PrototypeWeather.raindrops.push({
-          x: Math.random() * W,
-          y: Math.random() * H,
-          length: 15 + Math.random() * 25,
-          // Código original usava 10–25 px por frame.
-          // Aqui convertemos para px/s para funcionar com dt.
-          speed: (10 + Math.random() * 15) * 60,
-          opacity: .2 + Math.random() * .4,
-          width: 1 + Math.random() * 1.5
-        });
-      }
-    }
-
-    function updateAndRenderPhase11PrototypeRain(dt) {
-      if(!phase11PrototypeWeather.raindrops.length) initPhase11PrototypeRain();
-
-      // A chuva existe somente dentro do recorte real da janela da Fase 11.
-      const clipped = clipToCarGlass(rainCtx);
-
-      rainCtx.lineCap = 'round';
-      for(let i=0;i<phase11PrototypeWeather.raindrops.length;i++){
-        const drop = phase11PrototypeWeather.raindrops[i];
-        const drift = drop.speed * .1;
-
-        rainCtx.beginPath();
-        rainCtx.lineWidth = drop.width;
-        rainCtx.strokeStyle = `rgba(180,210,240,${drop.opacity})`;
-        rainCtx.moveTo(drop.x, drop.y);
-        rainCtx.lineTo(
-          drop.x - drift * (drop.length / Math.max(1, drop.speed)),
-          drop.y + drop.length
-        );
-        rainCtx.stroke();
-
-        drop.y += drop.speed * dt;
-        drop.x -= drift * dt;
-
-        if(drop.y > H + drop.length || drop.x < -80){
-          drop.y = -drop.length - Math.random() * H * .18;
-          drop.x = Math.random() * (W + 100);
-        }
-      }
-
-      if(clipped) rainCtx.restore();
-    }
 
     // ============================================================
     // NEVE ❄️ — SISTEMA DEDICADO
@@ -2559,17 +2519,6 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       fogBaseCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
       fogBaseCtx.clearRect(0, 0, W, H);
 
-      const phase = getActivePhase();
-
-      // Fase 11: névoa simples do protótipo enviado pelo usuário.
-      // O recorte e a limpeza continuam sendo controlados pela máscara da janela.
-      if(!state.isZen && state.currentPhase === 10){
-        fogBaseCtx.fillStyle = `rgba(180,195,210,${phase11PrototypeWeather.fogDensity})`;
-        fogBaseCtx.fillRect(0,0,W,H);
-        fogBaseCtx.globalAlpha = 1;
-        return;
-      }
-
       // A base visual é gerada uma única vez. No Zen só a máscara muda,
       // então a névoa não acumula branco nem forma blocos.
       fogBaseCtx.save();
@@ -2578,6 +2527,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       fogBaseCtx.drawImage(bgCanvas, 0, 0, bgCanvas.width, bgCanvas.height, -12, -12, W + 24, H + 24);
       fogBaseCtx.restore();
 
+      const phase = getActivePhase();
       const fogOpacity = Math.max(.18, Math.min(.48, (phase.fog ?? .40) * .86));
       fogBaseCtx.fillStyle = `rgba(190,205,213,${fogOpacity})`;
       fogBaseCtx.fillRect(0, 0, W, H);
@@ -2597,7 +2547,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     }
 
     function applyPlayableGlassMaskToFogMask() {
-      const profile=getCarGlassProfile();
+      const profile=getPlayableGlassProfile();
       if(!profile) return;
       fogMaskCtx.save();
       fogMaskCtx.globalCompositeOperation="destination-in";
@@ -2624,7 +2574,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       setupFogMaskCanvas();
       fogMaskCtx.globalCompositeOperation="source-over";
       fogMaskCtx.fillStyle="#fff";
-      const profile=getCarGlassProfile();
+      const profile=getPlayableGlassProfile();
       if(profile){
         traceCarGlassPolygon(fogMaskCtx,profile);
         fogMaskCtx.fill();
@@ -3229,7 +3179,6 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       const activePhase = getActivePhase();
       applyPhaseAtmosphere(activePhase);
       rainParticles.forEach(p=>p.reset(true));
-      if(!zen && idx === 10) initPhase11PrototypeRain();
       glassDropsSystem.resetForPhase();
       initFog(); updatePhaseUI();
       document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
@@ -3439,9 +3388,6 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         // CHUVA — BLOCO APROVADO, preservado.
         // =====================================================
         else {
-          if(!state.isZen && state.currentPhase === 10){
-            updateAndRenderPhase11PrototypeRain(dt);
-          } else {
           // Cada chuva agora tem quantidade própria. A intensidade (phase.rain)
           // continua importando, mas rainStyle passa a definir a personalidade do mapa.
           const rainProfile = getRainStyleProfile(phase);
@@ -3477,7 +3423,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
               )
             );
 
-          const rainClipped = clipToCarGlass(rainCtx);
+          const rainClipped = clipToPlayableGlass(rainCtx);
 
           // Desenha de trás para frente para a profundidade continuar legível.
           for (let depthLayer = 0; depthLayer < 3; depthLayer++) {
@@ -3498,11 +3444,10 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
               rainParticles[i].reset();
             }
           }
-          }
         }
 
         glassDropsSystem.update(dt);
-        const glassClipped=clipToCarGlass(glassCtx);
+        const glassClipped=clipToPlayableGlass(glassCtx);
         glassDropsSystem.draw(glassCtx);
         if(glassClipped) glassCtx.restore();
         if(isCarPhase()){
