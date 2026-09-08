@@ -1003,6 +1003,13 @@ const phases = [
       }
     });
 
+    // Fase 11: a chuva deve aparecer somente na área externa visível da janela,
+    // sem mexer em névoa, limpeza, retrovisor ou qualquer outro sistema.
+    const PHASE11_RAIN_WINDOW_PROFILE = Object.freeze({
+      polygon:[[.58,.00],[1,.00],[1,.690],[.58,.682],[.22,.666],[.10,.620],[.050,.535],[.046,.405],[.085,.285]],
+      mirror:{cx:.245,cy:.600,rx:.145,ry:.055,rotation:.055}
+    });
+
     function isCarPhase(phase = getActivePhase()) {
       return !state.isZen && (phase?.type === "car" || phase?.type === "car_snow");
     }
@@ -1104,25 +1111,22 @@ const phases = [
       return true;
     }
 
-    // Fase 11: mesmo sendo uma fase "normal", a chuva deve aparecer
-    // apenas na área da janela do carro, sem alterar névoa, retrovisor
-    // ou qualquer outro sistema.
-    function getRainClipProfile() {
+    function getRainOnlyClipProfile() {
       if(state.isZen) return null;
-      if(isCarPhase()) return CAR_GLASS_PROFILES[state.currentPhase] || null;
-      if(state.currentPhase === 10) return CAR_GLASS_PROFILES[10] || null;
-      return null;
+      if(state.currentPhase === 10) return PHASE11_RAIN_WINDOW_PROFILE;
+      return isCarPhase() ? getCarGlassProfile() : null;
     }
 
-    function clipRainToPhaseWindow(ctx, profile = getRainClipProfile()) {
+    function clipRainToPhaseWindow(ctx) {
+      const profile=getRainOnlyClipProfile();
       if(!profile) return false;
       ctx.save();
-      traceCarGlassPolygon(ctx, profile);
+      traceCarGlassPolygon(ctx,profile);
       ctx.clip();
       return true;
     }
 
-    function eraseMirrorFromContextWithProfile(ctx, profile) {
+    function eraseMirrorFromContextProfile(ctx, profile) {
       const mirror=getMirrorScreenGeometry(profile);
       if(!mirror) return;
       ctx.save();
@@ -3412,8 +3416,8 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
               )
             );
 
-          const rainClipProfile = getRainClipProfile();
-          const rainClipped = clipRainToPhaseWindow(rainCtx, rainClipProfile);
+          const rainClipProfile = getRainOnlyClipProfile();
+          const rainClipped = clipRainToPhaseWindow(rainCtx);
 
           // Desenha de trás para frente para a profundidade continuar legível.
           for (let depthLayer = 0; depthLayer < 3; depthLayer++) {
@@ -3427,7 +3431,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
           }
 
           if (rainClipped) rainCtx.restore();
-          if (rainClipProfile?.mirror) eraseMirrorFromContextWithProfile(rainCtx, rainClipProfile);
+          if (rainClipProfile?.mirror) eraseMirrorFromContextProfile(rainCtx, rainClipProfile);
 
           for (let i = activeRainCount; i < rainParticles.length; i++) {
             if (rainParticles[i].y > H + 80) {
