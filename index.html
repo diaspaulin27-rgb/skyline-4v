@@ -1006,7 +1006,14 @@ const phases = [
     // Fase 11: a chuva deve aparecer somente na área externa visível da janela,
     // sem mexer em névoa, limpeza, retrovisor ou qualquer outro sistema.
     const PHASE11_RAIN_WINDOW_PROFILE = Object.freeze({
-      polygon:[[.58,.00],[1,.00],[1,.690],[.58,.682],[.22,.666],[.10,.620],[.050,.535],[.046,.405],[.085,.285]],
+      // Recorte exato da abertura da janela lateral da Fase 11.
+      // A chuva deve começar e terminar exatamente no enquadramento
+      // do vidro, sem aparecer no interior do carro.
+      polygon:[
+        [.455,.000],[1.000,.000],[1.000,.832],
+        [.820,.820],[.620,.802],[.420,.772],[.240,.738],[.085,.694],
+        [.062,.620],[.054,.540],[.052,.455],[.068,.366]
+      ],
       mirror:{cx:.245,cy:.600,rx:.145,ry:.055,rotation:.055}
     });
 
