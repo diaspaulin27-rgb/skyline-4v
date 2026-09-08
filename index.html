@@ -3,8 +3,8 @@
       RAINY SKYLINE V12 — BUILD INTEGRADA
       20 fases + arte exclusiva do Modo Zen incorporadas no próprio arquivo.
       Sem dependência de ZIP para iniciar ou trocar de fase.
-      V13: máscaras reais do vidro nas fases de carro e retrovisor com névoa permanente.
-      Fases 11, 13, 17 e 19 sem qualquer efeito de parallax do cenário.
+      V13: máscaras reais do vidro nas fases de carro, parallax/movimento,
+      retrovisor com névoa permanente.
       ZEN REGEN: delay 2s + ramp 1.5s + fechamento final real em 100%; chuva e neve com 65/28/7 de profundidade e personalidade por fase.
     -->
     <html lang="en">
@@ -539,7 +539,7 @@
     </script>
     <script>
     /* =========================================================
-       RAINY SKYLINE V13 (20 fases + Zen suave + vidro real dos carros)
+       RAINY SKYLINE V13 (20 fases + Zen suave + vidro real dos carros + parallax)
     ========================================================= */
 
     // As 20 fases ficam disponíveis no menu, campanha e modo Zen.
@@ -939,15 +939,15 @@ const phases = [
       { name:{en:"Memories",pt:"Memórias",es:"Recuerdos"}, feeling:{en:"Longing",pt:"Saudade",es:"Añoranza"}, hue:260, sky:["#090613","#2b183b"], lights:["#c4b5fd","#f9a8d4","#fef3c7"], rain:.54, thunder:.05, type:"rain", rainStyle:"memory", fog:.43, target:.78 },
       { name:{en:"Silence",pt:"Silêncio",es:"Silencio"}, feeling:{en:"Peace",pt:"Paz",es:"Paz"}, hue:175, sky:["#020d0d","#123638"], lights:["#5eead4","#99f6e4","#fef9c3"], rain:.20, thunder:0, type:"rain", rainStyle:"drizzle", fog:.30, target:.73 },
       { name:{en:"Clearing Sky",pt:"O Céu Clareia",es:"El Cielo se Abre"}, feeling:{en:"Renewal",pt:"Renovação",es:"Renovación"}, hue:35, sky:["#17100a","#513b20"], lights:["#fde68a","#fb923c","#fef3c7"], rain:.16, thunder:0, type:"rain", rainStyle:"clearing", fog:.28, target:.72 },
-      { name:{en:"Moving Car",pt:"Carro em Movimento",es:"Coche en Marcha"}, feeling:{en:"Journey",pt:"Jornada",es:"Viaje"}, hue:200, sky:["#0a0a0a","#1a1a1a"], lights:["#ef4444","#f59e0b"], rain:.66, thunder:.06, type:"car", rainStyle:"carRain", fog:.42, target:.78 },
+      { name:{en:"Moving Car",pt:"Carro em Movimento",es:"Coche en Marcha"}, feeling:{en:"Journey",pt:"Jornada",es:"Viaje"}, hue:200, sky:["#0a0a0a","#1a1a1a"], lights:["#ef4444","#f59e0b"], rain:.66, thunder:.06, type:"rain", rainStyle:"carRain", fog:.42, target:.78 },
       { name:{en:"Snowfall",pt:"Queda de Neve",es:"Nevada"}, feeling:{en:"Stillness",pt:"Quietude",es:"Quietud"}, hue:200, sky:["#2d3748","#4a5568"], lights:["#e2e8f0","#cbd5e0"], rain:.34, thunder:0, type:"snow", rainStyle:"snowSoft", fog:.38, target:.75 },
-      { name:{en:"Highway Rain",pt:"Chuva na Rodovia",es:"Lluvia en la Autopista"}, feeling:{en:"Speed",pt:"Velocidade",es:"Velocidad"}, hue:220, sky:["#050510","#151530"], lights:["#ffffff","#ef4444","#22d3ee"], rain:.92, thunder:.30, type:"car", rainStyle:"highwayRain", fog:.51, target:.80 },
+      { name:{en:"Highway Rain",pt:"Chuva na Rodovia",es:"Lluvia en la Autopista"}, feeling:{en:"Speed",pt:"Velocidade",es:"Velocidad"}, hue:220, sky:["#050510","#151530"], lights:["#ffffff","#ef4444","#22d3ee"], rain:.92, thunder:.30, type:"rain", rainStyle:"highwayRain", fog:.51, target:.80 },
       { name:{en:"Morning Frost",pt:"Geada Matinal",es:"Escarcha Matinal"}, feeling:{en:"Clarity",pt:"Claridade",es:"Claridad"}, hue:190, sky:["#4a5568","#a0aec0"], lights:["#ffffff","#e2e8f0"], rain:.24, thunder:0, type:"snow", rainStyle:"snowLight", fog:.47, target:.78 },
       { name:{en:"Summer Sun Shower",pt:"Chuva de Verão",es:"Lluvia de Verano"}, feeling:{en:"Warmth",pt:"Calor",es:"Calidez"}, hue:50, sky:["#ecc94b","#f6e05e"], lights:["#ffffff"], rain:.46, thunder:.10, type:"rain", rainStyle:"sunShower", fog:.30, target:.74 },
       { name:{en:"Midnight Blizzard",pt:"Nevasca à Meia-Noite",es:"Ventisca de Medianoche"}, feeling:{en:"Isolation",pt:"Isolamento",es:"Aislamiento"}, hue:230, sky:["#000000","#111827"], lights:["#718096","#a0aec0"], rain:.86, thunder:.18, type:"snow", rainStyle:"blizzard", fog:.58, target:.81 },
-      { name:{en:"City Tunnel",pt:"Túnel da Cidade",es:"Túnel de la Ciudad"}, feeling:{en:"Echo",pt:"Eco",es:"Eco"}, hue:30, sky:["#1a1005","#3a2010"], lights:["#f6ad55","#ed8936"], rain:.48, thunder:0, type:"car", rainStyle:"tunnelRain", fog:.40, target:.77 },
+      { name:{en:"City Tunnel",pt:"Túnel da Cidade",es:"Túnel de la Ciudad"}, feeling:{en:"Echo",pt:"Eco",es:"Eco"}, hue:30, sky:["#1a1005","#3a2010"], lights:["#f6ad55","#ed8936"], rain:.48, thunder:0, type:"rain", rainStyle:"tunnelRain", fog:.40, target:.77 },
       { name:{en:"Golden Hour Drops",pt:"Gotas Douradas",es:"Gotas Doradas"}, feeling:{en:"Beauty",pt:"Beleza",es:"Belleza"}, hue:20, sky:["#c53030","#ed8936"], lights:["#fefcbf","#fbd38d"], rain:.38, thunder:0, type:"rain", rainStyle:"goldenRain", fog:.31, target:.74 },
-      { name:{en:"Snowy Drive",pt:"Passeio na Neve",es:"Viaje Nevado"}, feeling:{en:"Comfort",pt:"Aconchego",es:"Abrigo"}, hue:210, sky:["#1a202c","#2d3748"], lights:["#e2e8f0","#ef4444"], rain:.52, thunder:0, type:"car_snow", rainStyle:"snowDrive", fog:.45, target:.78 },
+      { name:{en:"Snowy Drive",pt:"Passeio na Neve",es:"Viaje Nevado"}, feeling:{en:"Comfort",pt:"Aconchego",es:"Abrigo"}, hue:210, sky:["#1a202c","#2d3748"], lights:["#e2e8f0","#ef4444"], rain:.52, thunder:0, type:"snow", rainStyle:"snowDrive", fog:.45, target:.78 },
       { name:{en:"The Last Wipe",pt:"A Última Limpeza",es:"La Última Limpieza"}, feeling:{en:"Closure",pt:"Despedida",es:"Despedida"}, hue:200, sky:["#2b6cb0","#4299e1"], lights:["#ffffff","#bee3f8"], rain:.12, thunder:0, type:"rain", rainStyle:"finalRain", fog:.25, target:.70 }
     ];
 
@@ -1212,7 +1212,7 @@ const phases = [
 
 
     // #endregion
-    // #region 08 — CANVASES / RESIZE / BACKGROUNDS
+    // #region 08 — CANVASES / RESIZE / BACKGROUNDS / PARALLAX
     const bgCanvas = document.getElementById("bgCanvas");
     const rainCanvas = document.getElementById("rainCanvas");
     const glassCanvas = document.getElementById("glassCanvas");
@@ -1446,8 +1446,110 @@ const phases = [
       ctx.drawImage(image,dx,dy,dw,dh);
     }
 
-    // As fases de carro usam o wallpaper incorporado de forma totalmente estática.
-    // Chuva/neve, máscara do vidro, retrovisor e limpeza continuam independentes.
+    function drawSideCarParallax(image, transform) {
+      const profile=getCarGlassProfile();
+      if(!profile) return;
+
+      // A arte é um único wallpaper. Para criar profundidade sem deslocar
+      // porta/pilar/retrovisor, somente a região do vidro recebe camadas móveis.
+      const travel=state.carOffset;
+      const bands=[
+        {from:.00,to:.48,amp:W*.010,speed:.0017,phase:.3},
+        {from:.43,to:.61,amp:W*.020,speed:.0024,phase:1.1},
+        {from:.56,to:.72,amp:W*.034,speed:.0032,phase:2.0}
+      ];
+
+      for(const band of bands){
+        bgCtx.save();
+        traceCarGlassPolygon(bgCtx,profile,transform);
+        bgCtx.clip();
+        const y0=transform.dy+band.from*transform.dh;
+        const y1=transform.dy+band.to*transform.dh;
+        bgCtx.beginPath();
+        bgCtx.rect(0,y0-8,W,(y1-y0)+16);
+        bgCtx.clip();
+        const shift=-Math.abs(Math.sin(travel*band.speed+band.phase))*band.amp;
+        const bob=Math.sin(state.elapsed*1.15+band.phase)*(band===bands[2]?1.4:.7);
+        drawImageCover(bgCtx,image,transform,shift,bob,1.045);
+        bgCtx.restore();
+      }
+
+      // Linhas de reflexo rápidas no plano mais próximo reforçam a direção
+      // do movimento sem alterar a ilustração original.
+      bgCtx.save();
+      traceCarGlassPolygon(bgCtx,profile,transform);
+      bgCtx.clip();
+      const roadTop=transform.dy+transform.dh*.565;
+      const roadBottom=transform.dy+transform.dh*.715;
+      for(let i=0;i<7;i++){
+        const speed=75+i*13;
+        const span=W+220;
+        let x=(i*173-travel*speed/100)%span;
+        if(x<-180) x+=span;
+        const y=roadTop+(roadBottom-roadTop)*(i/6);
+        const len=34+i*13;
+        bgCtx.strokeStyle=`rgba(205,225,238,${.028+i*.006})`;
+        bgCtx.lineWidth=.7+i*.14;
+        bgCtx.beginPath();
+        bgCtx.moveTo(x,y);
+        bgCtx.lineTo(x+len,y+.7);
+        bgCtx.stroke();
+      }
+      bgCtx.restore();
+
+      // O retrovisor pertence ao carro, não à paisagem: redesenha a região dele
+      // sobre o parallax para permanecer perfeitamente fixa.
+      const mirror=getMirrorScreenGeometry(profile,transform);
+      if(mirror){
+        bgCtx.save();
+        bgCtx.beginPath();
+        bgCtx.ellipse(
+          mirror.cx,mirror.cy,
+          mirror.rx*1.16,mirror.ry*1.28,
+          mirror.rotation,0,Math.PI*2
+        );
+        bgCtx.clip();
+        drawImageCover(bgCtx,image,transform,0,0,1);
+        bgCtx.restore();
+      }
+    }
+
+    function drawTunnelParallax(image, transform) {
+      const profile=getCarGlassProfile();
+      if(!profile) return;
+      const zoom=1.018+Math.sin(state.elapsed*1.05)*.006;
+      bgCtx.save();
+      traceCarGlassPolygon(bgCtx,profile,transform);
+      bgCtx.clip();
+      drawImageCover(
+        bgCtx,image,transform,
+        Math.sin(state.elapsed*.72)*W*.0025,
+        Math.sin(state.elapsed*1.30)*H*.0018,
+        zoom
+      );
+
+      // Movimento de perspectiva: luzes/umidade saem do ponto de fuga.
+      const vpX=W*.50, vpY=H*.43;
+      const phase=(state.carOffset*.00135)%1;
+      for(let i=0;i<10;i++){
+        const p=(i/10+phase)%1;
+        const eased=p*p;
+        const y=vpY+(H-vpY)*eased;
+        const spread=W*.42*eased;
+        const alpha=.025+.085*p;
+        bgCtx.strokeStyle=`rgba(246,181,91,${alpha})`;
+        bgCtx.lineWidth=.8+2.3*p;
+        bgCtx.beginPath();
+        bgCtx.moveTo(vpX-spread*.18,y);
+        bgCtx.lineTo(vpX-spread*.34,y+7+22*p);
+        bgCtx.stroke();
+        bgCtx.beginPath();
+        bgCtx.moveTo(vpX+spread*.18,y);
+        bgCtx.lineTo(vpX+spread*.34,y+7+22*p);
+        bgCtx.stroke();
+      }
+      bgCtx.restore();
+    }
 
     function drawCityBackground() {
       const phase = getActivePhase();
@@ -1458,8 +1560,13 @@ const phases = [
         const image = currentBackgroundImage;
         const transform=getArtworkTransform(image);
 
-        // Wallpaper estático em todas as fases, inclusive 11, 13, 17 e 19.
+        // Interior do carro permanece absolutamente fixo. Só a paisagem visível
+        // através do vidro recebe o deslocamento de profundidade.
         drawImageCover(bgCtx,image,transform,0,0,1);
+        if(isCarPhase()){
+          if(state.currentPhase===16) drawTunnelParallax(image,transform);
+          else drawSideCarParallax(image,transform);
+        }
 
         // Gradação vertical discreta: conserva a arte, mas a coloca dentro do mesmo
         // clima do vidro, da chuva e do HUD.
@@ -1477,9 +1584,13 @@ const phases = [
       sky.addColorStop(0, phase.sky[0]); sky.addColorStop(.55, phase.sky[1]); sky.addColorStop(1, "#020308");
       bgCtx.fillStyle = sky; bgCtx.fillRect(0, 0, W, H);
 
-      // Bokeh estático também nas fases de carro.
+      // Bokeh Draw (animado se for carro)
       bokeh.forEach(light => {
-        const lx = light.x;
+        let lx = light.x;
+        if(phase.type === 'car' || phase.type === 'car_snow') {
+            lx = (light.x - state.carOffset * (light.r/10)) % W;
+            if (lx < 0) lx += W;
+        }
         const gradient = bgCtx.createRadialGradient(lx, light.y, 0, lx, light.y, light.r);
         gradient.addColorStop(0, light.color); gradient.addColorStop(1, "transparent");
         bgCtx.fillStyle = gradient; bgCtx.globalAlpha = light.alpha;
@@ -1518,7 +1629,7 @@ const phases = [
         const g=bgCtx.createRadialGradient(l.x,l.y-l.h,0,l.x,l.y-l.h,24); g.addColorStop(0,l.glow); g.addColorStop(1,"transparent"); bgCtx.fillStyle=g; bgCtx.globalAlpha=.22; bgCtx.beginPath(); bgCtx.arc(l.x,l.y-l.h,24,0,Math.PI*2); bgCtx.fill(); bgCtx.globalAlpha=1;
       });
       traffic.forEach(c=>{
-        const x=c.x;
+        let x=(c.x-state.carOffset*c.speed/100)% (W+180); if(x< -120)x+=W+180;
         const y=c.y, sc=c.scale;
         bgCtx.fillStyle="rgba(8,12,18,.9)"; bgCtx.fillRect(x,y,42*sc,10*sc);
         const rg=bgCtx.createRadialGradient(x+5*sc,y+5*sc,0,x+5*sc,y+5*sc,18*sc); rg.addColorStop(0,c.tail); rg.addColorStop(1,"transparent"); bgCtx.fillStyle=rg; bgCtx.globalAlpha=.35; bgCtx.beginPath(); bgCtx.arc(x+5*sc,y+5*sc,18*sc,0,Math.PI*2); bgCtx.fill(); bgCtx.globalAlpha=1;
@@ -3178,8 +3289,14 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       if (state.started && !state.paused) {
         state.elapsed += dt; updateAudio();
         const phase = getActivePhase();
-        // Sem parallax nas fases de carro: o fundo só redesenha quando realmente necessário.
-        if(backgroundDirty) {
+        const movingPhase = phase.type === 'car' || phase.type === 'car_snow';
+        if(movingPhase) {
+          state.carOffset += dt * 300;
+        }
+        // Fases estáticas só redesenham quando necessário. Fases de carro,
+        // inclusive com arte incorporada, redesenham para o parallax funcionar.
+        const carFrameInterval=lowPowerDevice ? 46 : 30;
+        if(backgroundDirty || (movingPhase && time-lastBackgroundFrame>carFrameInterval)) {
           drawCityBackground();
           lastBackgroundFrame=time;
         }
