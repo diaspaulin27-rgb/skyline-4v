@@ -1402,6 +1402,9 @@ const phases = [
       setupFogMaskCanvas();
       if (typeof glassDropsSystem !== "undefined") glassDropsSystem.resize();
       generateCity(); drawCityBackground();
+      if(!state.isZen && state.currentPhase === 10 && typeof initPhase11PrototypeRain === "function") {
+        initPhase11PrototypeRain();
+      }
 
       if(preserveFog && maskSnapshot && previousGrid?.length){
         buildFogBase();
@@ -1880,6 +1883,72 @@ const phases = [
     }
 
     const rainParticles = Array.from({ length: MAX_RAIN_DROPS }, () => new Particle());
+
+    // ============================================================
+    // FASE 11 — PROTÓTIPO DE CHUVA ADAPTADO
+    // Baseado no código enviado pelo usuário. Só é usado na Fase 11.
+    // As demais fases continuam usando o sistema de chuva aprovado.
+    // ============================================================
+    const phase11PrototypeWeather = {
+      rainIntensity: 2, // leve/moderada para Moving Car
+      fogDensity: .35,
+      raindrops: []
+    };
+
+    function initPhase11PrototypeRain() {
+      const baseCount = Math.max(18, Math.floor((W * H) / 3000));
+      const count = Math.min(
+        MAX_RAIN_DROPS,
+        baseCount * phase11PrototypeWeather.rainIntensity
+      );
+
+      phase11PrototypeWeather.raindrops = [];
+      for(let i=0;i<count;i++){
+        phase11PrototypeWeather.raindrops.push({
+          x: Math.random() * W,
+          y: Math.random() * H,
+          length: 15 + Math.random() * 25,
+          // Código original usava 10–25 px por frame.
+          // Aqui convertemos para px/s para funcionar com dt.
+          speed: (10 + Math.random() * 15) * 60,
+          opacity: .2 + Math.random() * .4,
+          width: 1 + Math.random() * 1.5
+        });
+      }
+    }
+
+    function updateAndRenderPhase11PrototypeRain(dt) {
+      if(!phase11PrototypeWeather.raindrops.length) initPhase11PrototypeRain();
+
+      // A chuva existe somente dentro do recorte real da janela da Fase 11.
+      const clipped = clipToCarGlass(rainCtx);
+
+      rainCtx.lineCap = 'round';
+      for(let i=0;i<phase11PrototypeWeather.raindrops.length;i++){
+        const drop = phase11PrototypeWeather.raindrops[i];
+        const drift = drop.speed * .1;
+
+        rainCtx.beginPath();
+        rainCtx.lineWidth = drop.width;
+        rainCtx.strokeStyle = `rgba(180,210,240,${drop.opacity})`;
+        rainCtx.moveTo(drop.x, drop.y);
+        rainCtx.lineTo(
+          drop.x - drift * (drop.length / Math.max(1, drop.speed)),
+          drop.y + drop.length
+        );
+        rainCtx.stroke();
+
+        drop.y += drop.speed * dt;
+        drop.x -= drift * dt;
+
+        if(drop.y > H + drop.length || drop.x < -80){
+          drop.y = -drop.length - Math.random() * H * .18;
+          drop.x = Math.random() * (W + 100);
+        }
+      }
+
+      if(clipped) rainCtx.restore();
+    }
 
     // ============================================================
     // NEVE ❄️ — SISTEMA DEDICADO
@@ -2490,6 +2559,17 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       fogBaseCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
       fogBaseCtx.clearRect(0, 0, W, H);
 
+      const phase = getActivePhase();
+
+      // Fase 11: névoa simples do protótipo enviado pelo usuário.
+      // O recorte e a limpeza continuam sendo controlados pela máscara da janela.
+      if(!state.isZen && state.currentPhase === 10){
+        fogBaseCtx.fillStyle = `rgba(180,195,210,${phase11PrototypeWeather.fogDensity})`;
+        fogBaseCtx.fillRect(0,0,W,H);
+        fogBaseCtx.globalAlpha = 1;
+        return;
+      }
+
       // A base visual é gerada uma única vez. No Zen só a máscara muda,
       // então a névoa não acumula branco nem forma blocos.
       fogBaseCtx.save();
@@ -2498,7 +2578,6 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       fogBaseCtx.drawImage(bgCanvas, 0, 0, bgCanvas.width, bgCanvas.height, -12, -12, W + 24, H + 24);
       fogBaseCtx.restore();
 
-      const phase = getActivePhase();
       const fogOpacity = Math.max(.18, Math.min(.48, (phase.fog ?? .40) * .86));
       fogBaseCtx.fillStyle = `rgba(190,205,213,${fogOpacity})`;
       fogBaseCtx.fillRect(0, 0, W, H);
@@ -3150,6 +3229,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       const activePhase = getActivePhase();
       applyPhaseAtmosphere(activePhase);
       rainParticles.forEach(p=>p.reset(true));
+      if(!zen && idx === 10) initPhase11PrototypeRain();
       glassDropsSystem.resetForPhase();
       initFog(); updatePhaseUI();
       document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
@@ -3359,6 +3439,9 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         // CHUVA — BLOCO APROVADO, preservado.
         // =====================================================
         else {
+          if(!state.isZen && state.currentPhase === 10){
+            updateAndRenderPhase11PrototypeRain(dt);
+          } else {
           // Cada chuva agora tem quantidade própria. A intensidade (phase.rain)
           // continua importando, mas rainStyle passa a definir a personalidade do mapa.
           const rainProfile = getRainStyleProfile(phase);
@@ -3414,6 +3497,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
             if (rainParticles[i].y > H + 80) {
               rainParticles[i].reset();
             }
+          }
           }
         }
 
