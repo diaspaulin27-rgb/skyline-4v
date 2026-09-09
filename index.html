@@ -1050,14 +1050,12 @@ const phases = [
         [.197917,.596337]
       ],
       drops:[
-        [.224,.622,.0042,.0080,.22],
-        [.274,.632,.0034,.0068,.18],
-        [.327,.641,.0040,.0076,.20],
-        [.205,.657,.0033,.0063,.17],
-        [.253,.675,.0044,.0084,.21],
-        [.312,.674,.0031,.0062,.17],
-        [.349,.666,.0036,.0070,.18],
-        [.291,.697,.0028,.0054,.16]
+        [.221,.623,.0030,.0058,.14],
+        [.270,.632,.0028,.0054,.13],
+        [.323,.641,.0030,.0058,.14],
+        [.244,.662,.0029,.0056,.13],
+        [.300,.674,.0031,.0060,.14],
+        [.345,.667,.0028,.0053,.12]
       ]
     });
 
@@ -1210,7 +1208,7 @@ const phases = [
       ctx.restore();
     }
 
-    function drawPhase11FixedMirrorDrops(ctx) {
+    function drawPhase11PermanentMirrorEffect(ctx) {
       const profile=getPhase11MirrorProfile();
       if(!profile) return;
       const transform=getArtworkTransform();
@@ -1219,50 +1217,7 @@ const phases = [
       tracePhase11MirrorPolygon(ctx,transform);
       ctx.clip();
 
-      // Gotas fixas ficam em uma camada baixa, por baixo da névoa.
-      // Assim aparecem apenas como detalhe do vidro externo.
-      for(const [nx,ny,nrx,nry,alpha] of profile.drops){
-        const p=artworkPoint(nx,ny,transform);
-        const dropRx=Math.max(1.05,nrx*transform.dw);
-        const dropRy=Math.max(1.8,nry*transform.dh);
-
-        ctx.save();
-        ctx.globalAlpha=alpha*.62;
-        const grad=ctx.createRadialGradient(
-          p.x-dropRx*.25,p.y-dropRy*.28,Math.max(.4,dropRx*.10),
-          p.x,p.y,Math.max(dropRx,dropRy)
-        );
-        grad.addColorStop(0,'rgba(255,255,255,.44)');
-        grad.addColorStop(.34,'rgba(214,230,240,.16)');
-        grad.addColorStop(.72,'rgba(175,203,220,.075)');
-        grad.addColorStop(1,'rgba(120,155,178,.025)');
-        ctx.fillStyle=grad;
-        ctx.beginPath();
-        ctx.ellipse(p.x,p.y,dropRx,dropRy,-.08,0,Math.PI*2);
-        ctx.fill();
-
-        ctx.strokeStyle='rgba(245,251,255,.12)';
-        ctx.lineWidth=Math.max(.55,transform.scale*.55);
-        ctx.beginPath();
-        ctx.arc(p.x-dropRx*.12,p.y-dropRy*.18,Math.max(.45,dropRx*.38),Math.PI*1.05,Math.PI*1.72);
-        ctx.stroke();
-        ctx.restore();
-      }
-
-      ctx.restore();
-    }
-
-    function drawPhase11PermanentMirrorHaze(ctx) {
-      const profile=getPhase11MirrorProfile();
-      if(!profile) return;
-      const transform=getArtworkTransform();
-
-      ctx.save();
-      tracePhase11MirrorPolygon(ctx,transform);
-      ctx.clip();
-
-      // Névoa permanente leve, desenhada NA camada de névoa.
-      // Ela fica sobre as gotas fixas e deixa o retrovisor mais integrado.
+      // Detalhe sutil: o efeito fica abaixo da névoa principal e não domina a cena.
       const p0=artworkPoint(.185,.598,transform);
       const p1=artworkPoint(.392,.710,transform);
       const cx=(p0.x+p1.x)*.5;
@@ -1271,23 +1226,52 @@ const phases = [
       const ry=Math.max(1,(p1.y-p0.y)*.72);
 
       const haze=ctx.createRadialGradient(
-        cx-rx*.18,cy-ry*.20,Math.max(1,ry*.08),
+        cx-rx*.16,cy-ry*.18,Math.max(.8,ry*.07),
         cx,cy,Math.max(rx,ry)
       );
-      haze.addColorStop(0,'rgba(224,234,239,.085)');
-      haze.addColorStop(.58,'rgba(196,211,220,.060)');
-      haze.addColorStop(1,'rgba(171,190,202,.030)');
+      haze.addColorStop(0,'rgba(224,234,239,.075)');
+      haze.addColorStop(.58,'rgba(196,211,220,.050)');
+      haze.addColorStop(1,'rgba(171,190,202,.022)');
       ctx.fillStyle=haze;
-      ctx.fillRect(p0.x-8,p0.y-8,(p1.x-p0.x)+16,(p1.y-p0.y)+16);
+      ctx.fillRect(p0.x-6,p0.y-6,(p1.x-p0.x)+12,(p1.y-p0.y)+12);
 
       ctx.save();
-      ctx.filter='blur(2px)';
-      ctx.globalAlpha=.14;
-      ctx.fillStyle='rgba(229,238,243,.12)';
+      ctx.filter='blur(1.4px)';
+      ctx.globalAlpha=.10;
+      ctx.fillStyle='rgba(229,238,243,.10)';
       ctx.beginPath();
-      ctx.ellipse(cx-rx*.06,cy-ry*.04,rx*.72,ry*.55,0,0,Math.PI*2);
+      ctx.ellipse(cx-rx*.05,cy-ry*.03,rx*.70,ry*.52,0,0,Math.PI*2);
       ctx.fill();
       ctx.restore();
+
+      // 6 gotas pequenas, discretas e fixas.
+      for(const [nx,ny,nrx,nry,alpha] of profile.drops){
+        const p=artworkPoint(nx,ny,transform);
+        const dropRx=Math.max(.85,nrx*transform.dw);
+        const dropRy=Math.max(1.45,nry*transform.dh);
+
+        ctx.save();
+        ctx.globalAlpha=alpha;
+        const grad=ctx.createRadialGradient(
+          p.x-dropRx*.24,p.y-dropRy*.26,Math.max(.28,dropRx*.10),
+          p.x,p.y,Math.max(dropRx,dropRy)
+        );
+        grad.addColorStop(0,'rgba(255,255,255,.42)');
+        grad.addColorStop(.34,'rgba(214,230,240,.14)');
+        grad.addColorStop(.72,'rgba(175,203,220,.07)');
+        grad.addColorStop(1,'rgba(120,155,178,.03)');
+        ctx.fillStyle=grad;
+        ctx.beginPath();
+        ctx.ellipse(p.x,p.y,dropRx,dropRy,-.08,0,Math.PI*2);
+        ctx.fill();
+
+        ctx.strokeStyle='rgba(245,251,255,.14)';
+        ctx.lineWidth=Math.max(.4,transform.scale*.36);
+        ctx.beginPath();
+        ctx.arc(p.x-dropRx*.10,p.y-dropRy*.16,Math.max(.30,dropRx*.32),Math.PI*1.05,Math.PI*1.70);
+        ctx.stroke();
+        ctx.restore();
+      }
 
       ctx.restore();
     }
@@ -2969,11 +2953,6 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       fogCtx.globalCompositeOperation="destination-in";
       fogCtx.drawImage(fogMaskCanvas,0,0,fogMaskCanvas.width,fogMaskCanvas.height,0,0,W,H);
       fogCtx.restore();
-
-      // Retrovisor da Fase 11: névoa permanente na própria camada de névoa.
-      // Isso mantém o efeito abaixo das camadas superiores e apenas como detalhe.
-      drawPhase11PermanentMirrorHaze(fogCtx);
-
       fogVisualDirty=false;
     }
 
@@ -3597,7 +3576,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
 
           if (rainClipped) rainCtx.restore();
           erasePhase11MirrorFromContext(rainCtx);
-          drawPhase11FixedMirrorDrops(rainCtx);
+          drawPhase11PermanentMirrorEffect(rainCtx);
           if (isCarPhase()) eraseMirrorFromContext(rainCtx);
 
           for (let i = activeRainCount; i < rainParticles.length; i++) {
@@ -3612,8 +3591,9 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         glassDropsSystem.draw(glassCtx);
         if(glassClipped) glassCtx.restore();
 
-        // Fase 11: nenhuma gota dinâmica invade o retrovisor.
-        // O detalhe fixo agora fica em camadas inferiores, sob a névoa.
+        // Fase 11: limpa qualquer gota dinâmica do retrovisor.
+        // O detalhe permanente é desenhado abaixo da névoa principal,
+        // no rainCtx, para não ficar por cima do efeito geral.
         erasePhase11MirrorFromContext(glassCtx);
 
         if(isCarPhase()){
