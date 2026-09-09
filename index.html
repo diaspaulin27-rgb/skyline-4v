@@ -1032,14 +1032,19 @@ const phases = [
     // substituindo a antiga elipse aproximada. Assim, a névoa estética e as
     // gotas fixas ficam presas somente no vidro real do retrovisor.
     const PHASE11_MIRROR_GLASS_PROFILE = Object.freeze({
+      // Contorno do VIDRO interno do retrovisor, extraído da linha vermelha
+      // da referência enviada pelo usuário. Não inclui a carcaça preta.
       polygon:[
-        [.144531,.594872],[.147135,.578755],[.156250,.569231],[.178385,.564103],
-        [.214844,.561905],[.253906,.562637],[.294271,.565568],[.328125,.572161],
-        [.355469,.581685],[.377604,.597070],[.389323,.614652],[.394531,.634432],
-        [.393229,.656410],[.386719,.674725],[.373698,.688645],[.352865,.695971],
-        [.319010,.700366],[.276042,.702564],[.229167,.703297],[.183594,.701099],
-        [.153646,.696703],[.135417,.687179],[.126302,.673260],[.122396,.654212],
-        [.122396,.631502],[.125000,.611722],[.132812,.600733]
+        [.187500,.594872],
+        [.187500,.646154],
+        [.208333,.701099],
+        [.325521,.698901],
+        [.365885,.694505],
+        [.385417,.687179],
+        [.393229,.672527],
+        [.388021,.651282],
+        [.356771,.613187],
+        [.205729,.589744]
       ]
     });
 
@@ -1158,6 +1163,25 @@ const phases = [
     }
 
     function getMirrorScreenGeometry(profile = getMirrorVisualProfile(), transform = getArtworkTransform()) {
+      // Na Fase 11, a geometria visual também nasce do polígono exato do vidro.
+      // Isso centraliza névoa e gotas dentro do espelho em vez de usar a antiga
+      // elipse aproximada, que ficava deslocada para cima/esquerda.
+      const phase11Mirror=getPhase11MirrorGlassProfile();
+      if(phase11Mirror?.polygon?.length){
+        const xs=phase11Mirror.polygon.map(p=>p[0]);
+        const ys=phase11Mirror.polygon.map(p=>p[1]);
+        const minX=Math.min(...xs), maxX=Math.max(...xs);
+        const minY=Math.min(...ys), maxY=Math.max(...ys);
+        const center=artworkPoint((minX+maxX)/2,(minY+maxY)/2,transform);
+        return {
+          cx:center.x,
+          cy:center.y,
+          rx:(maxX-minX)*transform.dw/2,
+          ry:(maxY-minY)*transform.dh/2,
+          rotation:0
+        };
+      }
+
       if(!profile?.mirror) return null;
       const m=profile.mirror;
       const center=artworkPoint(m.cx,m.cy,transform);
