@@ -1090,9 +1090,9 @@ const phases = [
       const p=screenToArtwork(x,y);
       if(!pointInPolygon(p.x,p.y,profile.polygon)) return false;
 
-      // O retrovisor nunca faz parte da área limpável.
-      // Na fase 11 usamos uma máscara exclusiva da janela, então o espelho
-      // precisa ser excluído manualmente para continuar não limpável.
+      // Em fases de carro antigas, um perfil com mirror pode excluir o próprio
+      // espelho da interação. Na Fase 11 atual, a máscara principal não contém
+      // mirror, então a névoa da janela continua limpável normalmente sobre ele.
       const baseMirror = profile.mirror || getCarGlassProfile()?.mirror;
       if(baseMirror && pointInRotatedEllipse(p.x,p.y,baseMirror)) return false;
       return true;
@@ -1109,7 +1109,14 @@ const phases = [
       return true;
     }
 
-    function getMirrorScreenGeometry(profile = getCarGlassProfile(), transform = getArtworkTransform()) {
+    function getMirrorVisualProfile() {
+      // Fase 11 é "rain" de propósito, então não entra em isCarPhase().
+      // Mesmo assim ela possui um retrovisor visual que precisa do detalhe fixo.
+      if(!state.isZen && state.currentPhase === 10) return CAR_GLASS_PROFILES[10];
+      return getCarGlassProfile();
+    }
+
+    function getMirrorScreenGeometry(profile = getMirrorVisualProfile(), transform = getArtworkTransform()) {
       if(!profile?.mirror) return null;
       const m=profile.mirror;
       const center=artworkPoint(m.cx,m.cy,transform);
@@ -1666,9 +1673,12 @@ const phases = [
         if(isCarPhase()){
           if(state.currentPhase===16) drawTunnelParallax(image,transform);
           else drawSideCarParallax(image,transform);
+        }
 
-          // O detalhe fixo do retrovisor é parte da arte e precisa ficar por trás
-          // da chuva e da névoa principais.
+        // FASE 11: o retrovisor é apenas um detalhe estético embutido na arte.
+        // Ele é desenhado no bgCanvas (z-index 1), portanto chuva e névoa
+        // principais continuam passando normalmente por cima dele.
+        if(!state.isZen && state.currentPhase === 10){
           drawPermanentMirrorFog(bgCtx);
         }
 
@@ -2620,7 +2630,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       fogMaskCtx.restore();
 
       // A névoa principal continua passando por cima do retrovisor normalmente.
-      // O bloqueio de limpeza do espelho é tratado em isPointInPlayableGlass().
+      // O detalhe fixo do espelho vive no background e não participa desta máscara.
     }
 
     function resetFogMask() {
@@ -2632,7 +2642,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         traceCarGlassPolygon(fogMaskCtx,profile);
         fogMaskCtx.fill();
         // Mantém a névoa principal atravessando o retrovisor.
-        // O espelho continua não limpável via isPointInPlayableGlass().
+        // Ao limpar a janela, só esta névoa principal some; o detalhe fixo permanece.
       } else {
         fogMaskCtx.fillRect(0,0,W,H);
       }
