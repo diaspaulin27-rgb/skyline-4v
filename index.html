@@ -1027,6 +1027,14 @@ const phases = [
       ]
     });
 
+    // FASE 11 — geometria EXCLUSIVA do vidro do retrovisor.
+    // É usada apenas para o detalhe visual permanente (leve névoa + gotas fixas).
+    // Não entra na máscara principal da névoa/janela, para a névoa do jogo continuar
+    // passando normalmente na frente do retrovisor.
+    const PHASE11_MIRROR_PROFILE = Object.freeze({
+      mirror:{cx:.238,cy:.639,rx:.105,ry:.052,rotation:.000}
+    });
+
     function isCarPhase(phase = getActivePhase()) {
       return !state.isZen && (phase?.type === "car" || phase?.type === "car_snow");
     }
@@ -1037,6 +1045,14 @@ const phases = [
 
     function getPhase11WindowProfile() {
       return (!state.isZen && state.currentPhase === 10) ? PHASE11_WINDOW_PROFILE : null;
+    }
+
+    function getPhase11MirrorProfile() {
+      return (!state.isZen && state.currentPhase === 10) ? PHASE11_MIRROR_PROFILE : null;
+    }
+
+    function getMirrorProfile() {
+      return getPhase11MirrorProfile() || getCarGlassProfile();
     }
 
     function getPlayableGlassProfile() {
@@ -1104,7 +1120,7 @@ const phases = [
       return true;
     }
 
-    function getMirrorScreenGeometry(profile = getCarGlassProfile(), transform = getArtworkTransform()) {
+    function getMirrorScreenGeometry(profile = getMirrorProfile(), transform = getArtworkTransform()) {
       if(!profile?.mirror) return null;
       const m=profile.mirror;
       const center=artworkPoint(m.cx,m.cy,transform);
@@ -1148,74 +1164,28 @@ const phases = [
     function drawPermanentMirrorFog(ctx) {
       const mirror=getMirrorScreenGeometry();
       if(!mirror) return;
-
-      // Este detalhe é propositalmente "embutido" na arte.
-      // Ele vive no fundo, dentro do vidro do retrovisor, sem competir
-      // com a névoa/chuva principal da janela.
-      const innerRx = mirror.rx * .74;
-      const innerRy = mirror.ry * .72;
-      const droplets = [
-        {x:-.54,y:-.22,r:.050,a:.26}, {x:-.40,y:-.12,r:.042,a:.24},
-        {x:-.22,y:-.26,r:.037,a:.22}, {x:-.10,y:-.08,r:.045,a:.23},
-        {x:.04,y:-.18,r:.040,a:.24},  {x:.18,y:-.28,r:.036,a:.22},
-        {x:.34,y:-.13,r:.043,a:.24},  {x:.48,y:-.02,r:.035,a:.21},
-        {x:-.47,y:.03,r:.032,a:.21},  {x:-.31,y:.15,r:.038,a:.23},
-        {x:-.14,y:.10,r:.030,a:.20},  {x:.02,y:.19,r:.034,a:.21},
-        {x:.19,y:.09,r:.031,a:.20},   {x:.36,y:.18,r:.036,a:.22},
-        {x:.52,y:.12,r:.030,a:.19},   {x:-.05,y:.31,r:.033,a:.20},
-        {x:.12,y:.32,r:.028,a:.18},   {x:.30,y:.30,r:.026,a:.17}
-      ];
-
       ctx.save();
-      ctx.translate(mirror.cx, mirror.cy);
+      ctx.translate(mirror.cx,mirror.cy);
       ctx.rotate(mirror.rotation);
-
-      ctx.beginPath();
-      ctx.ellipse(0, 0, innerRx, innerRy, 0, 0, Math.PI * 2);
-      ctx.clip();
-
-      const fogBase = ctx.createRadialGradient(
-        -innerRx * .18, -innerRy * .14, innerRy * .05,
-        0, 0, innerRx * 1.04
+      // Névoa propositalmente discreta: o retrovisor fica do lado de fora
+      // e nunca participa da limpeza do vidro da cabine.
+      const gradient=ctx.createRadialGradient(
+        -mirror.rx*.18,-mirror.ry*.18,mirror.ry*.08,
+        0,0,mirror.rx
       );
-      fogBase.addColorStop(0, "rgba(225,235,242,.095)");
-      fogBase.addColorStop(.62, "rgba(195,208,218,.060)");
-      fogBase.addColorStop(1, "rgba(170,188,200,.024)");
-      ctx.fillStyle = fogBase;
-      ctx.fillRect(-innerRx - 4, -innerRy - 4, innerRx * 2 + 8, innerRy * 2 + 8);
-
-      ctx.save();
-      ctx.globalAlpha = .18;
-      ctx.filter = "blur(1.8px)";
-      ctx.fillStyle = "rgba(236,242,246,.11)";
+      gradient.addColorStop(0,"rgba(220,232,238,.16)");
+      gradient.addColorStop(.62,"rgba(194,210,220,.115)");
+      gradient.addColorStop(1,"rgba(170,190,205,.055)");
+      ctx.fillStyle=gradient;
       ctx.beginPath();
-      ctx.ellipse(-innerRx*.08, -innerRy*.04, innerRx*.58, innerRy*.42, 0, 0, Math.PI*2);
+      ctx.ellipse(0,0,mirror.rx*.86,mirror.ry*.74,0,0,Math.PI*2);
       ctx.fill();
-      ctx.restore();
-
-      for (const d of droplets) {
-        const x = d.x * innerRx;
-        const y = d.y * innerRy;
-        const r = Math.max(1.1, Math.min(innerRx, innerRy) * d.r);
-
-        ctx.beginPath();
-        ctx.fillStyle = `rgba(220,230,238,${d.a})`;
-        ctx.ellipse(x, y, r * 1.02, r * .92, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.fillStyle = `rgba(255,255,255,${Math.min(.22, d.a + .03)})`;
-        ctx.ellipse(x - r * .22, y - r * .22, r * .33, r * .24, -.35, 0, Math.PI * 2);
-        ctx.fill();
-
-        if (d.a > .21) {
-          ctx.beginPath();
-          ctx.fillStyle = `rgba(210,220,228,${d.a * .50})`;
-          ctx.ellipse(x, y + r * .82, r * .24, r * .38, 0, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-
+      ctx.globalAlpha=.24;
+      ctx.filter="blur(2.2px)";
+      ctx.fillStyle="rgba(232,240,244,.16)";
+      ctx.beginPath();
+      ctx.ellipse(-mirror.rx*.08,-mirror.ry*.03,mirror.rx*.70,mirror.ry*.50,0,0,Math.PI*2);
+      ctx.fill();
       ctx.restore();
     }
 
@@ -1653,7 +1623,6 @@ const phases = [
         if(isCarPhase()){
           if(state.currentPhase===16) drawTunnelParallax(image,transform);
           else drawSideCarParallax(image,transform);
-          if(state.currentPhase===10) drawPermanentMirrorFog(bgCtx);
         }
 
         // Gradação vertical discreta: conserva a arte, mas a coloca dentro do mesmo
@@ -1664,6 +1633,13 @@ const phases = [
         grade.addColorStop(1, "rgba(2,6,14,.105)");
         bgCtx.fillStyle = grade;
         bgCtx.fillRect(0, 0, W, H);
+
+        // Fase 11: detalhe fixo do retrovisor deve fazer parte do fundo,
+        // ficando atrás da chuva e da névoa principal.
+        if(!state.isZen && state.currentPhase === 10) {
+          drawPermanentMirrorFog(bgCtx);
+        }
+
         backgroundDirty = false;
         return;
       }
@@ -3499,6 +3475,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         if(glassClipped) glassCtx.restore();
         if(isCarPhase()){
           eraseMirrorFromContext(glassCtx);
+          drawPermanentMirrorFog(glassCtx);
         }
         if(!state.isZen){
           glassDropsSystem.replenish();
