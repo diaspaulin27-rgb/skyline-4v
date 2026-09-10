@@ -1199,41 +1199,42 @@ const phases = [
     }
 
     // =========================================================
-    // FASE 11 — PARALLAX V5 / CORTE DIREITO
-    // A linha branca da referência define o começo da textura repetível.
-    // Nada à esquerda desse corte entra no loop: retrovisor, moldura e começo
-    // do guard-rail ficam fora da textura móvel. A própria arte original é a fonte.
+    // FASE 11 — PARALLAX V6 / ÚLTIMA TENTATIVA
+    // Estratégia: a arte base continua 100% intacta e fixa. Só a parte visível
+    // da janela recebe um loop de profundidade. Para evitar conflitos com o
+    // retrovisor e com o começo do guard-rail, a textura repetível nasce no
+    // lado direito da arte, a partir do corte abaixo.
     // =========================================================
-    const PHASE11_REPEAT_CUT_X = 0.505; // ~linha branca da referência (50,5% da arte)
+    const PHASE11_REPEAT_CUT_X = 0.505;
 
     const PHASE11_REPEAT_LAYERS = Object.freeze({
-      sky:   { y:0.000, h:0.640, speed:0.020 }, // rosa — muito leve
-      city:  { y:0.431, h:0.196, speed:0.145 }, // verde — médio
-      water: { y:0.627, h:0.190, speed:0.170 }, // roxo — médio
-      rail:  { y:0.617, h:0.180, speed:0.620 }  // laranja — rápido
+      // Os recortes seguem exatamente a lógica aprovada pelo usuário:
+      // céu = leve | cidade = médio | água = médio | guard-rail = rápido.
+      sky:   { y:0.000, h:0.640, speed:0.018, bob:0.18 },
+      city:  { y:0.431, h:0.196, speed:0.110, bob:0.34 },
+      water: { y:0.627, h:0.190, speed:0.145, bob:0.24 },
+      rail:  { y:0.617, h:0.180, speed:0.420, bob:0.10 }
     });
 
-    function drawPhase11RightRepeatLayer(ctx, image, transform, layer, travel, bob=0) {
+    function drawPhase11RightRepeatLayer(ctx, image, transform, layer, travel, breath=0) {
       if(!image?.naturalWidth || !image?.naturalHeight || !layer) return;
 
-      // Recorta SOMENTE o lado direito da linha branca na imagem original.
       const sx = Math.round(image.naturalWidth * PHASE11_REPEAT_CUT_X);
       const sw = Math.max(2, image.naturalWidth - sx);
       const sy = Math.round(image.naturalHeight * layer.y);
       const sh = Math.max(2, Math.round(image.naturalHeight * layer.h));
 
       const dx0 = transform.dx + PHASE11_REPEAT_CUT_X * transform.dw;
-      const dy  = transform.dy + layer.y * transform.dh + bob;
+      const dy  = transform.dy + layer.y * transform.dh + breath * layer.bob;
       const dw  = (1 - PHASE11_REPEAT_CUT_X) * transform.dw;
       const dh  = layer.h * transform.dh;
       if(dw <= 1 || dh <= 1) return;
 
-      // Movimento contínuo na direção já aprovada para vender o carro avançando.
-      // O módulo mantém o loop infinito sem trazer nenhuma parte da esquerda.
+      // Direção corrigida: a paisagem corre para trás, vendendo o carro indo pra frente.
       const offset = ((travel * layer.speed) % dw + dw) % dw;
       let x = dx0 + offset - dw;
 
-      // Uma pequena sobreposição de 1px evita frestas por arredondamento no Safari.
+      // Pequena sobreposição para o Safari não mostrar frestas de 1px.
       while(x < W + dw) {
         ctx.drawImage(image, sx, sy, sw, sh, x, dy, dw + 1, dh);
         x += dw;
@@ -1246,30 +1247,41 @@ const phases = [
 
       const travel = state.carOffset;
       const cutScreenX = transform.dx + PHASE11_REPEAT_CUT_X * transform.dw;
-      const bob = Math.sin(state.elapsed * 1.1) * 0.8;
+      const breath = Math.sin(state.elapsed * 1.1) * 0.8;
 
       bgCtx.save();
 
-      // Primeiro limite: vidro real da Fase 11.
+      // 1) Limita o efeito ao vidro real da Fase 11.
       traceCarGlassPolygon(bgCtx,windowProfile,transform);
       bgCtx.clip();
 
-      // Segundo limite: só o lado DIREITO da linha branca pode receber parallax.
-      // O lado esquerdo é literalmente removido da textura repetível.
+      // 2) Só o lado direito entra no loop; o lado esquerdo da arte base continua parado.
       bgCtx.beginPath();
-      bgCtx.rect(cutScreenX, transform.dy - 4, W - cutScreenX + 8, transform.dh + 8);
+      bgCtx.rect(cutScreenX - 2, transform.dy - 8, W - cutScreenX + 18, transform.dh + 16);
       bgCtx.clip();
 
-      // Cada profundidade usa o MESMO corte direito, mas corre em velocidade própria.
-      drawPhase11RightRepeatLayer(bgCtx,image,transform,PHASE11_REPEAT_LAYERS.sky,travel,bob*0.20);
-      drawPhase11RightRepeatLayer(bgCtx,image,transform,PHASE11_REPEAT_LAYERS.city,travel,bob*0.45);
-      drawPhase11RightRepeatLayer(bgCtx,image,transform,PHASE11_REPEAT_LAYERS.water,travel,bob*0.55);
-      drawPhase11RightRepeatLayer(bgCtx,image,transform,PHASE11_REPEAT_LAYERS.rail,travel,bob*0.75);
+      drawPhase11RightRepeatLayer(bgCtx,image,transform,PHASE11_REPEAT_LAYERS.sky,travel,breath);
+      drawPhase11RightRepeatLayer(bgCtx,image,transform,PHASE11_REPEAT_LAYERS.city,travel,breath);
+      drawPhase11RightRepeatLayer(bgCtx,image,transform,PHASE11_REPEAT_LAYERS.water,travel,breath);
+      drawPhase11RightRepeatLayer(bgCtx,image,transform,PHASE11_REPEAT_LAYERS.rail,travel,breath);
 
       bgCtx.restore();
 
-      // O retrovisor não entra no tile. Apenas o vidro mantém o efeito sutil
-      // de afastamento já existente, separado da repetição principal.
+      // 3) Faixa atmosférica discreta para esconder a transição rígida do corte.
+      bgCtx.save();
+      traceCarGlassPolygon(bgCtx,windowProfile,transform);
+      bgCtx.clip();
+      const seam = bgCtx.createLinearGradient(cutScreenX - 22, 0, cutScreenX + 32, 0);
+      seam.addColorStop(0.00, 'rgba(4,8,16,0.000)');
+      seam.addColorStop(0.35, 'rgba(8,12,22,0.012)');
+      seam.addColorStop(0.70, 'rgba(8,12,22,0.032)');
+      seam.addColorStop(1.00, 'rgba(8,12,22,0.060)');
+      bgCtx.fillStyle = seam;
+      bgCtx.fillRect(cutScreenX - 22, transform.dy - 4, 54, transform.dh + 8);
+      bgCtx.restore();
+
+      // 4) O retrovisor não participa do tile principal. Só o vidro interno mantém
+      // o afastamento sutil já existente, para não quebrar a carcaça fixa.
       drawPhase11MirrorRecession(image,transform);
       return true;
     }
