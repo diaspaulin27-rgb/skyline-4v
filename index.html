@@ -1186,6 +1186,7 @@ const phases = [
       const recession = rawRecession * rawRecession * (3 - 2 * rawRecession);
       const scale = 1.040 - recession * 0.040;
       const shiftX = mirror.width * 0.10 * recession;
+      const bob = Math.sin(state.elapsed * 1.1) * 0.8;
 
       bgCtx.save();
       tracePhase11ParallaxMirror(bgCtx,transform);
@@ -1193,7 +1194,7 @@ const phases = [
       bgCtx.translate(mirror.cx,mirror.cy);
       bgCtx.scale(scale,scale);
       bgCtx.translate(-mirror.cx,-mirror.cy);
-      drawImageCover(bgCtx,image,transform,shiftX,0,1);
+      drawImageCover(bgCtx,image,transform,shiftX,bob,1);
       bgCtx.restore();
     }
 
@@ -1212,9 +1213,13 @@ const phases = [
       if(!windowProfile) return false;
 
       // 1) Toda a paisagem móvel fica confinada à janela.
+      // Micro-bob de suspensão: menos de 1 px para o carro "respirar" sem
+      // mexer na moldura/interior vermelho, que continua 100% fixo.
+      const bob = Math.sin(state.elapsed * 1.1) * 0.8;
       bgCtx.save();
       traceCarGlassPolygon(bgCtx,windowProfile,transform);
       bgCtx.clip();
+      bgCtx.translate(0, bob);
 
       // FUNDO — céu: deslocamento muito leve.
       const sky = PHASE11_PARALLAX_LAYOUT.sky;
@@ -2046,6 +2051,11 @@ const phases = [
       return RAIN_STYLE_PROFILE[phase?.rainStyle] || RAIN_STYLE_PROFILE.steady;
     }
 
+    // Chuva em movimento de carro: inclinação aerodinâmica discreta de 12°.
+    // Vale para a Fase 11 (parallax especial) e para fases do tipo "car".
+    const CAR_RAIN_TILT_RADIANS = 12 * Math.PI / 180;
+    const CAR_RAIN_TILT_TAN = Math.tan(CAR_RAIN_TILT_RADIANS);
+
     class Particle {
       constructor() { this.reset(true); }
 
@@ -2156,10 +2166,11 @@ const phases = [
           this.currentVx = this.wind;
           this.currentVy = this.vy;
 
-          // Nas fases de carro, mantém a sensação da paisagem em movimento,
-          // mas sem criar outro tipo de chuva.
-          if (phase.type === 'car') {
-            this.currentVx += 185 * (.35 + this.z * .95);
+          // Em cenas de carro, a chuva recebe uma inclinação aerodinâmica de 12°.
+          // A velocidade vertical, densidade, profundidade e personalidade da chuva
+          // continuam exatamente as mesmas; só a direção do traço é inclinada.
+          if (isPhase11ParallaxActive() || phase.type === 'car') {
+            this.currentVx += this.currentVy * CAR_RAIN_TILT_TAN;
           }
         }
 
