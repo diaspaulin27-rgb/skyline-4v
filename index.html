@@ -1064,14 +1064,12 @@ const phases = [
     });
 
     const PHASE11_PARALLAX_LAYOUT = Object.freeze({
-      // Mapa aprovado pelo usuário:
-      // vermelho = carro imóvel | rosa = céu leve | verde = cidade média
-      // roxo = água média | laranja = guard-rail rápido | preto = reflexo do retrovisor.
-      // As velocidades foram polidas para parecer avanço contínuo, sem sensação de ré.
-      sky:   { x:0.000000, y:0.000000, w:1.000000, h:0.639952, speed:0.022, bob:0.22 },
-      city:  { x:0.078640, y:0.431220, w:0.921360, h:0.195574, speed:0.120, bob:0.34 },
-      water: { x:0.000000, y:0.626794, w:1.000000, h:0.189593, speed:0.155, bob:0.24 },
-      rail:  { x:0.349628, y:0.616627, w:0.650372, h:0.180024, speed:0.540, bob:0.10 }
+      // Polimento V3: mantém a hierarquia de profundidade, mas com céu mais discreto
+      // e primeiro plano menos brusco no iPhone.
+      sky:   { x:0.000000, y:0.000000, w:1.000000, h:0.639952, speed:0.018 },
+      city:  { x:0.078640, y:0.431220, w:0.921360, h:0.195574, speed:0.150 },
+      water: { x:0.000000, y:0.626794, w:1.000000, h:0.189593, speed:0.170 },
+      rail:  { x:0.349628, y:0.616627, w:0.650372, h:0.180024, speed:0.600 }
     });
 
     const PHASE11_PARALLAX_MIRROR = Object.freeze({
@@ -1150,14 +1148,15 @@ const phases = [
     }
 
     // Tiles alternados (normal/espelhado) eliminam a emenda brusca na repetição.
-    // A paisagem corre para trás em uma única direção, reforçando que o carro avança.
+    // V3: direção invertida em relação ao protótipo aprovado. O conjunto inteiro
+    // agora corre continuamente para o OUTRO lado, sem seno e sem "vai e volta".
     function drawPhase11AlternatingTiles(ctx, image, x0, y0, tileW, tileH, travelPx) {
       if(!image || tileW<=1 || tileH<=1) return;
       const period = tileW * 2;
       const wrapped = ((travelPx % period) + period) % period;
       const anchor = x0 + wrapped;
-      const first = Math.floor((-tileW - anchor) / tileW) - 1;
-      const count = Math.ceil((W + tileW * 4) / tileW) + 8;
+      const first = Math.floor((-tileW - anchor) / tileW);
+      const count = Math.ceil((W + tileW * 4) / tileW) + 6;
 
       for(let n=0;n<count;n++) {
         const k = first + n;
@@ -1169,28 +1168,12 @@ const phases = [
         if(flipped) {
           ctx.translate(x + tileW, y0);
           ctx.scale(-1,1);
-          ctx.drawImage(image, 0, 0, tileW + 1, tileH);
+          ctx.drawImage(image, 0, 0, tileW, tileH);
         } else {
-          ctx.drawImage(image, x, y0, tileW + 1, tileH);
+          ctx.drawImage(image, x, y0, tileW, tileH);
         }
         ctx.restore();
       }
-    }
-
-    function drawPhase11LayerByDepth(ctx, image, transform, layout, travel, bob) {
-      if(!image || !layout) return;
-      const x = transform.dx + layout.x * transform.dw;
-      const y = transform.dy + layout.y * transform.dh;
-      const w = layout.w * transform.dw;
-      const h = layout.h * transform.dh;
-      const localBob = bob * (layout.bob ?? 0.2);
-
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(-24, y - 18, W + 48, h + 36);
-      ctx.clip();
-      drawPhase11AlternatingTiles(ctx, image, x, y + localBob, w, h, travel * layout.speed);
-      ctx.restore();
     }
 
     function drawPhase11MirrorRecession(image, transform) {
@@ -1215,47 +1198,78 @@ const phases = [
       bgCtx.restore();
     }
 
-    function drawPhase11DepthParallax(image, transform) {
-      if(!phase11ParallaxReady) return false;
+    // =========================================================
+    // FASE 11 — PARALLAX V5 / CORTE DIREITO
+    // A linha branca da referência define o começo da textura repetível.
+    // Nada à esquerda desse corte entra no loop: retrovisor, moldura e começo
+    // do guard-rail ficam fora da textura móvel. A própria arte original é a fonte.
+    // =========================================================
+    const PHASE11_REPEAT_CUT_X = 0.505; // ~linha branca da referência (50,5% da arte)
 
-      const skyImage   = phase11ParallaxImages.sky;
-      const cityImage  = phase11ParallaxImages.city;
-      const waterImage = phase11ParallaxImages.water;
-      const railImage  = phase11ParallaxImages.rail;
-      const fixedImage = phase11ParallaxImages.fixed;
-      if(!skyImage || !cityImage || !waterImage || !railImage || !fixedImage) return false;
+    const PHASE11_REPEAT_LAYERS = Object.freeze({
+      sky:   { y:0.000, h:0.640, speed:0.020 }, // rosa — muito leve
+      city:  { y:0.431, h:0.196, speed:0.145 }, // verde — médio
+      water: { y:0.627, h:0.190, speed:0.170 }, // roxo — médio
+      rail:  { y:0.617, h:0.180, speed:0.620 }  // laranja — rápido
+    });
+
+    function drawPhase11RightRepeatLayer(ctx, image, transform, layer, travel, bob=0) {
+      if(!image?.naturalWidth || !image?.naturalHeight || !layer) return;
+
+      // Recorta SOMENTE o lado direito da linha branca na imagem original.
+      const sx = Math.round(image.naturalWidth * PHASE11_REPEAT_CUT_X);
+      const sw = Math.max(2, image.naturalWidth - sx);
+      const sy = Math.round(image.naturalHeight * layer.y);
+      const sh = Math.max(2, Math.round(image.naturalHeight * layer.h));
+
+      const dx0 = transform.dx + PHASE11_REPEAT_CUT_X * transform.dw;
+      const dy  = transform.dy + layer.y * transform.dh + bob;
+      const dw  = (1 - PHASE11_REPEAT_CUT_X) * transform.dw;
+      const dh  = layer.h * transform.dh;
+      if(dw <= 1 || dh <= 1) return;
+
+      // Movimento contínuo na direção já aprovada para vender o carro avançando.
+      // O módulo mantém o loop infinito sem trazer nenhuma parte da esquerda.
+      const offset = ((travel * layer.speed) % dw + dw) % dw;
+      let x = dx0 + offset - dw;
+
+      // Uma pequena sobreposição de 1px evita frestas por arredondamento no Safari.
+      while(x < W + dw) {
+        ctx.drawImage(image, sx, sy, sw, sh, x, dy, dw + 1, dh);
+        x += dw;
+      }
+    }
+
+    function drawPhase11DepthParallax(image, transform) {
+      const windowProfile = getPhase11WindowProfile();
+      if(!windowProfile || !image?.naturalWidth) return false;
 
       const travel = state.carOffset;
-      const windowProfile = getPhase11WindowProfile();
-      if(!windowProfile) return false;
-
-      // Toda a paisagem móvel fica confinada à janela.
-      // O interior vermelho nunca se move. Só o mundo exterior e o reflexo do retrovisor.
+      const cutScreenX = transform.dx + PHASE11_REPEAT_CUT_X * transform.dw;
       const bob = Math.sin(state.elapsed * 1.1) * 0.8;
+
       bgCtx.save();
+
+      // Primeiro limite: vidro real da Fase 11.
       traceCarGlassPolygon(bgCtx,windowProfile,transform);
       bgCtx.clip();
-      bgCtx.translate(0, bob);
 
-      // Reconstrução por profundidade exatamente como no mapa colorido aprovado.
-      drawPhase11LayerByDepth(bgCtx, skyImage,   transform, PHASE11_PARALLAX_LAYOUT.sky,   travel, bob);
-      drawPhase11LayerByDepth(bgCtx, cityImage,  transform, PHASE11_PARALLAX_LAYOUT.city,  travel, bob);
-      drawPhase11LayerByDepth(bgCtx, waterImage, transform, PHASE11_PARALLAX_LAYOUT.water, travel, bob);
-      drawPhase11LayerByDepth(bgCtx, railImage,  transform, PHASE11_PARALLAX_LAYOUT.rail,  travel, bob);
+      // Segundo limite: só o lado DIREITO da linha branca pode receber parallax.
+      // O lado esquerdo é literalmente removido da textura repetível.
+      bgCtx.beginPath();
+      bgCtx.rect(cutScreenX, transform.dy - 4, W - cutScreenX + 8, transform.dh + 8);
+      bgCtx.clip();
 
-      // Velatura leve para unir as camadas e reduzir aspecto "quebrado".
-      const glaze = bgCtx.createLinearGradient(0,0,0,H);
-      glaze.addColorStop(0,'rgba(190,210,228,.030)');
-      glaze.addColorStop(1,'rgba(5,12,22,.060)');
-      bgCtx.fillStyle = glaze;
-      bgCtx.fillRect(0,0,W,H);
+      // Cada profundidade usa o MESMO corte direito, mas corre em velocidade própria.
+      drawPhase11RightRepeatLayer(bgCtx,image,transform,PHASE11_REPEAT_LAYERS.sky,travel,bob*0.20);
+      drawPhase11RightRepeatLayer(bgCtx,image,transform,PHASE11_REPEAT_LAYERS.city,travel,bob*0.45);
+      drawPhase11RightRepeatLayer(bgCtx,image,transform,PHASE11_REPEAT_LAYERS.water,travel,bob*0.55);
+      drawPhase11RightRepeatLayer(bgCtx,image,transform,PHASE11_REPEAT_LAYERS.rail,travel,bob*0.75);
+
       bgCtx.restore();
 
-      // Interior/moldura/carcaça do retrovisor são recolocados exatamente
-      // sobre a paisagem e portanto permanecem 100% imóveis.
-      drawImageCover(bgCtx,fixedImage,transform,0,0,1);
-
-      // Só o vidro do retrovisor recebe o afastamento, como se o mundo ficasse para trás.
+      // O retrovisor não entra no tile. Apenas o vidro mantém o efeito sutil
+      // de afastamento já existente, separado da repetição principal.
       drawPhase11MirrorRecession(image,transform);
       return true;
     }
@@ -1877,25 +1891,21 @@ const phases = [
         const image = currentBackgroundImage;
         const transform=getArtworkTransform(image);
 
-        // FASE 11: quando as camadas dedicadas estiverem prontas, a cena inteira
-        // é recomposta por profundidade, mantendo o interior fixo e a janela viva.
+        // Interior do carro permanece absolutamente fixo. Só a paisagem visível
+        // através do vidro recebe o deslocamento de profundidade.
+        drawImageCover(bgCtx,image,transform,0,0,1);
+
+        // FASE 11: parallax novo por profundidade, sem reativar o sistema antigo
+        // de fases de carro. Chuva, névoa, limpeza e restante do jogo permanecem iguais.
         if(isPhase11ParallaxActive()){
-          const rendered = drawPhase11DepthParallax(image,transform);
-          if(!rendered) {
-            drawImageCover(bgCtx,image,transform,0,0,1);
-          }
-        } else {
-          // Demais fases continuam desenhando a arte base normalmente.
-          drawImageCover(bgCtx,image,transform,0,0,1);
+          drawPhase11DepthParallax(image,transform);
+        } else if(isCarPhase()){
+          if(state.currentPhase===16) drawTunnelParallax(image,transform);
+          else drawSideCarParallax(image,transform);
 
-          if(isCarPhase()){
-            if(state.currentPhase===16) drawTunnelParallax(image,transform);
-            else drawSideCarParallax(image,transform);
-
-            // O detalhe fixo do retrovisor é parte da arte e precisa ficar por trás
-            // da chuva e da névoa principais.
-            drawPermanentMirrorFog(bgCtx);
-          }
+          // O detalhe fixo do retrovisor é parte da arte e precisa ficar por trás
+          // da chuva e da névoa principais.
+          drawPermanentMirrorFog(bgCtx);
         }
 
         // Gradação vertical discreta: conserva a arte, mas a coloca dentro do mesmo
