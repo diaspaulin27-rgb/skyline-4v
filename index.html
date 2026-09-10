@@ -1064,12 +1064,14 @@ const phases = [
     });
 
     const PHASE11_PARALLAX_LAYOUT = Object.freeze({
-      // Polimento V3: mantém a hierarquia de profundidade, mas com céu mais discreto
-      // e primeiro plano menos brusco no iPhone.
-      sky:   { x:0.000000, y:0.000000, w:1.000000, h:0.639952, speed:0.018 },
-      city:  { x:0.078640, y:0.431220, w:0.921360, h:0.195574, speed:0.150 },
-      water: { x:0.000000, y:0.626794, w:1.000000, h:0.189593, speed:0.170 },
-      rail:  { x:0.349628, y:0.616627, w:0.650372, h:0.180024, speed:0.600 }
+      // Mapa aprovado pelo usuário:
+      // vermelho = carro imóvel | rosa = céu leve | verde = cidade média
+      // roxo = água média | laranja = guard-rail rápido | preto = reflexo do retrovisor.
+      // As velocidades foram polidas para parecer avanço contínuo, sem sensação de ré.
+      sky:   { x:0.000000, y:0.000000, w:1.000000, h:0.639952, speed:0.022, bob:0.22 },
+      city:  { x:0.078640, y:0.431220, w:0.921360, h:0.195574, speed:0.120, bob:0.34 },
+      water: { x:0.000000, y:0.626794, w:1.000000, h:0.189593, speed:0.155, bob:0.24 },
+      rail:  { x:0.349628, y:0.616627, w:0.650372, h:0.180024, speed:0.540, bob:0.10 }
     });
 
     const PHASE11_PARALLAX_MIRROR = Object.freeze({
@@ -1148,15 +1150,14 @@ const phases = [
     }
 
     // Tiles alternados (normal/espelhado) eliminam a emenda brusca na repetição.
-    // V3: direção invertida em relação ao protótipo aprovado. O conjunto inteiro
-    // agora corre continuamente para o OUTRO lado, sem seno e sem "vai e volta".
+    // A paisagem corre para trás em uma única direção, reforçando que o carro avança.
     function drawPhase11AlternatingTiles(ctx, image, x0, y0, tileW, tileH, travelPx) {
       if(!image || tileW<=1 || tileH<=1) return;
       const period = tileW * 2;
       const wrapped = ((travelPx % period) + period) % period;
       const anchor = x0 + wrapped;
-      const first = Math.floor((-tileW - anchor) / tileW);
-      const count = Math.ceil((W + tileW * 4) / tileW) + 6;
+      const first = Math.floor((-tileW - anchor) / tileW) - 1;
+      const count = Math.ceil((W + tileW * 4) / tileW) + 8;
 
       for(let n=0;n<count;n++) {
         const k = first + n;
@@ -1168,12 +1169,28 @@ const phases = [
         if(flipped) {
           ctx.translate(x + tileW, y0);
           ctx.scale(-1,1);
-          ctx.drawImage(image, 0, 0, tileW, tileH);
+          ctx.drawImage(image, 0, 0, tileW + 1, tileH);
         } else {
-          ctx.drawImage(image, x, y0, tileW, tileH);
+          ctx.drawImage(image, x, y0, tileW + 1, tileH);
         }
         ctx.restore();
       }
+    }
+
+    function drawPhase11LayerByDepth(ctx, image, transform, layout, travel, bob) {
+      if(!image || !layout) return;
+      const x = transform.dx + layout.x * transform.dw;
+      const y = transform.dy + layout.y * transform.dh;
+      const w = layout.w * transform.dw;
+      const h = layout.h * transform.dh;
+      const localBob = bob * (layout.bob ?? 0.2);
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(-24, y - 18, W + 48, h + 36);
+      ctx.clip();
+      drawPhase11AlternatingTiles(ctx, image, x, y + localBob, w, h, travel * layout.speed);
+      ctx.restore();
     }
 
     function drawPhase11MirrorRecession(image, transform) {
@@ -1212,65 +1229,33 @@ const phases = [
       const windowProfile = getPhase11WindowProfile();
       if(!windowProfile) return false;
 
-      // 1) Toda a paisagem móvel fica confinada à janela.
-      // Micro-bob de suspensão: menos de 1 px para o carro "respirar" sem
-      // mexer na moldura/interior vermelho, que continua 100% fixo.
+      // Toda a paisagem móvel fica confinada à janela.
+      // O interior vermelho nunca se move. Só o mundo exterior e o reflexo do retrovisor.
       const bob = Math.sin(state.elapsed * 1.1) * 0.8;
       bgCtx.save();
       traceCarGlassPolygon(bgCtx,windowProfile,transform);
       bgCtx.clip();
       bgCtx.translate(0, bob);
 
-      // FUNDO — céu: deslocamento muito leve.
-      const sky = PHASE11_PARALLAX_LAYOUT.sky;
-      drawPhase11AlternatingTiles(
-        bgCtx, skyImage,
-        transform.dx + sky.x * transform.dw,
-        transform.dy + sky.y * transform.dh,
-        sky.w * transform.dw,
-        sky.h * transform.dh,
-        travel * sky.speed
-      );
+      // Reconstrução por profundidade exatamente como no mapa colorido aprovado.
+      drawPhase11LayerByDepth(bgCtx, skyImage,   transform, PHASE11_PARALLAX_LAYOUT.sky,   travel, bob);
+      drawPhase11LayerByDepth(bgCtx, cityImage,  transform, PHASE11_PARALLAX_LAYOUT.city,  travel, bob);
+      drawPhase11LayerByDepth(bgCtx, waterImage, transform, PHASE11_PARALLAX_LAYOUT.water, travel, bob);
+      drawPhase11LayerByDepth(bgCtx, railImage,  transform, PHASE11_PARALLAX_LAYOUT.rail,  travel, bob);
 
-      // ÁGUA — plano médio.
-      const water = PHASE11_PARALLAX_LAYOUT.water;
-      drawPhase11AlternatingTiles(
-        bgCtx, waterImage,
-        transform.dx + water.x * transform.dw,
-        transform.dy + water.y * transform.dh,
-        water.w * transform.dw,
-        water.h * transform.dh,
-        travel * water.speed
-      );
-
-      // CIDADE — plano médio, um pouco mais lenta que a água.
-      const city = PHASE11_PARALLAX_LAYOUT.city;
-      drawPhase11AlternatingTiles(
-        bgCtx, cityImage,
-        transform.dx + city.x * transform.dw,
-        transform.dy + city.y * transform.dh,
-        city.w * transform.dw,
-        city.h * transform.dh,
-        travel * city.speed
-      );
-
-      // PRIMEIRO PLANO — guard-rail rápido.
-      const rail = PHASE11_PARALLAX_LAYOUT.rail;
-      drawPhase11AlternatingTiles(
-        bgCtx, railImage,
-        transform.dx + rail.x * transform.dw,
-        transform.dy + rail.y * transform.dh,
-        rail.w * transform.dw,
-        rail.h * transform.dh,
-        travel * rail.speed
-      );
+      // Velatura leve para unir as camadas e reduzir aspecto "quebrado".
+      const glaze = bgCtx.createLinearGradient(0,0,0,H);
+      glaze.addColorStop(0,'rgba(190,210,228,.030)');
+      glaze.addColorStop(1,'rgba(5,12,22,.060)');
+      bgCtx.fillStyle = glaze;
+      bgCtx.fillRect(0,0,W,H);
       bgCtx.restore();
 
-      // 2) Interior/moldura/carcaça do retrovisor são recolocados exatamente
+      // Interior/moldura/carcaça do retrovisor são recolocados exatamente
       // sobre a paisagem e portanto permanecem 100% imóveis.
       drawImageCover(bgCtx,fixedImage,transform,0,0,1);
 
-      // 3) Só o vidro do retrovisor recebe o afastamento.
+      // Só o vidro do retrovisor recebe o afastamento, como se o mundo ficasse para trás.
       drawPhase11MirrorRecession(image,transform);
       return true;
     }
@@ -1892,21 +1877,25 @@ const phases = [
         const image = currentBackgroundImage;
         const transform=getArtworkTransform(image);
 
-        // Interior do carro permanece absolutamente fixo. Só a paisagem visível
-        // através do vidro recebe o deslocamento de profundidade.
-        drawImageCover(bgCtx,image,transform,0,0,1);
-
-        // FASE 11: parallax novo por profundidade, sem reativar o sistema antigo
-        // de fases de carro. Chuva, névoa, limpeza e restante do jogo permanecem iguais.
+        // FASE 11: quando as camadas dedicadas estiverem prontas, a cena inteira
+        // é recomposta por profundidade, mantendo o interior fixo e a janela viva.
         if(isPhase11ParallaxActive()){
-          drawPhase11DepthParallax(image,transform);
-        } else if(isCarPhase()){
-          if(state.currentPhase===16) drawTunnelParallax(image,transform);
-          else drawSideCarParallax(image,transform);
+          const rendered = drawPhase11DepthParallax(image,transform);
+          if(!rendered) {
+            drawImageCover(bgCtx,image,transform,0,0,1);
+          }
+        } else {
+          // Demais fases continuam desenhando a arte base normalmente.
+          drawImageCover(bgCtx,image,transform,0,0,1);
 
-          // O detalhe fixo do retrovisor é parte da arte e precisa ficar por trás
-          // da chuva e da névoa principais.
-          drawPermanentMirrorFog(bgCtx);
+          if(isCarPhase()){
+            if(state.currentPhase===16) drawTunnelParallax(image,transform);
+            else drawSideCarParallax(image,transform);
+
+            // O detalhe fixo do retrovisor é parte da arte e precisa ficar por trás
+            // da chuva e da névoa principais.
+            drawPermanentMirrorFog(bgCtx);
+          }
         }
 
         // Gradação vertical discreta: conserva a arte, mas a coloca dentro do mesmo
