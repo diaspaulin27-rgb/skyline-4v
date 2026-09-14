@@ -5,7 +5,7 @@
       Sem dependência de ZIP para iniciar ou trocar de fase.
       V13: máscaras reais do vidro nas fases de carro, parallax/movimento,
       retrovisor com névoa permanente.
-      ZEN REGEN: ramp 1.5s + fechamento final real em 100%; chuva e neve com 65/28/7 de profundidade e personalidade por fase.
+      ZEN REGEN: delay 2s + ramp 1.5s + fechamento final real em 100%; chuva e neve com 65/28/7 de profundidade e personalidade por fase.
     -->
     <html lang="en">
     <head>
@@ -1029,20 +1029,16 @@ const phases = [
 
     const PHASE13_WINDOW_PROFILE = Object.freeze({
       polygon:[
-        [.403646,.000000],
-        [.278646,.179619],
-        [.171875,.357771],
-        [.078125,.557185],
-        [.131510,.620235],
-        [.132812,.643695],
-        [.177083,.775660],
-        [.211198,.797654],
-        [.200521,.806452],
-        [.953125,.999267],
+        [.401042,.000000],
+        [.298177,.066716],
+        [.174479,.170088],
+        [.075521,.273460],
+        [.016927,.355572],
+        [.178385,.788123],
+        [.947917,.999267],
         [1.000000,.999267],
         [1.000000,.000000]
-      ],
-      mirror:{cx:.112500,cy:.550239,rx:.098438,ry:.084928,rotation:.020}
+      ]
     });
 
     const PHASE19_WINDOW_PROFILE = Object.freeze({
