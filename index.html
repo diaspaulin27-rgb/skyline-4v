@@ -922,7 +922,7 @@ const GLASS_DROP_PHASES = [
   { count: 120, min: 1.8, max: 6.0 }, // 14
   { count: 68,  min: 1.8, max: 4.0 }, // 15
   { count: 100, min: 1.8, max: 5.2 }, // 16
-  { count: 0,   min: 2.0, max: 6.8 }, // 17
+  { count: 135, min: 2.0, max: 6.8 }, // 17
   { count: 112, min: 1.8, max: 5.8 }, // 18
   { count: 78,  min: 1.8, max: 4.3 }, // 19
   { count: 145, min: 2.0, max: 7.0 }  // 20
@@ -1027,6 +1027,42 @@ const phases = [
       ]
     });
 
+    const PHASE13_WINDOW_PROFILE = Object.freeze({
+      polygon:[
+        [.403646,.000000],
+        [.278646,.179619],
+        [.171875,.357771],
+        [.078125,.557185],
+        [.131510,.620235],
+        [.132812,.643695],
+        [.177083,.775660],
+        [.211198,.797654],
+        [.200521,.806452],
+        [.953125,.999267],
+        [1.000000,.999267],
+        [1.000000,.000000]
+      ]
+    });
+
+    const PHASE19_WINDOW_PROFILE = Object.freeze({
+      polygon:[
+        [.552083,.000000],
+        [.334635,.104839],
+        [.218750,.176686],
+        [.130208,.250000],
+        [.061198,.325513],
+        [.006510,.396628],
+        [.000000,.398093],
+        [.000000,.456745],
+        [.009115,.465543],
+        [.063802,.602639],
+        [.097656,.714076],
+        [.114583,.728739],
+        [1.000000,.814516],
+        [1.000000,.000000]
+      ]
+    });
+
     function isCarPhase(phase = getActivePhase()) {
       return !state.isZen && (phase?.type === "car" || phase?.type === "car_snow");
     }
@@ -1039,11 +1075,16 @@ const phases = [
       return (!state.isZen && state.currentPhase === 10) ? PHASE11_WINDOW_PROFILE : null;
     }
 
+    function getPhase13WindowProfile() {
+      return (!state.isZen && state.currentPhase === 12) ? PHASE13_WINDOW_PROFILE : null;
+    }
+
+    function getPhase19WindowProfile() {
+      return (!state.isZen && state.currentPhase === 18) ? PHASE19_WINDOW_PROFILE : null;
+    }
+
     function getPlayableGlassProfile() {
-      if (!state.isZen && (state.currentPhase === 12 || state.currentPhase === 18)) {
-        return CAR_GLASS_PROFILES[state.currentPhase] || null;
-      }
-      return getPhase11WindowProfile() || getCarGlassProfile();
+      return getPhase11WindowProfile() || getPhase13WindowProfile() || getPhase19WindowProfile() || getCarGlassProfile();
     }
 
     function getArtworkTransform(image = currentBackgroundImage) {
@@ -1685,8 +1726,13 @@ const phases = [
       backgroundDirty = false;
     }
 
+    function isPhase17DryTunnel() {
+      return !state.isZen && state.currentPhase === 16;
+    }
+
     function getEffectiveRainIntensity() {
       const phase = getActivePhase();
+      if (isPhase17DryTunnel()) return 0;
       return state.isZen ? Math.max(.1, Math.min(1, state.rainIntensity)) : phase.rain;
     }
 
@@ -3041,7 +3087,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         highwayRain:{gain:1.14,tone:1.34},snowLight:{gain:.36,tone:.52},sunShower:{gain:.68,tone:1.08},blizzard:{gain:.72,tone:.74},
         tunnelRain:{gain:.82,tone:.92},goldenRain:{gain:.62,tone:.92},snowDrive:{gain:.50,tone:.68},finalRain:{gain:.38,tone:.64}
       })[phase.rainStyle] || {gain:1,tone:1};
-      const targetRain=(!state.isZen && state.currentPhase===16) ? 0 : (state.gameSound ? 1 : 0)*(isSnow ? .035+.055*intensity : .075+.115*intensity)*profile.gain*state.rainVolume;
+      const targetRain=(state.gameSound ? 1 : 0)*(isSnow ? .035+.055*intensity : .075+.115*intensity)*profile.gain*state.rainVolume;
       rainGain.gain.setTargetAtTime(targetRain,audioCtx.currentTime,.16);
       droneGain.gain.setTargetAtTime(state.musicSound ? .027*state.ambVolume : 0,audioCtx.currentTime,.20);
       rainFilter.frequency.setTargetAtTime((isSnow ? 1050 : 1750+intensity*1850)*profile.tone,audioCtx.currentTime,.25);
@@ -3358,9 +3404,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         if (isSnowPhase) {
           const activeSnowCount = getSnowActiveCount(phase);
 
-          const snowClipped = (!state.isZen && state.currentPhase === 18)
-            ? clipToPlayableGlass(rainCtx)
-            : clipToCarGlass(rainCtx);
+          const snowClipped = clipToPlayableGlass(rainCtx);
 
           // Fundo -> médio -> primeiro plano.
           for (let depthLayer = 0; depthLayer < 3; depthLayer++) {
@@ -3392,10 +3436,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         // =====================================================
         // CHUVA — BLOCO APROVADO, preservado.
         // =====================================================
-        else if (!state.isZen && state.currentPhase === 16) {
-          // Fase 17 — túnel: sem chuva dentro do túnel.
-        }
-        else {
+        else if (!isPhase17DryTunnel()) {
           // Cada chuva agora tem quantidade própria. A intensidade (phase.rain)
           // continua importando, mas rainStyle passa a definir a personalidade do mapa.
           const rainProfile = getRainStyleProfile(phase);
@@ -3454,18 +3495,20 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
           }
         }
 
-        glassDropsSystem.update(dt);
-        const glassClipped=clipToPlayableGlass(glassCtx);
-        glassDropsSystem.draw(glassCtx);
-        if(glassClipped) glassCtx.restore();
-        if(isCarPhase()){
-          eraseMirrorFromContext(glassCtx);
-          drawPermanentMirrorFog(glassCtx);
-        }
-        if(!state.isZen){
-          glassDropsSystem.replenish();
-        } else if(Math.random() < 0.015){
-          glassDropsSystem.replenish();
+        if (!isPhase17DryTunnel()) {
+          glassDropsSystem.update(dt);
+          const glassClipped=clipToPlayableGlass(glassCtx);
+          glassDropsSystem.draw(glassCtx);
+          if(glassClipped) glassCtx.restore();
+          if(isCarPhase()){
+            eraseMirrorFromContext(glassCtx);
+            drawPermanentMirrorFog(glassCtx);
+          }
+          if(!state.isZen){
+            glassDropsSystem.replenish();
+          } else if(Math.random() < 0.015){
+            glassDropsSystem.replenish();
+          }
         }
         
         if(state.isZen){
