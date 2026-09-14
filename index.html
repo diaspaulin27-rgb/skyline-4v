@@ -1839,7 +1839,7 @@ const phases = [
         const randD = seedD - Math.floor(seedD);
 
         const x = opening.left * W + randA * regionWidth;
-        const fallSpeed = 300 + randB * 210;
+        const fallSpeed = 180 + randB * 126;
         const pathHeight = (base - top) + 42;
         const y = top - 34 + ((state.elapsed * fallSpeed + randC * pathHeight) % pathHeight);
         const length = 5 + randD * 5;
