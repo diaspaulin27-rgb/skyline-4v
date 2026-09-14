@@ -1041,7 +1041,23 @@ const phases = [
         [.953125,.999267],
         [1.000000,.999267],
         [1.000000,.000000]
-      ]
+      ],
+      extraPolygons:[[
+        [.120000,.451613],
+        [.083333,.460411],
+        [.063802,.484604],
+        [.059896,.530792],
+        [.067708,.585777],
+        [.078125,.623167],
+        [.092448,.640029],
+        [.123698,.649560],
+        [.164063,.645161],
+        [.191406,.634897],
+        [.194010,.610704],
+        [.190104,.510997],
+        [.184896,.476540],
+        [.167969,.457478]
+      ]]
     });
 
     const PHASE19_WINDOW_PROFILE = Object.freeze({
@@ -1132,19 +1148,26 @@ const phases = [
       const profile=getPlayableGlassProfile();
       if(!profile) return true;
       const p=screenToArtwork(x,y);
-      if(!pointInPolygon(p.x,p.y,profile.polygon)) return false;
-      if(profile.mirror && pointInRotatedEllipse(p.x,p.y,profile.mirror)) return false;
+      const insideMain=pointInPolygon(p.x,p.y,profile.polygon);
+      const insideExtra=(profile.extraPolygons || []).some(poly => pointInPolygon(p.x,p.y,poly));
+      if(!insideMain && !insideExtra) return false;
+      if(profile.mirror && !insideExtra && pointInRotatedEllipse(p.x,p.y,profile.mirror)) return false;
       return true;
     }
 
     function traceCarGlassPolygon(ctx, profile = getCarGlassProfile(), transform = getArtworkTransform()) {
       if(!profile?.polygon?.length) return false;
+      const tracePolygon = (polygon) => {
+        if(!polygon?.length) return;
+        polygon.forEach(([nx,ny],index)=>{
+          const p=artworkPoint(nx,ny,transform);
+          if(index===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
+        });
+        ctx.closePath();
+      };
       ctx.beginPath();
-      profile.polygon.forEach(([nx,ny],index)=>{
-        const p=artworkPoint(nx,ny,transform);
-        if(index===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
-      });
-      ctx.closePath();
+      tracePolygon(profile.polygon);
+      (profile.extraPolygons || []).forEach(tracePolygon);
       return true;
     }
 
