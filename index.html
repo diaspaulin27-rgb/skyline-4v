@@ -1821,12 +1821,12 @@ const phases = [
       const regionWidth = (opening.right - opening.left) * W;
       const top = opening.top * H;
       const base = opening.base * H;
-      const streakCount = lowPowerDevice ? 68 : 104;
+      const streakCount = lowPowerDevice ? 20 : 28;
 
       rainCtx.save();
       tracePhase17TunnelExitPath(rainCtx);
       rainCtx.clip();
-      rainCtx.globalAlpha = .88;
+      rainCtx.globalAlpha = .66;
 
       for (let i = 0; i < streakCount; i++) {
         const seedA = Math.sin(i * 12.9898 + 1.7) * 43758.5453;
@@ -1839,13 +1839,13 @@ const phases = [
         const randD = seedD - Math.floor(seedD);
 
         const x = opening.left * W + randA * regionWidth;
-        const fallSpeed = 255 + randB * 195;
+        const fallSpeed = 300 + randB * 210;
         const pathHeight = (base - top) + 42;
         const y = top - 34 + ((state.elapsed * fallSpeed + randC * pathHeight) % pathHeight);
-        const length = 12 + randD * 17;
-        const slant = 2 + randB * 6;
-        const alpha = .14 + randA * .14;
-        const width = .55 + randD * .35;
+        const length = 5 + randD * 5;
+        const slant = .8 + randB * 1.8;
+        const alpha = .07 + randA * .05;
+        const width = .34 + randD * .20;
 
         rainCtx.beginPath();
         rainCtx.strokeStyle = `rgba(204,218,232,${alpha})`;
