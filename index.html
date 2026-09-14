@@ -5,7 +5,7 @@
       Sem dependência de ZIP para iniciar ou trocar de fase.
       V13: máscaras reais do vidro nas fases de carro, parallax/movimento,
       retrovisor com névoa permanente.
-      ZEN REGEN: delay 2s + ramp 1.5s + fechamento final real em 100%; chuva e neve com 65/28/7 de profundidade e personalidade por fase.
+      ZEN REGEN: ramp 1.5s + fechamento final real em 100%; chuva e neve com 65/28/7 de profundidade e personalidade por fase.
     -->
     <html lang="en">
     <head>
@@ -1042,22 +1042,7 @@ const phases = [
         [1.000000,.999267],
         [1.000000,.000000]
       ],
-      extraPolygons:[[
-        [.120000,.451613],
-        [.083333,.460411],
-        [.063802,.484604],
-        [.059896,.530792],
-        [.067708,.585777],
-        [.078125,.623167],
-        [.092448,.640029],
-        [.123698,.649560],
-        [.164063,.645161],
-        [.191406,.634897],
-        [.194010,.610704],
-        [.190104,.510997],
-        [.184896,.476540],
-        [.167969,.457478]
-      ]]
+      mirror:{cx:.112500,cy:.550239,rx:.098438,ry:.084928,rotation:.020}
     });
 
     const PHASE19_WINDOW_PROFILE = Object.freeze({
@@ -1148,26 +1133,18 @@ const phases = [
       const profile=getPlayableGlassProfile();
       if(!profile) return true;
       const p=screenToArtwork(x,y);
-      const insideMain=pointInPolygon(p.x,p.y,profile.polygon);
-      const insideExtra=(profile.extraPolygons || []).some(poly => pointInPolygon(p.x,p.y,poly));
-      if(!insideMain && !insideExtra) return false;
-      if(profile.mirror && !insideExtra && pointInRotatedEllipse(p.x,p.y,profile.mirror)) return false;
+      if(!pointInPolygon(p.x,p.y,profile.polygon)) return false;
       return true;
     }
 
     function traceCarGlassPolygon(ctx, profile = getCarGlassProfile(), transform = getArtworkTransform()) {
       if(!profile?.polygon?.length) return false;
-      const tracePolygon = (polygon) => {
-        if(!polygon?.length) return;
-        polygon.forEach(([nx,ny],index)=>{
-          const p=artworkPoint(nx,ny,transform);
-          if(index===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
-        });
-        ctx.closePath();
-      };
       ctx.beginPath();
-      tracePolygon(profile.polygon);
-      (profile.extraPolygons || []).forEach(tracePolygon);
+      profile.polygon.forEach(([nx,ny],index)=>{
+        const p=artworkPoint(nx,ny,transform);
+        if(index===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
+      });
+      ctx.closePath();
       return true;
     }
 
@@ -1751,6 +1728,140 @@ const phases = [
 
     function isPhase17DryTunnel() {
       return !state.isZen && state.currentPhase === 16;
+    }
+
+    const PHASE17_DISTANT_RAIN_PROFILE = Object.freeze({
+      opening:{
+        left:.266,
+        right:.474,
+        top:.512,
+        shoulder:.575,
+        base:.613,
+        topInset:.012
+      },
+      carCutout:{
+        left:.290,
+        right:.405,
+        roofTop:.571,
+        roofBottom:.594,
+        bodyTop:.590,
+        bodyBottom:.614
+      }
+    });
+
+    function tracePhase17TunnelExitPath(ctx) {
+      const p = PHASE17_DISTANT_RAIN_PROFILE.opening;
+      const left = p.left * W;
+      const right = p.right * W;
+      const top = p.top * H;
+      const shoulder = p.shoulder * H;
+      const base = p.base * H;
+      const mid = (left + right) * .5;
+      const inset = (right - left) * p.topInset;
+
+      ctx.beginPath();
+      ctx.moveTo(left, base);
+      ctx.lineTo(left, shoulder);
+      ctx.bezierCurveTo(
+        left + inset, shoulder - (base - top) * .72,
+        mid - (right - left) * .18, top,
+        mid, top
+      );
+      ctx.bezierCurveTo(
+        mid + (right - left) * .18, top,
+        right - inset, shoulder - (base - top) * .72,
+        right, shoulder
+      );
+      ctx.lineTo(right, base);
+      ctx.closePath();
+      return true;
+    }
+
+    function erasePhase17TunnelCarRain(ctx) {
+      const c = PHASE17_DISTANT_RAIN_PROFILE.carCutout;
+      const left = c.left * W;
+      const right = c.right * W;
+      const roofTop = c.roofTop * H;
+      const roofBottom = c.roofBottom * H;
+      const bodyTop = c.bodyTop * H;
+      const bodyBottom = c.bodyBottom * H;
+      const mid = (left + right) * .5;
+      const width = right - left;
+
+      ctx.save();
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.fillStyle = "#000";
+
+      ctx.beginPath();
+      ctx.moveTo(left, bodyBottom);
+      ctx.lineTo(left, bodyTop);
+      ctx.lineTo(left + width * .10, bodyTop);
+      ctx.bezierCurveTo(
+        left + width * .18, roofBottom,
+        left + width * .24, roofTop,
+        mid, roofTop
+      );
+      ctx.bezierCurveTo(
+        right - width * .24, roofTop,
+        right - width * .18, roofBottom,
+        right - width * .10, bodyTop
+      );
+      ctx.lineTo(right, bodyTop);
+      ctx.lineTo(right, bodyBottom);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.ellipse(left + width * .08, bodyBottom - H * .006, width * .05, H * .007, 0, 0, Math.PI * 2);
+      ctx.ellipse(right - width * .08, bodyBottom - H * .006, width * .05, H * .007, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawPhase17DistantRain() {
+      if (!isPhase17DryTunnel()) return;
+
+      const opening = PHASE17_DISTANT_RAIN_PROFILE.opening;
+      const regionWidth = (opening.right - opening.left) * W;
+      const top = opening.top * H;
+      const base = opening.base * H;
+      const streakCount = lowPowerDevice ? 68 : 104;
+
+      rainCtx.save();
+      tracePhase17TunnelExitPath(rainCtx);
+      rainCtx.clip();
+      rainCtx.globalAlpha = .88;
+
+      for (let i = 0; i < streakCount; i++) {
+        const seedA = Math.sin(i * 12.9898 + 1.7) * 43758.5453;
+        const seedB = Math.sin(i * 78.233 + 0.4) * 19642.3491;
+        const seedC = Math.sin(i * 39.425 + 2.1) * 9621.3457;
+        const seedD = Math.sin(i * 25.173 + 3.6) * 18431.1159;
+        const randA = seedA - Math.floor(seedA);
+        const randB = seedB - Math.floor(seedB);
+        const randC = seedC - Math.floor(seedC);
+        const randD = seedD - Math.floor(seedD);
+
+        const x = opening.left * W + randA * regionWidth;
+        const fallSpeed = 255 + randB * 195;
+        const pathHeight = (base - top) + 42;
+        const y = top - 34 + ((state.elapsed * fallSpeed + randC * pathHeight) % pathHeight);
+        const length = 12 + randD * 17;
+        const slant = 2 + randB * 6;
+        const alpha = .14 + randA * .14;
+        const width = .55 + randD * .35;
+
+        rainCtx.beginPath();
+        rainCtx.strokeStyle = `rgba(204,218,232,${alpha})`;
+        rainCtx.lineWidth = width;
+        rainCtx.lineCap = "round";
+        rainCtx.moveTo(x - slant, y - length);
+        rainCtx.lineTo(x, y);
+        rainCtx.stroke();
+      }
+
+      rainCtx.restore();
+      erasePhase17TunnelCarRain(rainCtx);
     }
 
     function getEffectiveRainIntensity() {
@@ -3516,6 +3627,10 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
               rainParticles[i].reset();
             }
           }
+        }
+
+        if (isPhase17DryTunnel()) {
+          drawPhase17DistantRain();
         }
 
         if (!isPhase17DryTunnel()) {
