@@ -1,0 +1,216 @@
+  <!DOCTYPE html>
+    <!--
+      RAINY SKYLINE V12 — BUILD INTEGRADA
+      20 fases + arte exclusiva do Modo Zen com assets externos organizados.
+      Assets locais conectados por caminhos relativos; sem dependência de rede externa.
+      V13: máscaras reais do vidro nas fases de carro, parallax/movimento,
+      retrovisor com névoa permanente.
+      ZEN REGEN: delay 2s + ramp 1.5s + fechamento final real em 100%; chuva e neve com 65/28/7 de profundidade e personalidade por fase.
+    -->
+    <html lang="en">
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#030712">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <title>Rainy Skyline — Atmospheric Experience</title>
+
+    <link rel="stylesheet" href="css/styles.css">
+    </head>
+    <body>
+
+    <div id="zanonSplash" aria-hidden="true">
+      <img src="assets/images/ui/Zanon_Splash.jpg" alt="">
+    </div>
+
+    <div id="adScreen" class="screen hidden">
+      <div style="text-align: center;">
+        <div class="loading-mark"></div>
+        <div style="font-size: 15px; font-weight: 600;" data-i18n="ad_loading">Preparing a short break…</div>
+      </div>
+    </div>
+
+    <div id="game">
+      <canvas id="bgCanvas"></canvas>
+      <canvas id="rainCanvas"></canvas>
+      <div id="glassAtmosphere"></div>
+      <canvas id="glassCanvas"></canvas>
+      <canvas id="fogCanvas"></canvas>
+      <div id="lightningFlash"></div>
+      <div id="sceneTransition"></div>
+      <div id="vignette"></div>
+      <div id="weatherGlow"></div>
+      <div id="cleanSpark"></div>
+      <div id="toast"></div>
+
+      <!-- HUD -->
+      <div id="hud" class="hidden">
+        <div class="hud-header">
+          <div class="hud-left">
+            <button id="pauseBtn" class="hud-btn" type="button" data-i18n-aria="pause_title" aria-label="Pause">Ⅱ</button>
+            <div class="phase-badge"><span data-i18n="phase_hud">PHASE</span> <span id="phaseDisplay">1</span>/<span id="phaseTotalDisplay">10</span></div>
+          </div>
+          <div class="hud-right">
+            <div class="currency-badge" id="currencyHud"><span>🌧️</span><span id="pointsDisplay">0</span></div>
+            <button id="zenMistBtn" class="hud-btn" type="button" style="display:none;width:auto;min-width:0;height:34px;padding:0 14px;border-radius:20px;font-size:18px;font-weight:600;letter-spacing:1px;text-transform:lowercase;flex-direction:row;gap:5px;align-items:center;justify-content:center;background:rgba(18,27,45,.88);border:1px solid rgba(255,255,255,.12);box-shadow:0 10px 28px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.05);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#63b8ee;">💨 <span>mist</span></button>
+          </div>
+        </div>
+        <div>
+          <div id="instruction" data-i18n="wipe_instruction">SWIPE TO WIPE THE FOG</div>
+          <div class="progress-wrap">
+            <div class="progress-label" id="progressLabelText" data-i18n="defog_window">Defog the window</div>
+            <div class="progress-bar" aria-hidden="true"><div id="progressFill"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <section id="loadingScreen" class="screen hidden" aria-live="polite">
+        <div style="text-align:center;">
+          <div class="loading-mark"></div>
+          <div style="font-family:Georgia,serif;font-size:22px;margin-bottom:7px;">Rainy Skyline</div>
+          <div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,.58);text-transform:uppercase;" data-i18n="loading_phase">Preparing the weather…</div>
+        </div>
+      </section>
+
+      <!-- MENU PRINCIPAL -->
+      <section id="mainMenu" class="screen hidden">
+        <div class="menu-card">
+          <h1 class="menu-title">Rainy Skyline</h1>
+          <p class="menu-subtitle" data-i18n="menu_subtitle">Atmospheric Relaxation</p>
+          <div id="mainPhaseInfo">
+            <h2 class="phase-title" id="menuPhaseName">The First Rain</h2>
+            <div class="phase-feeling" id="menuPhaseFeeling">Serenity</div>
+          </div>
+          <div class="btn-stack">
+            <button id="continueBtn" class="btn btn-primary" data-i18n="btn_continue">CONTINUE PHASE</button>
+            <button id="zenBtn" class="btn btn-zen" data-i18n="btn_zen">ZEN MODE (INFINITE)</button>
+            <button id="phasesBtn" class="btn" data-i18n="btn_phases">PHASES & MEMORIES</button>
+            <button id="storeBtn" class="btn" data-i18n="btn_store">WIPE STYLES</button>
+            <button id="settingsBtn" class="btn" data-i18n="btn_settings">SETTINGS</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- FASES -->
+      <section id="phasesScreen" class="screen hidden">
+        <div class="menu-card">
+          <h2 style="margin:0;font-size:24px;" data-i18n="phases_title">Phases & Memories</h2>
+          <p style="color:rgba(255,255,255,.5);font-size:12px;margin-top:6px;" data-i18n="phases_desc">Every weather holds a feeling.</p>
+          <div id="phaseList" class="phase-list"></div>
+          <button id="closePhasesBtn" class="btn" style="width:100%;" data-i18n="btn_back">BACK</button>
+        </div>
+      </section>
+
+      <!-- LOJA -->
+      <section id="storeScreen" class="screen hidden">
+        <div class="menu-card">
+          <h2 style="margin:0;font-size:24px;" data-i18n="store_title">Wipe Styles</h2>
+          <p style="color:rgba(255,255,255,.5);font-size:12px;margin-top:4px;" data-i18n="store_desc">Choose how each touch clears the glass.</p>
+          <div class="coin-big">🌧️ <span id="storeCoins">0</span> <span data-i18n="store_coins">coins</span></div>
+          <div class="finger-slots">
+            <button type="button" id="fingerSlot1" class="finger-slot selected"><div class="slot-label" data-i18n="store_finger1">Touch 1</div><div class="slot-name" id="slot1Name">Soft</div></button>
+            <button type="button" id="fingerSlot2" class="finger-slot"><div class="slot-label" data-i18n="store_finger2">Touch 2</div><div class="slot-name" id="slot2Name">Soft</div></button>
+          </div>
+          <div class="combine-info" data-i18n="store_info">You can use two fingers at once. Combine them to create your perfect wiping style!</div>
+          <div id="storeGrid" class="store-grid"></div>
+          <button id="closeStoreBtn" class="btn" style="width:100%;" data-i18n="btn_back">BACK</button>
+        </div>
+      </section>
+
+      <!-- CONFIGURAÇÕES -->
+      <section id="settingsScreen" class="screen hidden">
+        <div class="menu-card">
+          <h2 style="margin:0 0 20px;" data-i18n="settings_title">Settings</h2>
+          <div style="text-align:left;">
+            
+            <div id="languageSettingRow" class="setting-row">
+              <span data-i18n="set_lang">Language</span>
+              <button id="langToggleBtn" class="btn btn-small" style="padding: 5px 10px; min-height:30px;">English</button>
+            </div>
+
+            <div id="rainIntensitySetting">
+              <div class="setting-row"><span data-i18n="set_rain">Rain Intensity</span><span id="rainVal">70%</span></div>
+              <input id="rainSlider" type="range" min="10" max="100" step="10" value="70">
+            </div>
+            
+            <div class="setting-row" style="margin-top:22px;"><span data-i18n="set_vol">Ambient Volume</span><span id="ambVal">50%</span></div>
+            <input id="ambSlider" type="range" min="0" max="100" value="50">
+
+            <div class="setting-row" style="margin-top:22px;"><span data-i18n="set_rain_sound">Rain Sound</span><span id="rainSoundVal">100%</span></div>
+            <input id="rainSoundSlider" type="range" min="0" max="100" value="100">
+
+            <div style="margin-top:25px;">
+              <div class="toggle-row">
+                <div class="toggle-text"><strong data-i18n="set_snd1">SFX</strong><span data-i18n="set_snd1_desc">Noise and drops</span></div>
+                <button type="button" id="gameSoundToggle" class="toggle on" role="switch" aria-checked="true"></button>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-text"><strong data-i18n="set_snd2">Music / Atmosphere</strong><span data-i18n="set_snd2_desc">Background layers</span></div>
+                <button type="button" id="musicSoundToggle" class="toggle on" role="switch" aria-checked="true"></button>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-text"><strong data-i18n="set_snd3">Vibration</strong><span data-i18n="set_snd3_desc">Haptic feedback on thunder</span></div>
+                <button type="button" id="vibrationToggle" class="toggle on" role="switch" aria-checked="true"></button>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-text"><strong data-i18n="set_flashes">Lightning flashes</strong><span data-i18n="set_flashes_desc">Visual flashes during storms</span></div>
+                <button type="button" id="flashesToggle" class="toggle on" role="switch" aria-checked="true"></button>
+              </div>
+            </div>
+          </div>
+          <button id="closeSettingsBtn" class="btn" style="width:100%;margin-top:25px;" data-i18n="btn_save">SAVE & BACK</button>
+        </div>
+      </section>
+
+      <!-- PAUSA -->
+      <section id="pauseScreen" class="screen hidden">
+        <div class="menu-card">
+          <h2 style="margin:0 0 8px;font-size:24px;" data-i18n="pause_title">Paused</h2>
+          <p style="color:rgba(255,255,255,.45);font-size:11px;margin-bottom:25px;" data-i18n="pause_desc">The weather is waiting for you.</p>
+          <div id="zenFogSetting" style="display:none;text-align:left;margin-bottom:18px;">
+            <div class="toggle-row" style="border-top:1px solid rgba(255,255,255,.06);">
+              <div class="toggle-text">
+                <strong id="zenFogSettingTitle">Auto-regenerate fog</strong>
+                <span id="zenFogSettingDesc">Fog slowly returns in Zen Mode.</span>
+              </div>
+              <button type="button" id="zenFogToggle" class="toggle on" role="switch" aria-checked="true"></button>
+            </div>
+          </div>
+          <div class="btn-stack">
+            <button id="resumeBtn" class="btn btn-primary" data-i18n="btn_resume">RETURN & RELAX</button>
+            <button id="pauseSettingsBtn" class="btn" data-i18n="btn_settings">OPTIONS</button>
+            <button id="exitMenuBtn" class="btn" data-i18n="btn_mainmenu">MAIN MENU</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- RECOMPENSA -->
+      <section id="rewardScreen" class="screen hidden">
+        <div class="menu-card">
+          <div class="reward-icon">✦</div>
+          <h2 class="reward-title" data-i18n="reward_title">Phase Complete</h2>
+          <div id="rewardPhaseName" class="phase-feeling">The First Rain</div>
+          <div id="rewardPerfectBadge" class="perfect-badge" data-i18n="perfect">PERFECT WIPE</div>
+          <div id="rewardCoins" class="reward-coins">+100 🌧️</div>
+          <div class="reward-breakdown">
+            <div class="reward-line"><span data-i18n="reward_base">Phase reward</span><span id="rewardBase">+100</span></div>
+            <div id="rewardBonusLine" class="reward-line"><span data-i18n="reward_first_bonus">New memory bonus</span><span id="rewardBonus">+50</span></div>
+            <div id="rewardPerfectLine" class="reward-line" style="display:none;"><span data-i18n="bonus_clean">CLEAN BONUS</span><span id="rewardPerfectBonus">+100</span></div>
+            <div class="reward-line total"><span data-i18n="reward_total">Total</span><span id="rewardTotal">+150 🌧️</span></div>
+          </div>
+          <p class="reward-description" data-i18n="reward_desc">You finished this memory. The next feeling awaits.</p>
+          <div class="btn-stack">
+            <button id="nextPhaseBtn" class="btn btn-primary" data-i18n="btn_next">NEXT PHASE</button>
+            <button id="rewardMenuBtn" class="btn" data-i18n="btn_mainmenu">MAIN MENU</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script src="js/error-handler.js"></script>
+    <script src="js/game.js"></script>
+    </body>
+    </html>

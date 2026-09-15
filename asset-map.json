@@ -1,0 +1,233 @@
+{
+  "build_source": "Rainy_Skyline_3V_COMPLETO_TROVOES_FREQUENCIA_AJUSTADA.txt",
+  "images": {
+    "splash": "assets/images/ui/Zanon_Splash.jpg",
+    "phases": [
+      {
+        "phase": 1,
+        "name": "First Rain",
+        "file": "assets/images/phases/01_First_Rain.webp"
+      },
+      {
+        "phase": 2,
+        "name": "Distant Lights",
+        "file": "assets/images/phases/02_Distant_Lights.webp"
+      },
+      {
+        "phase": 3,
+        "name": "After Midnight",
+        "file": "assets/images/phases/03_After_Midnight.webp"
+      },
+      {
+        "phase": 4,
+        "name": "Neon Splash",
+        "file": "assets/images/phases/04_Neon_Splash.webp"
+      },
+      {
+        "phase": 5,
+        "name": "The Window",
+        "file": "assets/images/phases/05_The_Window.webp"
+      },
+      {
+        "phase": 6,
+        "name": "Storm",
+        "file": "assets/images/phases/06_Storm.webp"
+      },
+      {
+        "phase": 7,
+        "name": "Horizon",
+        "file": "assets/images/phases/07_Horizon.webp"
+      },
+      {
+        "phase": 8,
+        "name": "Memories",
+        "file": "assets/images/phases/08_Memories.webp"
+      },
+      {
+        "phase": 9,
+        "name": "Silence",
+        "file": "assets/images/phases/09_Silence.webp"
+      },
+      {
+        "phase": 10,
+        "name": "Clearing Sky",
+        "file": "assets/images/phases/10_Clearing_Sky.webp"
+      },
+      {
+        "phase": 11,
+        "name": "Moving Car",
+        "file": "assets/images/phases/11_Moving_Car.webp"
+      },
+      {
+        "phase": 12,
+        "name": "Snowfall",
+        "file": "assets/images/phases/12_Snowfall.webp"
+      },
+      {
+        "phase": 13,
+        "name": "Highway Rain",
+        "file": "assets/images/phases/13_Highway_Rain.webp"
+      },
+      {
+        "phase": 14,
+        "name": "Morning Frost",
+        "file": "assets/images/phases/14_Morning_Frost.webp"
+      },
+      {
+        "phase": 15,
+        "name": "Summer Sun Shower",
+        "file": "assets/images/phases/15_Summer_Sun_Shower.webp"
+      },
+      {
+        "phase": 16,
+        "name": "Midnight Blizzard",
+        "file": "assets/images/phases/16_Midnight_Blizzard.webp"
+      },
+      {
+        "phase": 17,
+        "name": "City Tunnel",
+        "file": "assets/images/phases/17_City_Tunnel.webp"
+      },
+      {
+        "phase": 18,
+        "name": "Golden Hour Drops",
+        "file": "assets/images/phases/18_Golden_Hour_Drops.webp"
+      },
+      {
+        "phase": 19,
+        "name": "Snowy Drive",
+        "file": "assets/images/phases/19_Snowy_Drive.webp"
+      },
+      {
+        "phase": 20,
+        "name": "The Last Wipe",
+        "file": "assets/images/phases/20_The_Last_Wipe.webp"
+      }
+    ],
+    "zen": "assets/images/zen/Zen.webp"
+  },
+  "rain_audio": [
+    {
+      "phase": 1,
+      "name": "First Rain",
+      "file": "assets/audio/rain/01_First_Rain.m4a"
+    },
+    {
+      "phase": 2,
+      "name": "Distant Lights",
+      "file": "assets/audio/rain/02_Distant_Lights.m4a"
+    },
+    {
+      "phase": 3,
+      "name": "After Midnight",
+      "file": "assets/audio/rain/03_After_Midnight.m4a"
+    },
+    {
+      "phase": 4,
+      "name": "Neon Splash",
+      "file": "assets/audio/rain/04_Neon_Splash.m4a"
+    },
+    {
+      "phase": 5,
+      "name": "The Window",
+      "file": "assets/audio/rain/05_The_Window.m4a"
+    },
+    {
+      "phase": 6,
+      "name": "Storm",
+      "file": "assets/audio/rain/06_Storm.m4a"
+    },
+    {
+      "phase": 7,
+      "name": "Horizon",
+      "file": "assets/audio/rain/07_Horizon.m4a"
+    },
+    {
+      "phase": 8,
+      "name": "Memories",
+      "file": "assets/audio/rain/08_Memories.m4a"
+    },
+    {
+      "phase": 9,
+      "name": "Silence",
+      "file": "assets/audio/rain/09_Silence.m4a"
+    },
+    {
+      "phase": 10,
+      "name": "Clearing Sky",
+      "file": "assets/audio/rain/10_Clearing_Sky.m4a"
+    },
+    {
+      "phase": 11,
+      "name": "Moving Car",
+      "file": "assets/audio/rain/11_Moving_Car.m4a"
+    },
+    {
+      "phase": 12,
+      "name": "Snowfall",
+      "file": "assets/audio/rain/12_Snowfall.m4a"
+    },
+    {
+      "phase": 13,
+      "name": "Highway Rain",
+      "file": "assets/audio/rain/13_Highway_Rain.m4a"
+    },
+    {
+      "phase": 14,
+      "name": "Morning Frost",
+      "file": "assets/audio/rain/14_Morning_Frost.m4a"
+    },
+    {
+      "phase": 15,
+      "name": "Summer Sun Shower",
+      "file": "assets/audio/rain/15_Summer_Sun_Shower.m4a"
+    },
+    {
+      "phase": 16,
+      "name": "Midnight Blizzard",
+      "file": "assets/audio/rain/16_Midnight_Blizzard.m4a"
+    },
+    {
+      "phase": 17,
+      "name": "City Tunnel",
+      "file": "assets/audio/rain/17_City_Tunnel.m4a"
+    },
+    {
+      "phase": 18,
+      "name": "Golden Hour Drops",
+      "file": "assets/audio/rain/18_Golden_Hour_Drops.m4a"
+    },
+    {
+      "phase": 19,
+      "name": "Snowy Drive",
+      "file": "assets/audio/rain/19_Snowy_Drive.m4a"
+    },
+    {
+      "phase": 20,
+      "name": "The Last Wipe",
+      "file": "assets/audio/rain/20_The_Last_Wipe.m4a"
+    }
+  ],
+  "thunder_audio": [
+    {
+      "id": 1,
+      "role": "Distant Soft",
+      "file": "assets/audio/thunder/Thunder_01_Distant_Soft.wav"
+    },
+    {
+      "id": 2,
+      "role": "Medium Rolling",
+      "file": "assets/audio/thunder/Thunder_02_Medium_Rolling.wav"
+    },
+    {
+      "id": 3,
+      "role": "Close Natural Crack v4",
+      "file": "assets/audio/thunder/Thunder_03_Close_Natural_Crack_v4.wav"
+    },
+    {
+      "id": 4,
+      "role": "Heavy Storm",
+      "file": "assets/audio/thunder/Thunder_04_Heavy_Storm.wav"
+    }
+  ]
+}
