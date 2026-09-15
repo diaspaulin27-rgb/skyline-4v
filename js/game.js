@@ -151,8 +151,8 @@ const state = {
         set_snd2_desc: "Background layers",
         set_snd3: "Vibration",
         set_snd3_desc: "Haptic feedback on thunder",
-        set_flashes: "Lightning flashes",
-        set_flashes_desc: "Visual flashes during storms",
+        set_flashes: "Thunder",
+        set_flashes_desc: "Thunder sound and lightning flash",
         btn_save: "SAVE & BACK",
         pause_title: "Paused",
         pause_desc: "The weather is waiting for you.",
@@ -214,8 +214,8 @@ const state = {
         set_snd2_desc: "Capas de fondo",
         set_snd3: "Vibración",
         set_snd3_desc: "Respuesta háptica con truenos",
-        set_flashes: "Destellos de relámpago",
-        set_flashes_desc: "Destellos visuales durante tormentas",
+        set_flashes: "Truenos",
+        set_flashes_desc: "Sonido de trueno y destello",
         btn_save: "GUARDAR Y VOLVER",
         pause_title: "Pausa",
         pause_desc: "El clima te está esperando.",
@@ -277,8 +277,8 @@ const state = {
         set_snd2_desc: "Camadas de fundo",
         set_snd3: "Vibração",
         set_snd3_desc: "Feedback em trovões",
-        set_flashes: "Clarões de relâmpago",
-        set_flashes_desc: "Clarões visuais durante tempestades",
+        set_flashes: "Trovões",
+        set_flashes_desc: "Som de relâmpago e clarão",
         btn_save: "SALVAR E VOLTAR",
         pause_title: "Pausa",
         pause_desc: "O clima continua esperando por você.",
@@ -1120,7 +1120,7 @@ const phases = [
         backgroundDirty = false;
         return;
       }
-      
+
       const sky = bgCtx.createLinearGradient(0, 0, 0, H);
       sky.addColorStop(0, phase.sky[0]); sky.addColorStop(.55, phase.sky[1]); sky.addColorStop(1, "#020308");
       bgCtx.fillStyle = sky; bgCtx.fillRect(0, 0, W, H);
@@ -2833,10 +2833,10 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     }
 
     async function playEmbeddedThunder(index) {
-      if(!audioCtx || !state.gameSound) return false;
+      if(!audioCtx || !state.gameSound || !state.lightningEnabled) return false;
       try {
         const buffer=await decodeEmbeddedThunder(index);
-        if(!buffer || !audioCtx || !state.gameSound || state.paused || document.hidden) return false;
+        if(!buffer || !audioCtx || !state.gameSound || !state.lightningEnabled || state.paused || document.hidden) return false;
         const source=audioCtx.createBufferSource();
         const variantGain=audioCtx.createGain();
         source.buffer=buffer;
@@ -2910,11 +2910,13 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       const embeddedRainTarget=embeddedRainReady && state.gameSound ? .72*state.rainVolume : 0;
       rainGain.gain.setTargetAtTime(syntheticRainTarget,audioCtx.currentTime,.16);
       phaseRainGain.gain.setTargetAtTime(embeddedRainTarget,audioCtx.currentTime,.16);
-      thunderGain.gain.setTargetAtTime(state.gameSound ? state.ambVolume : 0,audioCtx.currentTime,.10);
+      thunderGain.gain.setTargetAtTime(state.gameSound && state.lightningEnabled ? state.ambVolume : 0,audioCtx.currentTime,.10);
       rainFilter.frequency.setTargetAtTime((isSnow ? 1050 : 1750+intensity*1850)*profile.tone,audioCtx.currentTime,.25);
     }
     function blip(freq,dur,vol){ if(!audioCtx||!state.gameSound)return; const o=audioCtx.createOscillator(),g=audioCtx.createGain(); o.frequency.value=freq; o.type='sine'; g.gain.setValueAtTime(0,audioCtx.currentTime);g.gain.linearRampToValueAtTime(vol,audioCtx.currentTime+.01);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+dur);o.connect(g);g.connect(masterGain);o.start();o.stop(audioCtx.currentTime+dur+.02);}
     function playThunder(v){
+      if(!state.lightningEnabled) return;
+
       initAudio();
       const index=chooseThunderIndex(v,state.currentPhase);
       const delay=getThunderDelay(index);
@@ -2925,17 +2927,23 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       if(thunderStrikeTimer) clearTimeout(thunderStrikeTimer);
       thunderStrikeTimer=setTimeout(async()=>{
         thunderStrikeTimer=null;
-        if(!state.started || state.paused || document.hidden) return;
+        if(!state.lightningEnabled || !state.started || state.paused || document.hidden) return;
 
         if(state.gameSound&&audioCtx) await playEmbeddedThunder(index);
-        if(state.vibration){
+        if(state.lightningEnabled && state.vibration){
           if(typeof window.RainySkylineHaptics?.thunder==='function') window.RainySkylineHaptics.thunder(v);
           else if(navigator.vibrate) navigator.vibrate([22,40,38]);
         }
       },delay);
     }
     function startThunderSchedule(firstStrike=true){
-      if(thunderTimer) clearTimeout(thunderTimer);
+      if(thunderTimer) {
+        clearTimeout(thunderTimer);
+        thunderTimer=null;
+      }
+
+      if(!state.lightningEnabled) return;
+
       const intensity=getActivePhase()?.thunder || 0;
       if(!intensity) return;
       const phaseIndex=state.currentPhase;
@@ -2943,7 +2951,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       const fallbackRange=firstStrike ? [5000,10000] : [9000,17000];
       const [minDelay,maxDelay]=(profile ? (firstStrike ? profile.first : profile.next) : fallbackRange);
       thunderTimer=setTimeout(()=>{
-        if(state.started&&!state.paused&&!document.hidden&&state.currentPhase===phaseIndex) playThunder(intensity);
+        if(state.lightningEnabled && state.started&&!state.paused&&!document.hidden&&state.currentPhase===phaseIndex) playThunder(intensity);
         startThunderSchedule(false);
       },minDelay+Math.random()*(maxDelay-minDelay));
     }
@@ -3362,7 +3370,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
             glassDropsSystem.replenish();
           }
         }
-        
+
         if(state.isZen){
           // Ritmo de regeneração do ACcompleted; visual limitado à névoa original.
           if(state.zenAutoFog) regenerateZenFog(dt);
@@ -3439,7 +3447,37 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     document.getElementById('ambSlider').addEventListener('input',e=>{state.ambVolume=Number(e.target.value)/100;document.getElementById('ambVal').textContent=Math.round(state.ambVolume*100)+'%';updateAudio();saveGame();});
     document.getElementById('rainSoundSlider').addEventListener('input',e=>{state.rainVolume=Number(e.target.value)/100;document.getElementById('rainSoundVal').textContent=Math.round(state.rainVolume*100)+'%';updateAudio();saveGame();});
     document.getElementById('vibrationToggle').onclick=()=>{state.vibration=!state.vibration;syncToggle("vibrationToggle",state.vibration);saveGame();};
-    document.getElementById('flashesToggle').onclick=()=>{state.lightningEnabled=!state.lightningEnabled;syncToggle("flashesToggle",state.lightningEnabled);saveGame();};
+    document.getElementById('flashesToggle').onclick=()=>{
+      state.lightningEnabled=!state.lightningEnabled;
+
+      if(!state.lightningEnabled){
+        if(thunderTimer){
+          clearTimeout(thunderTimer);
+          thunderTimer=null;
+        }
+
+        if(thunderStrikeTimer){
+          clearTimeout(thunderStrikeTimer);
+          thunderStrikeTimer=null;
+        }
+
+        const flash=document.getElementById('lightningFlash');
+        if(flash) flash.style.opacity=0;
+
+        if(thunderGain&&audioCtx){
+          thunderGain.gain.setTargetAtTime(0,audioCtx.currentTime,.03);
+        }
+      } else {
+        updateAudio();
+
+        if(state.started){
+          startThunderSchedule(true);
+        }
+      }
+
+      syncToggle("flashesToggle",state.lightningEnabled);
+      saveGame();
+    };
     document.getElementById('gameSoundToggle').onclick=()=>{state.gameSound=!state.gameSound;syncToggle("gameSoundToggle",state.gameSound);updateAudio();saveGame();};
     document.getElementById('musicSoundToggle').onclick=()=>{state.musicSound=!state.musicSound;syncToggle("musicSoundToggle",state.musicSound);updateAudio();saveGame();};
     document.getElementById('zenFogToggle').onclick=()=>{
@@ -3502,5 +3540,5 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     // igual ao original, exceto pelos comentários de organização inseridos.
       window.__RAINY_SKYLINE_READY__ = true;
     }, { once:true });
-    
+
     // #endregion — FIM DO JAVASCRIPT PRINCIPAL
