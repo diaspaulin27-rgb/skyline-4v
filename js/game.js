@@ -2664,6 +2664,30 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       "assets/audio/rain/20_The_Last_Wipe.m4a" // 20 — 20_The_Last_Wipe
     ]);
 
+    const PHASE_MUSIC_AUDIO = Object.freeze([
+      "assets/audio/music/Fase 01 - First Rain.mp3",
+      "assets/audio/music/Fase 02 - Distant Lights.mp3",
+      "assets/audio/music/Fase 03 - After Midnight.mp3",
+      "assets/audio/music/Fase 04 - Neon Splash.mp3",
+      "assets/audio/music/Fase 05 - The Window.mp3",
+      "assets/audio/music/Fase 06 - Storm.mp3",
+      "assets/audio/music/Fase 07 - Horizon.mp3",
+      "assets/audio/music/Fase 08 - Memories.mp3",
+      "assets/audio/music/Fase 09 - Silence.mp3",
+      "assets/audio/music/Fase 10 - Clearing Sky.mp3",
+      "assets/audio/music/Fase 11 - Moving Car.mp3",
+      "assets/audio/music/Fase 12 - Snowfall.mp3",
+      "assets/audio/music/Fase 13 - Highway Rain.mp3",
+      "assets/audio/music/Fase 14 - Morning Frost.mp3",
+      "assets/audio/music/Fase 15 - Summer Sun Shower.mp3",
+      "assets/audio/music/Fase 16 - Midnight Blizzard.mp3",
+      "assets/audio/music/Fase 17 - City Tunnel.mp3",
+      "assets/audio/music/Fase 18 - Golden Hour Drops.mp3",
+      "assets/audio/music/Fase 19 - Snowy Drive.mp3",
+      "assets/audio/music/Fase 20 - The Last Wipe.mp3"
+    ]);
+    const ZEN_MUSIC_AUDIO = "assets/audio/music/Modo Zen - Soul of Rain.mp3";
+
 
     // 4 trovões reais do Rainy Skyline — arquivos externos locais.
     const THUNDER_AUDIO = Object.freeze([
@@ -2674,11 +2698,13 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     ]);
     const THUNDER_VARIANT_GAINS = Object.freeze([1, 1, 1, .75]);
 
-    let audioCtx = null, masterGain = null, rainGain = null, phaseRainGain = null, thunderGain = null, droneGain = null;
+    let audioCtx = null, masterGain = null, rainGain = null, phaseRainGain = null, musicGain = null, thunderGain = null, droneGain = null;
     let rainFilter = null, droneOsc = null, thunderTimer = null, thunderStrikeTimer = null;
     let phaseRainSource = null, phaseRainActiveIndex = -1, phaseRainRequestedIndex = -1, phaseRainRequestToken = 0;
+    let musicSource = null, musicActiveKey = null, musicRequestedKey = null, musicRequestToken = 0;
     let lastThunderIndex = -1;
     const phaseRainBufferCache = new Map();
+    const musicBufferCache = new Map();
     const thunderBufferCache = new Map();
     const thunderDecodePromiseCache = new Map();
 
@@ -2762,6 +2788,93 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       if(phaseRainActiveIndex!==state.currentPhase && phaseRainRequestedIndex!==state.currentPhase) {
         playEmbeddedPhaseRain(state.currentPhase);
       }
+    }
+
+    function getActiveMusicKey() {
+      return state.isZen ? "zen" : state.currentPhase;
+    }
+
+    function getMusicUri(key) {
+      return key === "zen" ? ZEN_MUSIC_AUDIO : PHASE_MUSIC_AUDIO[key];
+    }
+
+    function stopEmbeddedMusic() {
+      musicRequestToken++;
+      musicRequestedKey = null;
+      musicActiveKey = null;
+      if(musicSource) {
+        try { musicSource.stop(); } catch(e) {}
+        try { musicSource.disconnect(); } catch(e) {}
+        musicSource = null;
+      }
+      if(musicGain && audioCtx) musicGain.gain.setTargetAtTime(0,audioCtx.currentTime,.12);
+    }
+
+    async function decodeEmbeddedMusic(key) {
+      if(musicBufferCache.has(key)) return musicBufferCache.get(key);
+      const uri=getMusicUri(key);
+      if(!uri || !audioCtx) return null;
+      const response=await fetch(uri);
+      if(!response.ok) throw new Error(`HTTP ${response.status} ao carregar ${uri}`);
+      const audioBytes=await response.arrayBuffer();
+      const buffer=await audioCtx.decodeAudioData(audioBytes);
+      musicBufferCache.clear();
+      musicBufferCache.set(key,buffer);
+      return buffer;
+    }
+
+    async function playEmbeddedMusic(key=getActiveMusicKey()) {
+      if(!audioCtx || !state.started) return;
+      if(musicActiveKey===key || musicRequestedKey===key) return;
+
+      const token=++musicRequestToken;
+      musicRequestedKey=key;
+      if(musicSource) {
+        try { musicSource.stop(); } catch(e) {}
+        try { musicSource.disconnect(); } catch(e) {}
+        musicSource=null;
+      }
+      musicActiveKey=null;
+      if(musicGain) musicGain.gain.setTargetAtTime(0,audioCtx.currentTime,.08);
+
+      try {
+        const buffer=await decodeEmbeddedMusic(key);
+        if(!buffer || token!==musicRequestToken || !state.started || getActiveMusicKey()!==key) return;
+        const source=audioCtx.createBufferSource();
+        source.buffer=buffer;
+        source.loop=true;
+        source.loopStart=0;
+        source.loopEnd=buffer.duration;
+        source.connect(musicGain);
+        source.start(0);
+        musicSource=source;
+        musicActiveKey=key;
+        musicRequestedKey=null;
+        updateAudio();
+      } catch(error) {
+        if(token===musicRequestToken) musicRequestedKey=null;
+        console.warn(`Não foi possível carregar a música ${key === "zen" ? "do Modo Zen" : `da fase ${Number(key)+1}`}.`,error);
+        updateAudio();
+      }
+    }
+
+    function syncEmbeddedMusic() {
+      if(!audioCtx) return;
+      if(!state.started) {
+        if(musicSource || musicRequestedKey!==null) stopEmbeddedMusic();
+        return;
+      }
+
+      const key=getActiveMusicKey();
+      if(
+        (musicActiveKey!==null && musicActiveKey!==key) ||
+        (musicRequestedKey!==null && musicRequestedKey!==key)
+      ) {
+        stopEmbeddedMusic();
+      }
+
+      if(!state.musicSound) return;
+      if(musicActiveKey!==key && musicRequestedKey!==key) playEmbeddedMusic(key);
     }
 
     async function decodeEmbeddedThunder(index) {
@@ -2874,6 +2987,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         masterGain=audioCtx.createGain(); masterGain.gain.value=.82; masterGain.connect(audioCtx.destination);
         rainGain=audioCtx.createGain(); rainGain.gain.value=0; rainGain.connect(masterGain);
         phaseRainGain=audioCtx.createGain(); phaseRainGain.gain.value=0; phaseRainGain.connect(masterGain);
+        musicGain=audioCtx.createGain(); musicGain.gain.value=0; musicGain.connect(masterGain);
         thunderGain=audioCtx.createGain(); thunderGain.gain.value=0; thunderGain.connect(masterGain);
         const buffer=audioCtx.createBuffer(1,audioCtx.sampleRate*4,audioCtx.sampleRate), data=buffer.getChannelData(0);
         let brown=0;
@@ -2904,12 +3018,14 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       })[phase.rainStyle] || {gain:1,tone:1};
 
       syncEmbeddedPhaseRain();
+      syncEmbeddedMusic();
       const embeddedRainReady=!state.isZen && phaseRainActiveIndex===state.currentPhase;
       const syntheticRainTarget=embeddedRainReady ? 0 :
         (state.gameSound ? 1 : 0)*(isSnow ? .035+.055*intensity : .075+.115*intensity)*profile.gain*state.rainVolume;
       const embeddedRainTarget=embeddedRainReady && state.gameSound ? .72*state.rainVolume : 0;
       rainGain.gain.setTargetAtTime(syntheticRainTarget,audioCtx.currentTime,.16);
       phaseRainGain.gain.setTargetAtTime(embeddedRainTarget,audioCtx.currentTime,.16);
+      musicGain.gain.setTargetAtTime(state.musicSound && state.started ? state.ambVolume : 0,audioCtx.currentTime,.25);
       thunderGain.gain.setTargetAtTime(state.gameSound && state.lightningEnabled ? state.ambVolume : 0,audioCtx.currentTime,.10);
       rainFilter.frequency.setTargetAtTime((isSnow ? 1050 : 1750+intensity*1850)*profile.tone,audioCtx.currentTime,.25);
     }
@@ -3012,6 +3128,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       if(masterGain&&audioCtx) masterGain.gain.setTargetAtTime(.24,audioCtx.currentTime,.4);
       if(thunderTimer) clearTimeout(thunderTimer);
       if(thunderStrikeTimer) { clearTimeout(thunderStrikeTimer); thunderStrikeTimer=null; }
+      stopEmbeddedMusic();
 
       const firstClear = !state.completedPhases.includes(completedIndex);
       const base = 100;
@@ -3069,6 +3186,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       if(audioCtx){
         if(zen) stopEmbeddedPhaseRain();
         else playEmbeddedPhaseRain(idx);
+        stopEmbeddedMusic();
       }
       document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
       document.getElementById("hud").classList.add("hidden");
@@ -3197,6 +3315,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     function returnToMainMenu(advanceToNext = false) {
       if(thunderTimer) clearTimeout(thunderTimer);
       if(thunderStrikeTimer) { clearTimeout(thunderStrikeTimer); thunderStrikeTimer=null; }
+      stopEmbeddedMusic();
       const wasZen=state.isZen;
       state.started=false;
       state.paused=false;
