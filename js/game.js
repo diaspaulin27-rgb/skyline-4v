@@ -40,7 +40,7 @@
     const PERFECT_CLEAN_TARGET = .995;
     const PERFECT_CLEAN_BONUS = 100;
     const ROAD_STAR_PHASES = Object.freeze([10, 12, 18]); // 11, 13 e 19
-    const ROAD_STAR_TARGET = .997; // mostrado como 100%, evita pixel invisível bloquear a conclusão
+    const ROAD_STAR_TARGET = .99; // 99% conclui o desafio Road Star e evita travar por pixels invisíveis
     const ROAD_STAR_BONUS = 100;
     const GLASS_DRIP_FREQUENCY = .006;
     // Fundos incorporados: as 20 fases funcionam sem baixar ZIPs em tempo de jogo.
@@ -687,7 +687,7 @@ const phases = [
 
     function getCompletionTarget() {
       // Desafio Road Star: fases 11, 13 e 19 mostram 100% ao jogador,
-      // mas aceitam 99,7% internamente para nenhum pixel invisível bloquear a conclusão.
+      // mas aceitam 99% internamente para nenhum pixel invisível bloquear a conclusão.
       if (isRoadStarPhase()) return ROAD_STAR_TARGET;
 
       // Mantém o comportamento anterior das demais fases de carro.
