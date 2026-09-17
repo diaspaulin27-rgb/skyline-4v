@@ -125,7 +125,7 @@
         <div class="menu-card">
           <h2 style="margin:0 0 20px;" data-i18n="settings_title">Settings</h2>
           <div style="text-align:left;">
-            
+
             <div id="languageSettingRow" class="setting-row">
               <span data-i18n="set_lang">Language</span>
               <button id="langToggleBtn" class="btn btn-small" style="padding: 5px 10px; min-height:30px;">English</button>
@@ -135,7 +135,7 @@
               <div class="setting-row"><span data-i18n="set_rain">Rain Intensity</span><span id="rainVal">70%</span></div>
               <input id="rainSlider" type="range" min="10" max="100" step="10" value="70">
             </div>
-            
+
             <div class="setting-row" style="margin-top:22px;"><span data-i18n="set_vol">Ambient Volume</span><span id="ambVal">50%</span></div>
             <input id="ambSlider" type="range" min="0" max="100" value="50">
 
@@ -206,6 +206,32 @@
             <button id="nextPhaseBtn" class="btn btn-primary" data-i18n="btn_next">NEXT PHASE</button>
             <button id="rewardMenuBtn" class="btn" data-i18n="btn_mainmenu">MAIN MENU</button>
           </div>
+        </div>
+      </section>
+
+      <!-- RECOMPENSA SECRETA — PARABRISA -->
+      <section id="windshieldSecretScreen" class="screen hidden" aria-hidden="true">
+        <div class="secret-reward-card">
+          <div class="secret-reward-eyebrow">✦ SEGREDO DESCOBERTO ✦</div>
+          <h2 class="secret-reward-title">PARABÉNS PELA VISTA LIMPA.</h2>
+          <p class="secret-reward-intro">Você encontrou algo que não estava à venda.</p>
+
+          <div class="secret-reward-box">
+            <img
+              class="secret-reward-art"
+              src="assets/images/IMG_2047.webp"
+              alt="Dois limpadores de para-brisa azuis"
+            >
+          </div>
+
+          <div class="secret-reward-name">PARABRISA</div>
+          <div class="secret-reward-state">Estilo secreto desbloqueado</div>
+
+          <p class="secret-reward-note">Algo novo espera por você nos Estilos de Limpeza.</p>
+
+          <button id="windshieldSecretContinueBtn" class="btn btn-primary secret-reward-button" type="button">
+            CONTINUAR
+          </button>
         </div>
       </section>
     </div>
