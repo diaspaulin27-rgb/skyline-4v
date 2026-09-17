@@ -1447,6 +1447,7 @@ const phases = [
 
         const intensity = getRainVisualIntensity();
         const profile = getRainStyleProfile(phase);
+        const zenClimate = state.isZen ? getZenClimate() : null;
 
         this.z = depth;
         this.x = Math.random() * W;
@@ -1462,10 +1463,16 @@ const phases = [
         const baseWindFrame = -0.7 - Math.random() * 0.5;
 
         // Intensidade geral do mapa + personalidade individual da fase.
-        const lengthScale = (.46 + intensity * .54) * profile.length;
-        const speedScale = (.52 + intensity * .48) * profile.speed;
+        const lengthScale = zenClimate
+          ? zenClimate.length * profile.length
+          : (.46 + intensity * .54) * profile.length;
+        const speedScale = zenClimate
+          ? zenClimate.speed * profile.speed
+          : (.52 + intensity * .48) * profile.speed;
         const opacityScale = (.34 + intensity * .66) * profile.opacity;
-        const thicknessScale = (.58 + intensity * .42) * profile.thickness;
+        const thicknessScale = zenClimate
+          ? zenClimate.width * profile.thickness
+          : (.58 + intensity * .42) * profile.thickness;
         const windScale = (.58 + intensity * .42) * profile.wind;
 
         this.len = baseLength * lengthScale;
@@ -2742,8 +2749,12 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       return buffer;
     }
 
+    function getActiveRainAudioIndex() {
+      return state.isZen ? getZenClimate().rainAudio : state.currentPhase;
+    }
+
     async function playEmbeddedPhaseRain(index) {
-      if(!audioCtx || state.isZen || index<0 || index>=PHASE_RAIN_AUDIO.length) {
+      if(!audioCtx || index<0 || index>=PHASE_RAIN_AUDIO.length) {
         stopEmbeddedPhaseRain();
         return;
       }
@@ -2761,7 +2772,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
 
       try {
         const buffer=await decodeEmbeddedPhaseRain(index);
-        if(!buffer || token!==phaseRainRequestToken || state.isZen || state.currentPhase!==index) return;
+        if(!buffer || token!==phaseRainRequestToken || getActiveRainAudioIndex()!==index) return;
         const source=audioCtx.createBufferSource();
         source.buffer=buffer;
         source.loop=true;
@@ -2773,20 +2784,16 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         updateAudio();
       } catch(error) {
         if(token===phaseRainRequestToken) phaseRainRequestedIndex=-1;
-        console.warn(`Não foi possível carregar o som de chuva da fase ${index+1}.`,error);
+        console.warn(`Não foi possível carregar o som climático ${index+1}.`,error);
         updateAudio();
       }
     }
 
     function syncEmbeddedPhaseRain() {
-      if(!audioCtx) return;
-      if(state.isZen) {
-        if(phaseRainSource || phaseRainRequestedIndex!==-1) stopEmbeddedPhaseRain();
-        return;
-      }
-      if(!state.started) return;
-      if(phaseRainActiveIndex!==state.currentPhase && phaseRainRequestedIndex!==state.currentPhase) {
-        playEmbeddedPhaseRain(state.currentPhase);
+      if(!audioCtx || !state.started) return;
+      const desiredIndex=getActiveRainAudioIndex();
+      if(phaseRainActiveIndex!==desiredIndex && phaseRainRequestedIndex!==desiredIndex) {
+        playEmbeddedPhaseRain(desiredIndex);
       }
     }
 
@@ -2923,6 +2930,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     });
 
     function getThunderWeights(intensity, phaseIndex=state.currentPhase) {
+      if(state.isZen) return getZenClimate().thunderWeights;
       const phaseProfile=PHASE_THUNDER_PROFILES[phaseIndex];
       if(phaseProfile) return phaseProfile.weights;
       if(intensity>=.80) return [.10,.38,.32,.20];
@@ -3007,7 +3015,8 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       if(!masterGain || !audioCtx) return;
       const phase=getActivePhase();
       const intensity=getEffectiveRainIntensity();
-      const isSnow=phase.type==='snow' || phase.type==='car_snow';
+      const zenClimate=state.isZen ? getZenClimate() : null;
+      const isSnow=phase.type==='snow' || phase.type==='car_snow' || Boolean(zenClimate?.snow);
       masterGain.gain.setTargetAtTime(state.paused ? .28 : .82,audioCtx.currentTime,.18);
       const profile=({
         light:{gain:.78,tone:.82},steady:{gain:1,tone:1},heavy:{gain:1.10,tone:1.08},neon:{gain:.96,tone:1.16},
@@ -3019,14 +3028,17 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
 
       syncEmbeddedPhaseRain();
       syncEmbeddedMusic();
-      const embeddedRainReady=!state.isZen && phaseRainActiveIndex===state.currentPhase;
+      const activeRainAudioIndex=getActiveRainAudioIndex();
+      const embeddedRainReady=phaseRainActiveIndex===activeRainAudioIndex;
       const syntheticRainTarget=embeddedRainReady ? 0 :
         (state.gameSound ? 1 : 0)*(isSnow ? .035+.055*intensity : .075+.115*intensity)*profile.gain*state.rainVolume;
-      const embeddedRainTarget=embeddedRainReady && state.gameSound ? .72*state.rainVolume : 0;
+      const rainAudioGain=state.isZen ? zenClimate.rainGain : .72;
+      const embeddedRainTarget=embeddedRainReady && state.gameSound ? rainAudioGain*state.rainVolume : 0;
+      const thunderLevelGain=state.isZen ? zenClimate.thunderGain : 1;
       rainGain.gain.setTargetAtTime(syntheticRainTarget,audioCtx.currentTime,.16);
       phaseRainGain.gain.setTargetAtTime(embeddedRainTarget,audioCtx.currentTime,.16);
       musicGain.gain.setTargetAtTime(state.musicSound && state.started ? state.ambVolume : 0,audioCtx.currentTime,.25);
-      thunderGain.gain.setTargetAtTime(state.gameSound && state.lightningEnabled ? state.ambVolume : 0,audioCtx.currentTime,.10);
+      thunderGain.gain.setTargetAtTime(state.gameSound && state.lightningEnabled ? state.ambVolume*thunderLevelGain : 0,audioCtx.currentTime,.10);
       rainFilter.frequency.setTargetAtTime((isSnow ? 1050 : 1750+intensity*1850)*profile.tone,audioCtx.currentTime,.25);
     }
     function blip(freq,dur,vol){ if(!audioCtx||!state.gameSound)return; const o=audioCtx.createOscillator(),g=audioCtx.createGain(); o.frequency.value=freq; o.type='sine'; g.gain.setValueAtTime(0,audioCtx.currentTime);g.gain.linearRampToValueAtTime(vol,audioCtx.currentTime+.01);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+dur);o.connect(g);g.connect(masterGain);o.start();o.stop(audioCtx.currentTime+dur+.02);}
@@ -3060,14 +3072,19 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
 
       if(!state.lightningEnabled) return;
 
-      const intensity=getActivePhase()?.thunder || 0;
+      const zenClimate=state.isZen ? getZenClimate() : null;
+      const intensity=state.isZen ? zenClimate.thunder : (getActivePhase()?.thunder || 0);
       if(!intensity) return;
       const phaseIndex=state.currentPhase;
-      const profile=PHASE_THUNDER_PROFILES[phaseIndex];
+      const zenLevel=state.isZen ? getZenLevel() : null;
+      const profile=state.isZen
+        ? { first:zenClimate.thunderFirst, next:zenClimate.thunderNext }
+        : PHASE_THUNDER_PROFILES[phaseIndex];
       const fallbackRange=firstStrike ? [5000,10000] : [9000,17000];
       const [minDelay,maxDelay]=(profile ? (firstStrike ? profile.first : profile.next) : fallbackRange);
       thunderTimer=setTimeout(()=>{
-        if(state.lightningEnabled && state.started&&!state.paused&&!document.hidden&&state.currentPhase===phaseIndex) playThunder(intensity);
+        const sameWeather=state.isZen ? getZenLevel()===zenLevel : state.currentPhase===phaseIndex;
+        if(state.lightningEnabled && state.started&&!state.paused&&!document.hidden&&sameWeather) playThunder(intensity);
         startThunderSchedule(false);
       },minDelay+Math.random()*(maxDelay-minDelay));
     }
@@ -3294,22 +3311,27 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       document.getElementById("fingerSlot2").classList.toggle("selected",state.selectedBrushSlot===2);
     }
 
-    /* ZEN — escala climática: o slider muda densidade, velocidade e peso da chuva. */
-    const ZEN_CLIMATE = {
-      10:{density:.18,speed:.42,length:.55,width:.62},
-      20:{density:.28,speed:.50,length:.62,width:.68},
-      30:{density:.40,speed:.58,length:.70,width:.74},
-      40:{density:.52,speed:.68,length:.78,width:.80},
-      50:{density:.64,speed:.78,length:.86,width:.88},
-      60:{density:.76,speed:.88,length:.94,width:.96},
-      70:{density:.88,speed:1.00,length:1.02,width:1.04},
-      80:{density:1.00,speed:1.12,length:1.08,width:1.10},
-      90:{density:1.12,speed:1.25,length:1.14,width:1.16},
-      100:{density:1.18,speed:1.30,length:1.08,width:1.18}
-    };
+    /* ZEN — 10 níveis climáticos reais.
+       10% a 90% usam exatamente 10%, 20% ... 90% do pool de chuva.
+       Em 100% a chuva vira neve. O áudio e os trovões acompanham a evolução
+       usando somente os sons que já existem no Rainy Skyline. */
+    const ZEN_CLIMATE = Object.freeze({
+      10:{density:.10,speed:.48,length:.58,width:.66,rainAudio:19,rainGain:.42,snow:false,thunder:0,   thunderGain:0,   thunderWeights:[1,0,0,0],             thunderFirst:[24000,32000],thunderNext:[28000,38000]},
+      20:{density:.20,speed:.54,length:.64,width:.70,rainAudio:8, rainGain:.46,snow:false,thunder:0,   thunderGain:0,   thunderWeights:[1,0,0,0],             thunderFirst:[22000,30000],thunderNext:[26000,36000]},
+      30:{density:.30,speed:.60,length:.70,width:.74,rainAudio:6, rainGain:.50,snow:false,thunder:0,   thunderGain:0,   thunderWeights:[1,0,0,0],             thunderFirst:[20000,28000],thunderNext:[24000,34000]},
+      40:{density:.40,speed:.68,length:.76,width:.78,rainAudio:0, rainGain:.54,snow:false,thunder:.04, thunderGain:.42, thunderWeights:[1,0,0,0],             thunderFirst:[18000,26000],thunderNext:[22000,32000]},
+      50:{density:.50,speed:.76,length:.82,width:.84,rainAudio:4, rainGain:.58,snow:false,thunder:.07, thunderGain:.52, thunderWeights:[.90,.10,0,0],         thunderFirst:[15000,23000],thunderNext:[18000,29000]},
+      60:{density:.60,speed:.84,length:.88,width:.90,rainAudio:1, rainGain:.62,snow:false,thunder:.11, thunderGain:.62, thunderWeights:[.74,.23,.03,0],       thunderFirst:[12000,20000],thunderNext:[15000,25000]},
+      70:{density:.70,speed:.94,length:.96,width:.96,rainAudio:3, rainGain:.68,snow:false,thunder:.18, thunderGain:.72, thunderWeights:[.54,.36,.10,0],       thunderFirst:[9000,16000], thunderNext:[12000,20000]},
+      80:{density:.80,speed:1.04,length:1.04,width:1.02,rainAudio:2,rainGain:.74,snow:false,thunder:.30, thunderGain:.84, thunderWeights:[.30,.46,.24,0],       thunderFirst:[7000,12000], thunderNext:[9000,16000]},
+      90:{density:.90,speed:1.16,length:1.12,width:1.10,rainAudio:5,rainGain:.82,snow:false,thunder:.65, thunderGain:.94, thunderWeights:[.12,.34,.36,.18],     thunderFirst:[4500,8000],  thunderNext:[6000,12000]},
+      100:{density:0,speed:1,length:1,width:1,rainAudio:15,rainGain:.82,snow:true,thunder:.85,thunderGain:1,thunderWeights:[.08,.27,.38,.27],thunderFirst:[3500,7000],thunderNext:[5000,10000]}
+    });
+    function getZenLevel(){
+      return Math.max(10,Math.min(100,Math.round(state.rainIntensity*10)*10));
+    }
     function getZenClimate(){
-      const level=Math.max(10,Math.min(100,Math.round(state.rainIntensity*100/10)*10));
-      return ZEN_CLIMATE[level] || ZEN_CLIMATE[70];
+      return ZEN_CLIMATE[getZenLevel()] || ZEN_CLIMATE[70];
     }
 
     function returnToMainMenu(advanceToNext = false) {
@@ -3317,6 +3339,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       if(thunderStrikeTimer) { clearTimeout(thunderStrikeTimer); thunderStrikeTimer=null; }
       stopEmbeddedMusic();
       const wasZen=state.isZen;
+      if(wasZen) stopEmbeddedPhaseRain();
       state.started=false;
       state.paused=false;
       state.isZen=false;
@@ -3371,7 +3394,8 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
 
         const isSnowPhase =
           phase.type === "snow" ||
-          phase.type === "car_snow";
+          phase.type === "car_snow" ||
+          Boolean(state.isZen && climate?.snow);
 
         // =====================================================
         // NEVE — pool dedicado. Não altera a chuva aprovada.
@@ -3419,14 +3443,15 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
             .32 +
             Math.max(0, Math.min(1, zenIntensity)) * .68;
 
-          const combinedDensity =
-            Math.max(
-              .04,
-              Math.min(
-                1,
-                rainProfile.density * intensityDensity
-              )
-            );
+          const combinedDensity = state.isZen && climate
+            ? climate.density
+            : Math.max(
+                .04,
+                Math.min(
+                  1,
+                  rainProfile.density * intensityDensity
+                )
+              );
 
           const rainDensityCurve =
             Math.pow(combinedDensity, 1.08);
@@ -3434,18 +3459,19 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
           const minimumDrops =
             combinedDensity < .18 ? 14 : 20;
 
-          const activeRainCount =
-            Math.max(
-              minimumDrops,
-              Math.min(
-                rainParticles.length,
-                Math.round(
-                  minimumDrops +
-                  rainDensityCurve *
-                  (rainParticles.length - minimumDrops)
+          const activeRainCount = state.isZen && climate
+            ? Math.max(1,Math.min(rainParticles.length,Math.round(rainParticles.length*climate.density)))
+            : Math.max(
+                minimumDrops,
+                Math.min(
+                  rainParticles.length,
+                  Math.round(
+                    minimumDrops +
+                    rainDensityCurve *
+                    (rainParticles.length - minimumDrops)
+                  )
                 )
-              )
-            );
+              );
 
           const rainClipped = clipToPlayableGlass(rainCtx);
 
@@ -3562,7 +3588,28 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
 
 
     // Atmospheric settings
-    document.getElementById('rainSlider').addEventListener('input',e=>{state.rainIntensity=Number(e.target.value)/100;document.getElementById('rainVal').textContent=Math.round(state.rainIntensity*100)+'%';updateAudio();saveGame();});
+    document.getElementById('rainSlider').addEventListener('input',e=>{
+      const previousZenLevel=getZenLevel();
+      state.rainIntensity=Number(e.target.value)/100;
+      const nextZenLevel=getZenLevel();
+      document.getElementById('rainVal').textContent=nextZenLevel+'%';
+
+      if(state.isZen && previousZenLevel!==nextZenLevel){
+        rainParticles.forEach(p=>p.reset(true));
+        snowFlakes.forEach(f=>f.reset(true));
+        stopEmbeddedPhaseRain();
+        if(audioCtx) syncEmbeddedPhaseRain();
+
+        if(thunderTimer){ clearTimeout(thunderTimer); thunderTimer=null; }
+        if(thunderStrikeTimer){ clearTimeout(thunderStrikeTimer); thunderStrikeTimer=null; }
+        const flash=document.getElementById('lightningFlash');
+        if(flash) flash.style.opacity=0;
+        if(state.started && !state.paused) startThunderSchedule(true);
+      }
+
+      updateAudio();
+      saveGame();
+    });
     document.getElementById('ambSlider').addEventListener('input',e=>{state.ambVolume=Number(e.target.value)/100;document.getElementById('ambVal').textContent=Math.round(state.ambVolume*100)+'%';updateAudio();saveGame();});
     document.getElementById('rainSoundSlider').addEventListener('input',e=>{state.rainVolume=Number(e.target.value)/100;document.getElementById('rainSoundVal').textContent=Math.round(state.rainVolume*100)+'%';updateAudio();saveGame();});
     document.getElementById('vibrationToggle').onclick=()=>{state.vibration=!state.vibration;syncToggle("vibrationToggle",state.vibration);saveGame();};
