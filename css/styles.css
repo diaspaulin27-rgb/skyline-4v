@@ -278,6 +278,138 @@
     .loading-mark { width:34px; height:34px; margin:0 auto 16px; border-radius:50%; border:2px solid rgba(255,255,255,.12); border-top-color:var(--primary); animation:spin .8s linear infinite; }
     @keyframes spin { to { transform:rotate(360deg); } }
 
+    /* =========================================================
+       RECOMPENSA SECRETA — PARABRISA
+       Visual aprovado; permanece escondida até ser acionada pelo JS.
+       ========================================================= */
+    #windshieldSecretScreen {
+      background:
+        radial-gradient(circle at 50% 20%, rgba(56,189,248,.10), transparent 34%),
+        rgba(3,7,18,.94);
+    }
+
+    .secret-reward-card {
+      width: min(430px, 100%);
+      max-height: calc(100vh - 36px);
+      max-height: calc(100dvh - 36px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+      overflow-y: auto;
+      padding: 28px 22px 22px;
+      border-radius: 28px;
+      text-align: center;
+      border: 1px solid var(--panel-border);
+      background: rgba(10,18,34,.94);
+      box-shadow: 0 24px 70px rgba(0,0,0,.62), inset 0 1px 0 rgba(255,255,255,.04);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      touch-action: pan-y;
+      overscroll-behavior: contain;
+      animation: secretRewardReveal .55s cubic-bezier(.2,.8,.2,1);
+    }
+
+    .secret-reward-card::-webkit-scrollbar { width: 0; }
+
+    .secret-reward-eyebrow {
+      color: #7dd3fc;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 2.4px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      text-shadow: 0 0 16px rgba(56,189,248,.45);
+    }
+
+    .secret-reward-title {
+      margin: 0;
+      font-size: 27px;
+      line-height: 1.12;
+      letter-spacing: .3px;
+    }
+
+    .secret-reward-intro {
+      margin: 10px auto 20px;
+      max-width: 310px;
+      color: rgba(255,255,255,.58);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .secret-reward-box {
+      position: relative;
+      border-radius: 22px;
+      padding: 10px;
+      border: 1px solid rgba(125,211,252,.25);
+      background: linear-gradient(145deg, rgba(56,189,248,.10), rgba(255,255,255,.025));
+      box-shadow: 0 0 34px rgba(56,189,248,.08), inset 0 1px 0 rgba(255,255,255,.05);
+      overflow: hidden;
+    }
+
+    .secret-reward-box::before {
+      content: "";
+      position: absolute;
+      inset: -35%;
+      pointer-events: none;
+      background: radial-gradient(circle, rgba(56,189,248,.13), transparent 55%);
+      animation: secretRewardGlow 3s ease-in-out infinite;
+    }
+
+    .secret-reward-art {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      display: block;
+      object-fit: cover;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.08);
+    }
+
+    .secret-reward-name {
+      margin-top: 16px;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+    }
+
+    .secret-reward-state {
+      margin-top: 5px;
+      color: #7dd3fc;
+      font-size: 10px;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+    }
+
+    .secret-reward-note {
+      margin: 18px auto 20px;
+      max-width: 310px;
+      color: rgba(255,255,255,.52);
+      font-size: 11px;
+      line-height: 1.55;
+    }
+
+    .secret-reward-button {
+      width: 100%;
+      letter-spacing: 1.3px;
+    }
+
+    @keyframes secretRewardReveal {
+      from { opacity: 0; transform: translateY(18px) scale(.98); }
+      to { opacity: 1; transform: none; }
+    }
+
+    @keyframes secretRewardGlow {
+      0%, 100% { opacity: .55; transform: scale(.96); }
+      50% { opacity: 1; transform: scale(1.04); }
+    }
+
+    @media (max-height: 760px) {
+      .secret-reward-card { padding: 20px 18px 18px; }
+      .secret-reward-title { font-size: 23px; }
+      .secret-reward-intro { margin-bottom: 14px; }
+      .secret-reward-box { width: min(280px, 86%); margin: 0 auto; }
+      .secret-reward-name { margin-top: 12px; }
+      .secret-reward-note { margin: 12px auto 14px; }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
     }
@@ -296,4 +428,3 @@
     #cleanSpark{position:absolute;inset:0;z-index:10;pointer-events:none;}
     #toast{position:absolute;left:50%;bottom:18%;transform:translate(-50%,10px);z-index:240;padding:10px 15px;border-radius:18px;background:rgba(4,10,20,.88);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(14px);font-size:12px;letter-spacing:.5px;opacity:0;pointer-events:none;transition:.25s ease;white-space:nowrap;}
     #toast.show{opacity:1;transform:translate(-50%,0);}
-    
