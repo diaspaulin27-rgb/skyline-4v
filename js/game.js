@@ -39,6 +39,9 @@
     const COMPLETION_TARGET = .98;
     const PERFECT_CLEAN_TARGET = .995;
     const PERFECT_CLEAN_BONUS = 100;
+    const ROAD_STAR_PHASES = Object.freeze([10, 12, 18]); // 11, 13 e 19
+    const ROAD_STAR_TARGET = .997; // mostrado como 100%, evita pixel invisível bloquear a conclusão
+    const ROAD_STAR_BONUS = 100;
     const GLASS_DRIP_FREQUENCY = .006;
     // Fundos incorporados: as 20 fases funcionam sem baixar ZIPs em tempo de jogo.
     // WebP vertical otimizado preserva a arte aprovada e reduz uso de rede/bateria.
@@ -107,6 +110,7 @@ const state = {
       selectedBrushSlot: 1,
       completedPhases: [],
       perfectPhases: [],
+      roadStarPhases: [],
       completedSinceAd: 0,
       lastAdAt: 0,
       resumePhase: null
@@ -524,6 +528,14 @@ const phases = [
       return !state.isZen && (phase?.type === "car" || phase?.type === "car_snow");
     }
 
+    function isRoadStarPhaseIndex(index) {
+      return ROAD_STAR_PHASES.includes(index);
+    }
+
+    function isRoadStarPhase(index = state.currentPhase) {
+      return !state.isZen && isRoadStarPhaseIndex(index);
+    }
+
     function getCarGlassProfile() {
       return isCarPhase() ? (CAR_GLASS_PROFILES[state.currentPhase] || null) : null;
     }
@@ -674,8 +686,11 @@ const phases = [
     }
 
     function getCompletionTarget() {
-      // Nas fases de carro a área real de vidro é bem menor; por isso a fase
-      // só termina quando TODOS os blocos válidos daquele vidro foram limpos.
+      // Desafio Road Star: fases 11, 13 e 19 mostram 100% ao jogador,
+      // mas aceitam 99,7% internamente para nenhum pixel invisível bloquear a conclusão.
+      if (isRoadStarPhase()) return ROAD_STAR_TARGET;
+
+      // Mantém o comportamento anterior das demais fases de carro.
       return isCarPhase() ? 1 : COMPLETION_TARGET;
     }
 
@@ -708,8 +723,8 @@ const phases = [
         rainIntensity: state.rainIntensity, ambVolume: state.ambVolume, rainVolume: state.rainVolume,
         gameSound: state.gameSound, musicSound: state.musicSound, vibration: state.vibration,
         lang: state.lang, lightningEnabled: state.lightningEnabled, zenAutoFog: state.zenAutoFog,
-        completedPhases: state.completedPhases, perfectPhases: state.perfectPhases, completedSinceAd: state.completedSinceAd,
-        lastAdAt: state.lastAdAt
+        completedPhases: state.completedPhases, perfectPhases: state.perfectPhases, roadStarPhases: state.roadStarPhases,
+        completedSinceAd: state.completedSinceAd, lastAdAt: state.lastAdAt
       };
       try { localStorage.setItem("rainySkylineSave", JSON.stringify(payload)); }
       catch (error) { console.warn("Não foi possível salvar o progresso.", error); }
@@ -745,6 +760,9 @@ const phases = [
           : Array.from({length: state.highestPhase}, (_, i) => i);
         state.perfectPhases = Array.isArray(data.perfectPhases)
           ? [...new Set(data.perfectPhases.map(Number).filter(i => Number.isInteger(i) && i >= 0 && i < ACTIVE_PHASE_COUNT))]
+          : [];
+        state.roadStarPhases = Array.isArray(data.roadStarPhases)
+          ? [...new Set(data.roadStarPhases.map(Number).filter(i => isRoadStarPhaseIndex(i)))]
           : [];
         state.completedSinceAd = Math.max(0, Number(data.completedSinceAd) || 0);
         state.lastAdAt = Math.max(0, Number(data.lastAdAt) || 0);
@@ -3137,7 +3155,9 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     function completePhase() {
       if(!state.started || state.isZen) return;
       const completedIndex = state.currentPhase;
-      const perfectClean = state.fogProgress >= PERFECT_CLEAN_TARGET;
+      const roadStarPhase = isRoadStarPhaseIndex(completedIndex);
+      const perfectClean = !roadStarPhase && state.fogProgress >= PERFECT_CLEAN_TARGET;
+      const roadStarClean = roadStarPhase && state.fogProgress + 1e-9 >= ROAD_STAR_TARGET;
       state.started = false;
       state.paused = false;
       state.activePointers.clear();
@@ -3148,10 +3168,12 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       stopEmbeddedMusic();
 
       const firstClear = !state.completedPhases.includes(completedIndex);
+      const firstRoadStar = roadStarClean && !state.roadStarPhases.includes(completedIndex);
       const base = 100;
       const newMemoryBonus = firstClear ? 50 : 0;
       const perfectBonus = perfectClean ? PERFECT_CLEAN_BONUS : 0;
-      const total = base + newMemoryBonus + perfectBonus;
+      const roadStarBonus = firstRoadStar ? ROAD_STAR_BONUS : 0;
+      const total = base + newMemoryBonus + perfectBonus + roadStarBonus;
 
       state.points += total;
       if(firstClear){
@@ -3160,6 +3182,9 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       }
       if(perfectClean && !state.perfectPhases.includes(completedIndex)) {
         state.perfectPhases.push(completedIndex);
+      }
+      if(firstRoadStar) {
+        state.roadStarPhases.push(completedIndex);
       }
       state.completedSinceAd += 1;
       if (state.currentPhase < ACTIVE_PHASE_COUNT - 1) {
@@ -3172,8 +3197,9 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       document.getElementById("rewardBase").textContent = `+${base}`;
       document.getElementById("rewardBonus").textContent = `+${newMemoryBonus}`;
       document.getElementById("rewardBonusLine").style.display = newMemoryBonus ? "flex" : "none";
-      document.getElementById("rewardPerfectBonus").textContent = `+${perfectBonus}`;
-      document.getElementById("rewardPerfectLine").style.display = perfectClean ? "flex" : "none";
+      const displayedCleanBonus = perfectBonus + roadStarBonus;
+      document.getElementById("rewardPerfectBonus").textContent = `+${displayedCleanBonus}`;
+      document.getElementById("rewardPerfectLine").style.display = displayedCleanBonus ? "flex" : "none";
       document.getElementById("rewardPerfectBadge").style.display = perfectClean ? "block" : "none";
       document.getElementById("rewardCoins").textContent = `+${total} 🌧️`;
       document.getElementById("rewardTotal").textContent = `+${total} 🌧️`;
