@@ -111,6 +111,8 @@ const state = {
       completedPhases: [],
       perfectPhases: [],
       roadStarPhases: [],
+      windshieldUnlocked: false,
+      windshieldRevealSeen: false,
       completedSinceAd: 0,
       lastAdAt: 0,
       resumePhase: null
@@ -731,6 +733,7 @@ const phases = [
         gameSound: state.gameSound, musicSound: state.musicSound, vibration: state.vibration,
         lang: state.lang, lightningEnabled: state.lightningEnabled, zenAutoFog: state.zenAutoFog,
         completedPhases: state.completedPhases, perfectPhases: state.perfectPhases, roadStarPhases: state.roadStarPhases,
+        windshieldUnlocked: state.windshieldUnlocked, windshieldRevealSeen: state.windshieldRevealSeen,
         completedSinceAd: state.completedSinceAd, lastAdAt: state.lastAdAt
       };
       try { localStorage.setItem("rainySkylineSave", JSON.stringify(payload)); }
@@ -771,6 +774,13 @@ const phases = [
         state.roadStarPhases = Array.isArray(data.roadStarPhases)
           ? [...new Set(data.roadStarPhases.map(Number).filter(i => isRoadStarPhaseIndex(i)))]
           : [];
+        state.windshieldUnlocked = data.windshieldUnlocked === true;
+        state.windshieldRevealSeen = data.windshieldRevealSeen === true;
+        // Migração segura: saves antigos que já conquistaram as 4 Road Stars
+        // também recebem o Parabrisa secreto sem precisar repetir as fases.
+        if(ROAD_STAR_PHASES.every(index => state.roadStarPhases.includes(index))) {
+          state.windshieldUnlocked = true;
+        }
         state.completedSinceAd = Math.max(0, Number(data.completedSinceAd) || 0);
         state.lastAdAt = Math.max(0, Number(data.lastAdAt) || 0);
       } catch (error) { console.warn("Save inválido."); }
@@ -3193,6 +3203,9 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       if(firstRoadStar) {
         state.roadStarPhases.push(completedIndex);
       }
+      if(!state.windshieldUnlocked && ROAD_STAR_PHASES.every(index => state.roadStarPhases.includes(index))) {
+        state.windshieldUnlocked = true;
+      }
       state.completedSinceAd += 1;
       if (state.currentPhase < ACTIVE_PHASE_COUNT - 1) {
         state.highestPhase = Math.max(state.highestPhase, state.currentPhase + 1);
@@ -3570,17 +3583,38 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
 
     // =========================================================
     // PARABRISA SECRETO — ABRIR / FECHAR TELA
-    // Nesta etapa NÃO existe ainda gatilho das 4 Road Stars.
+    // Desbloqueia e revela uma única vez após conquistar as 4 Road Stars.
     // =========================================================
-    function showWindshieldSecretScreen() {
+    let windshieldSecretContinuation = null;
+
+    function hasPendingWindshieldReveal() {
+      return state.windshieldUnlocked && !state.windshieldRevealSeen;
+    }
+
+    function showWindshieldSecretScreen(continuation = null) {
+      windshieldSecretContinuation = typeof continuation === "function" ? continuation : null;
       document.querySelectorAll(".screen").forEach(screen => screen.classList.add("hidden"));
       document.getElementById("hud").classList.add("hidden");
 
       const secretScreen = document.getElementById("windshieldSecretScreen");
-      if (!secretScreen) return;
+      if (!secretScreen) {
+        const fallback = windshieldSecretContinuation;
+        windshieldSecretContinuation = null;
+        fallback?.();
+        return;
+      }
 
       secretScreen.classList.remove("hidden");
       secretScreen.setAttribute("aria-hidden", "false");
+    }
+
+    function maybeShowWindshieldSecretScreen(continuation) {
+      if(hasPendingWindshieldReveal()) {
+        showWindshieldSecretScreen(continuation);
+        return true;
+      }
+      continuation?.();
+      return false;
     }
 
     function closeWindshieldSecretScreen() {
@@ -3590,7 +3624,15 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         secretScreen.setAttribute("aria-hidden", "true");
       }
 
-      returnToMainMenu(false);
+      if(hasPendingWindshieldReveal()) {
+        state.windshieldRevealSeen = true;
+        saveGame();
+      }
+
+      const continuation = windshieldSecretContinuation;
+      windshieldSecretContinuation = null;
+      if(continuation) continuation();
+      else returnToMainMenu(false);
     }
 
     const windshieldSecretContinueBtn = document.getElementById("windshieldSecretContinueBtn");
@@ -3644,10 +3686,14 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     };
     document.getElementById("exitMenuBtn").onclick = () => returnToMainMenu(false);
     document.getElementById("nextPhaseBtn").onclick = () => {
-      if(state.currentPhase < ACTIVE_PHASE_COUNT - 1) startPhase(state.resumePhase ?? state.currentPhase + 1);
-      else maybeShowCompletionAd(() => returnToMainMenu(false));
+      maybeShowWindshieldSecretScreen(() => {
+        if(state.currentPhase < ACTIVE_PHASE_COUNT - 1) startPhase(state.resumePhase ?? state.currentPhase + 1);
+        else maybeShowCompletionAd(() => returnToMainMenu(false));
+      });
     };
-    document.getElementById("rewardMenuBtn").onclick = () => maybeShowCompletionAd(() => returnToMainMenu(true));
+    document.getElementById("rewardMenuBtn").onclick = () => {
+      maybeShowWindshieldSecretScreen(() => maybeShowCompletionAd(() => returnToMainMenu(true)));
+    };
 
     document.getElementById("langToggleBtn").onclick = () => {
       state.lang = state.lang === 'en' ? 'es' : state.lang === 'es' ? 'pt' : 'en';
@@ -3768,6 +3814,14 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
           zanonSplash.classList.add("fade-out");
           setTimeout(() => zanonSplash.remove(), 380);
         }, 1000);
+      }
+
+      // Se o save já tinha as 4 Road Stars antes desta recompensa existir,
+      // revela o segredo uma única vez após a splash.
+      if(hasPendingWindshieldReveal()) {
+        setTimeout(() => {
+          if(hasPendingWindshieldReveal() && !state.started) showWindshieldSecretScreen();
+        }, 1450);
       }
 
     // Fim da inicialização. O código funcional acima permanece byte-a-byte
