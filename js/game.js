@@ -176,6 +176,7 @@ const state = {
         zen_score: "ZEN · ",
         star: "STAR",
         perfect: "PERFECT WIPE",
+        road_star_message: "CLEAN GLASS. CLEAR VIEW.",
         audio_ready: "Tap to enable atmosphere",
         owned: "OWNED",
         equipped: "EQUIPPED",
@@ -239,6 +240,7 @@ const state = {
         zen_score: "ZEN · ",
         star: "ESTRELLA",
         perfect: "LIMPIEZA PERFECTA",
+        road_star_message: "CRISTAL LIMPIO. VISTA DESPEJADA.",
         audio_ready: "Toca para activar la atmósfera",
         owned: "ADQUIRIDO",
         equipped: "EQUIPADO",
@@ -302,6 +304,7 @@ const state = {
         zen_score: "ZEN · ",
         star: "ESTRELA",
         perfect: "LIMPEZA PERFEITA",
+        road_star_message: "VIDRO LIMPO. PAISAGEM LIVRE.",
         audio_ready: "Toque para ativar a atmosfera",
         owned: "ADQUIRIDO",
         equipped: "EQUIPADO",
@@ -3200,7 +3203,9 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       const displayedCleanBonus = perfectBonus + roadStarBonus;
       document.getElementById("rewardPerfectBonus").textContent = `+${displayedCleanBonus}`;
       document.getElementById("rewardPerfectLine").style.display = displayedCleanBonus ? "flex" : "none";
-      document.getElementById("rewardPerfectBadge").style.display = perfectClean ? "block" : "none";
+      const rewardPerfectBadge = document.getElementById("rewardPerfectBadge");
+      rewardPerfectBadge.textContent = roadStarClean ? t("road_star_message") : t("perfect");
+      rewardPerfectBadge.style.display = (perfectClean || roadStarClean) ? "block" : "none";
       document.getElementById("rewardCoins").textContent = `+${total} 🌧️`;
       document.getElementById("rewardTotal").textContent = `+${total} 🌧️`;
       document.getElementById("hud").classList.add("hidden");
