@@ -715,9 +715,11 @@ const phases = [
       mist: { name:{en:"Mist",pt:"Névoa",es:"Niebla"}, cost:1100, radius:62, blur:1.30, vignette:.62, desc:{en:"Diffuse and atmospheric.",pt:"Difuso e atmosférico.",es:"Difuso y atmosférico."} },
       crystal: { name:{en:"Crystal",pt:"Cristal",es:"Cristal"}, cost:1300, radius:29, blur:.26, vignette:.12, desc:{en:"Clean and clearly defined.",pt:"Limpo e bem definido.",es:"Limpio y bien definido."} },
       giant: { name:{en:"Giant",pt:"Gigante",es:"Gigante"}, cost:1600, radius:78, blur:.92, vignette:.48, desc:{en:"The widest clearing style.",pt:"O estilo de limpeza mais amplo.",es:"El estilo de limpieza más amplio."} },
-      focus: { name:{en:"Focus",pt:"Foco",es:"Enfoque"}, cost:1900, radius:36, blur:.34, vignette:.20, desc:{en:"Precise, balanced clarity.",pt:"Nitidez precisa e equilibrada.",es:"Claridad precisa y equilibrada."} }
+      focus: { name:{en:"Focus",pt:"Foco",es:"Enfoque"}, cost:1900, radius:36, blur:.34, vignette:.20, desc:{en:"Precise, balanced clarity.",pt:"Nitidez precisa e equilibrada.",es:"Claridad precisa y equilibrada."} },
+      windshield: { name:{en:"Windshield",pt:"Parabrisa",es:"Parabrisas"}, cost:0, radius:42, blur:.65, vignette:.24, special:"windshield", desc:{en:"A secret style earned for a clear view.",pt:"Um estilo secreto conquistado pela vista limpa.",es:"Un estilo secreto conquistado por la vista despejada."} }
     };
 
+    const WINDSHIELD_BRUSH_KEY = "windshield";
     let unlockedBrushes = { soft: true };
 
 
@@ -780,6 +782,13 @@ const phases = [
         // também recebem o Parabrisa secreto sem precisar repetir as fases.
         if(ROAD_STAR_PHASES.every(index => state.roadStarPhases.includes(index))) {
           state.windshieldUnlocked = true;
+        }
+        if(state.windshieldUnlocked) {
+          unlockedBrushes[WINDSHIELD_BRUSH_KEY] = true;
+        } else {
+          delete unlockedBrushes[WINDSHIELD_BRUSH_KEY];
+          if(state.brush1 === WINDSHIELD_BRUSH_KEY) state.brush1 = "soft";
+          if(state.brush2 === WINDSHIELD_BRUSH_KEY) state.brush2 = "soft";
         }
         state.completedSinceAd = Math.max(0, Number(data.completedSinceAd) || 0);
         state.lastAdAt = Math.max(0, Number(data.lastAdAt) || 0);
@@ -2625,7 +2634,11 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       if (index === 0) key = state.brush1;
       else if (index === 1) key = state.brush2;
       else {
-        const extras = Object.keys(brushes).filter(k => k !== state.brush1 && k !== state.brush2);
+        const extras = Object.keys(brushes).filter(k =>
+          k !== state.brush1 &&
+          k !== state.brush2 &&
+          (k !== WINDSHIELD_BRUSH_KEY || state.windshieldUnlocked)
+        );
         key = extras[(index - 2) % extras.length] || "soft";
       }
       state.pointerBrushes.set(pointerId, key);
@@ -3205,6 +3218,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       }
       if(!state.windshieldUnlocked && ROAD_STAR_PHASES.every(index => state.roadStarPhases.includes(index))) {
         state.windshieldUnlocked = true;
+        unlockedBrushes[WINDSHIELD_BRUSH_KEY] = true;
       }
       state.completedSinceAd += 1;
       if (state.currentPhase < ACTIVE_PHASE_COUNT - 1) {
@@ -3324,8 +3338,13 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
 
     function renderStore() {
       const grid = document.getElementById("storeGrid"); grid.innerHTML = "";
-      Object.keys(brushes).forEach(k => {
-        const b = brushes[k]; const unlocked = unlockedBrushes[k]; const div = document.createElement("div");
+      Object.keys(brushes)
+        .filter(k => k !== WINDSHIELD_BRUSH_KEY || state.windshieldUnlocked)
+        .forEach(k => {
+        const b = brushes[k];
+        const secretWindshield = k === WINDSHIELD_BRUSH_KEY;
+        const unlocked = secretWindshield ? state.windshieldUnlocked : unlockedBrushes[k];
+        const div = document.createElement("div");
         const equipped = state.brush1 === k || state.brush2 === k;
         div.className = "store-item " + (equipped ? "active" : "");
         div.setAttribute("role","button");
@@ -3333,10 +3352,12 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         const previewWidth=Math.max(8,Math.min(29,b.radius*.36));
         const previewDot=Math.max(12,Math.min(29,b.radius*.38));
         const previewBlur=Math.max(.2,Math.min(4,b.blur*2.2));
-        const action=unlocked ? (equipped ? t('equipped') : t('equip')) : `${t('buy')} · ${b.cost} 🌧️`;
+        const action=secretWindshield
+          ? (equipped ? t('equipped') : t('owned'))
+          : (unlocked ? (equipped ? t('equipped') : t('equip')) : `${t('buy')} · ${b.cost} 🌧️`);
         div.innerHTML = `<div class="store-preview" style="--preview-width:${previewWidth}px;--preview-dot:${previewDot}px;--preview-blur:${previewBlur}px"></div><div class="store-item-title">${localize(b.name)}</div><div class="store-item-desc">${localize(b.desc)}</div><div class="store-item-cost">${action}</div>`;
         div.onclick = () => {
-          if (!unlockedBrushes[k]) {
+          if (!unlocked) {
             if(state.points < b.cost){ showToast(t('not_enough')); return; }
             state.points -= b.cost;
             unlockedBrushes[k] = true;
