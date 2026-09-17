@@ -39,7 +39,7 @@
     const COMPLETION_TARGET = .98;
     const PERFECT_CLEAN_TARGET = .995;
     const PERFECT_CLEAN_BONUS = 100;
-    const ROAD_STAR_PHASES = Object.freeze([10, 12, 18]); // 11, 13 e 19
+    const ROAD_STAR_PHASES = Object.freeze([10, 12, 16, 18]); // 11, 13, 17 e 19
     const ROAD_STAR_TARGET = .99; // 99% conclui o desafio Road Star e evita travar por pixels invisíveis
     const ROAD_STAR_BONUS = 100;
     const GLASS_DRIP_FREQUENCY = .006;
@@ -689,11 +689,15 @@ const phases = [
     }
 
     function getCompletionTarget() {
-      // Desafio Road Star: fases 11, 13 e 19 mostram 100% ao jogador,
-      // mas aceitam 99% internamente para nenhum pixel invisível bloquear a conclusão.
+      // Fase 17 — City Tunnel: conclui normalmente em 98%.
+      // Se o jogador continuar limpando até 99% antes de soltar o dedo,
+      // conquista a Road Star especial.
+      if (!state.isZen && state.currentPhase === 16) return COMPLETION_TARGET;
+
+      // Fases 11, 13 e 19: 99% conclui a fase e conquista a Road Star.
       if (isRoadStarPhase()) return ROAD_STAR_TARGET;
 
-      // Mantém o comportamento anterior das demais fases de carro.
+      // Mantém o comportamento anterior das demais fases.
       return isCarPhase() ? 1 : COMPLETION_TARGET;
     }
 
@@ -3296,7 +3300,8 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         const unlocked = i <= state.highestPhase;
         const div = document.createElement("div");
         div.className = "phase-item " + (i === state.currentPhase ? "active " : "") + (!unlocked ? "locked" : "");
-        const perfectMark = unlocked && state.perfectPhases.includes(i) ? " ✦" : "";
+        const roadStarPhase = isRoadStarPhaseIndex(i);
+        const perfectMark = unlocked && !roadStarPhase && state.perfectPhases.includes(i) ? " ✦" : "";
         const roadStarMark = unlocked && state.roadStarPhases.includes(i) ? " 🚘✦" : "";
         div.innerHTML = `<div class="phase-number">${t('phase_hud')} ${i + 1}</div><div class="phase-name">${unlocked ? localize(p.name) + perfectMark + roadStarMark : t('phase_locked')}</div><div class="phase-mini-feeling">${unlocked ? localize(p.feeling) : t('phase_req')}</div>`;
         if (unlocked) div.onclick = () => { initAudio(); startPhase(i); };
