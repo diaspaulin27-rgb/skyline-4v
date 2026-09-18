@@ -2598,6 +2598,165 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       updateProgress();
     }
 
+    // =========================================================
+    // PARABRISA SECRETO — VARREDURA AUTOMÁTICA ENQUANTO SEGURA
+    // Dois limpadores paralelos partem do centro e giram juntos:
+    // 0° -> +90° -> 0° -> -90° -> 0° ... até o dedo ser solto.
+    // =========================================================
+    const WINDSHIELD_SWEEP_LIMIT = Math.PI / 2;
+    const WINDSHIELD_SWEEP_SPEED = Math.PI * .84; // ~151°/s
+    const windshieldWiperState = {
+      active:false,
+      angle:0,
+      direction:1
+    };
+
+    function hasActiveWindshieldPointer() {
+      for (const pointer of state.activePointers.values()) {
+        if(pointer?.key === WINDSHIELD_BRUSH_KEY) return true;
+      }
+      return false;
+    }
+
+    function getWindshieldBladeSegments(angle) {
+      // Os pivôs ficam logo abaixo da borda inferior para que a varredura
+      // semicircular alcance praticamente todo o vidro em telas diferentes.
+      const pivotY = H * 1.025;
+      const length = Math.hypot(W, H) * 1.04;
+      const sin = Math.sin(angle);
+      const cos = Math.cos(angle);
+      return [.34, .58].map(nx => {
+        const x1 = W * nx;
+        const y1 = pivotY;
+        return {
+          x1, y1,
+          x2:x1 + sin * length,
+          y2:y1 - cos * length
+        };
+      });
+    }
+
+    function pointSegmentDistanceSquared(px, py, segment) {
+      const vx = segment.x2 - segment.x1;
+      const vy = segment.y2 - segment.y1;
+      const wx = px - segment.x1;
+      const wy = py - segment.y1;
+      const vv = vx * vx + vy * vy || 1;
+      const t = Math.max(0, Math.min(1, (wx * vx + wy * vy) / vv));
+      const dx = px - (segment.x1 + vx * t);
+      const dy = py - (segment.y1 + vy * t);
+      return dx * dx + dy * dy;
+    }
+
+    function eraseWindshieldFogAtAngle(angle) {
+      const brush = brushes[WINDSHIELD_BRUSH_KEY];
+      const scale = Math.max(.82, Math.min(1.18, Math.min(W, H) / 390));
+      const bladeWidth = Math.max(18, Math.min(30, brush.radius * scale * .60));
+      const segments = getWindshieldBladeSegments(angle);
+
+      // Apaga a máscara diretamente em duas lâminas longas. Uma passada externa
+      // leve cria a borda suave; o núcleo remove a névoa por completo.
+      fogMaskCtx.save();
+      fogMaskCtx.globalCompositeOperation = "destination-out";
+      fogMaskCtx.lineCap = "round";
+      fogMaskCtx.lineJoin = "round";
+      fogMaskCtx.strokeStyle = "#000";
+      for(const segment of segments) {
+        fogMaskCtx.globalAlpha = .18;
+        fogMaskCtx.lineWidth = bladeWidth * 1.75;
+        fogMaskCtx.beginPath();
+        fogMaskCtx.moveTo(segment.x1, segment.y1);
+        fogMaskCtx.lineTo(segment.x2, segment.y2);
+        fogMaskCtx.stroke();
+
+        fogMaskCtx.globalAlpha = 1;
+        fogMaskCtx.lineWidth = bladeWidth;
+        fogMaskCtx.beginPath();
+        fogMaskCtx.moveTo(segment.x1, segment.y1);
+        fogMaskCtx.lineTo(segment.x2, segment.y2);
+        fogMaskCtx.stroke();
+      }
+      fogMaskCtx.restore();
+      fogVisualDirty = true;
+
+      // Mantém o progresso lógico alinhado com a área realmente varrida.
+      const gridRadius = bladeWidth * .70;
+      const gridRadiusSq = gridRadius * gridRadius;
+      for(let gy=0; gy<GRID_Y; gy++) {
+        for(let gx=0; gx<GRID_X; gx++) {
+          const index = gy * GRID_X + gx;
+          if(fogGrid[index] !== 0) continue;
+          const px = (gx + .5) / GRID_X * W;
+          const py = (gy + .5) / GRID_Y * H;
+          if(!isPointInPlayableGlass(px, py)) continue;
+          if(segments.some(segment => pointSegmentDistanceSquared(px, py, segment) <= gridRadiusSq)) {
+            fogGrid[index] = 1;
+            fogClearedCells++;
+          }
+        }
+      }
+
+      // As gotas do vidro também saem quando uma lâmina passa por cima.
+      const dropRadiusSq = (bladeWidth * .82) ** 2;
+      for(const drop of glassDropsSystem.drops) {
+        if(!drop.alive) continue;
+        if(segments.some(segment => pointSegmentDistanceSquared(drop.x, drop.y, segment) <= dropRadiusSq)) {
+          drop.scheduleRespawn(3000);
+        }
+      }
+    }
+
+    function startWindshieldWiper() {
+      windshieldWiperState.active = true;
+      windshieldWiperState.angle = 0;
+      windshieldWiperState.direction = 1;
+      if(!state.hasInteracted) {
+        state.hasInteracted = true;
+        document.getElementById("instruction").classList.add("hidden-text");
+      }
+      eraseWindshieldFogAtAngle(0);
+      updateProgress();
+    }
+
+    function updateWindshieldWiper(dt) {
+      const shouldRun = hasActiveWindshieldPointer();
+      if(!shouldRun) {
+        windshieldWiperState.active = false;
+        return;
+      }
+      if(!windshieldWiperState.active) startWindshieldWiper();
+
+      let remaining = WINDSHIELD_SWEEP_SPEED * Math.max(0, Math.min(.10, dt));
+      while(remaining > 1e-6) {
+        const boundary = windshieldWiperState.direction > 0
+          ? WINDSHIELD_SWEEP_LIMIT
+          : -WINDSHIELD_SWEEP_LIMIT;
+        const distanceToBoundary = Math.abs(boundary - windshieldWiperState.angle);
+        const travel = Math.min(remaining, distanceToBoundary);
+        const target = windshieldWiperState.angle + windshieldWiperState.direction * travel;
+
+        // Subdivide a rotação para não deixar faixas sem limpar na ponta da lâmina,
+        // inclusive em aparelhos rodando a 30 FPS.
+        const angularDistance = Math.abs(target - windshieldWiperState.angle);
+        const steps = Math.max(1, Math.ceil(angularDistance / (Math.PI / 90))); // <= 2°
+        const from = windshieldWiperState.angle;
+        for(let i=1; i<=steps; i++) {
+          eraseWindshieldFogAtAngle(from + (target - from) * (i / steps));
+        }
+
+        windshieldWiperState.angle = target;
+        remaining -= travel;
+
+        if(distanceToBoundary <= travel + 1e-6) {
+          windshieldWiperState.direction *= -1;
+        } else {
+          break;
+        }
+      }
+
+      updateProgress();
+    }
+
     function markFogGrid(x, y, radius) {
       let marked=0;
       const gx = Math.floor((x / W) * GRID_X); const gy = Math.floor((y / H) * GRID_Y);
@@ -2649,8 +2808,17 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     // #region 12 — INPUT / PONTEIROS / ÁUDIO
     function handlePointerDown(e) {
       if(!state.started || state.paused) return;
-      // Nas fases de carro, tocar porta/moldura/retrovisor não inicia limpeza.
-      if(!isPointInPlayableGlass(e.clientX,e.clientY)) return;
+
+      const key = getPointerBrushKey(e.pointerId);
+      const windshieldTouch = key === WINDSHIELD_BRUSH_KEY;
+
+      // O Parabrisa é um gatilho de "toque e segure", então pode ser ativado
+      // em qualquer ponto da tela. Os outros estilos preservam a máscara real.
+      if(!windshieldTouch && !isPointInPlayableGlass(e.clientX,e.clientY)) {
+        state.pointerBrushes.delete(e.pointerId);
+        return;
+      }
+
       e.preventDefault();
       initAudio();
       fogCanvas.setPointerCapture?.(e.pointerId);
@@ -2661,14 +2829,28 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         zenFogRegenAccumulator = 0.0;
       }
 
-      const key = getPointerBrushKey(e.pointerId);
+      const windshieldWasActive = hasActiveWindshieldPointer();
       state.activePointers.set(e.pointerId, {x:e.clientX, y:e.clientY, key});
-      clearFogLine(e.clientX, e.clientY, e.clientX, e.clientY, brushes[key]);
+
+      if(windshieldTouch) {
+        if(!windshieldWasActive) startWindshieldWiper();
+      } else {
+        clearFogLine(e.clientX, e.clientY, e.clientX, e.clientY, brushes[key]);
+      }
     }
     function handlePointerMove(e) {
       if(!state.started || state.paused || !state.activePointers.has(e.pointerId)) return;
       e.preventDefault();
       const pointer = state.activePointers.get(e.pointerId);
+
+      // Com o Parabrisa, a posição do dedo não controla a limpeza: manter o
+      // toque pressionado é o que sustenta a varredura automática.
+      if(pointer.key === WINDSHIELD_BRUSH_KEY) {
+        pointer.x = e.clientX;
+        pointer.y = e.clientY;
+        return;
+      }
+
       const brush = brushes[pointer.key] || brushes.soft;
       const coalesced = e.getCoalescedEvents ? e.getCoalescedEvents() : null;
       const events = coalesced?.length ? coalesced : [e];
@@ -2686,6 +2868,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       if (state.activePointers.has(e.pointerId)) e.preventDefault();
       state.activePointers.delete(e.pointerId);
       state.pointerBrushes.delete(e.pointerId);
+      if(!hasActiveWindshieldPointer()) windshieldWiperState.active = false;
 
       // Quando o último dedo sai, a taxa volta suavemente ao fluxo normal.
       if(state.isZen && state.zenAutoFog && state.activePointers.size === 0) {
@@ -3570,6 +3753,8 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         if (isPhase17DryTunnel()) {
           drawPhase17DistantRain();
         }
+
+        updateWindshieldWiper(dt);
 
         if (!isPhase17DryTunnel()) {
           glassDropsSystem.update(dt);
