@@ -3583,38 +3583,45 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
             }
             .windshield-preview-zone {
               position:absolute;
-              bottom:-14px;
-              width:62px;
-              height:62px;
-              border-radius:50%;
-              background:conic-gradient(
-                from -90deg,
-                transparent 0deg,
-                rgba(214,241,255,.10) 9deg,
-                rgba(164,220,250,.36) 25deg,
-                rgba(122,202,244,.58) 42deg,
-                rgba(205,239,255,.50) 61deg,
-                transparent 78deg
-              );
-              filter:blur(.45px);
-              mix-blend-mode:screen;
+              bottom:10px;
+              width:64px;
+              height:72px;
+              background:
+                radial-gradient(ellipse at 48% 68%,
+                  rgba(9,22,43,.96) 0%,
+                  rgba(12,31,57,.94) 50%,
+                  rgba(18,45,75,.82) 76%,
+                  rgba(105,176,218,.24) 94%,
+                  transparent 100%);
+              clip-path:polygon(50% 100%, 5% 77%, 3% 53%, 12% 30%, 29% 12%, 48% 4%, 65% 8%, 80% 23%, 91% 43%, 96% 66%, 91% 87%);
+              filter:blur(.35px) drop-shadow(0 0 4px rgba(105,190,235,.16));
               transform-origin:50% 100%;
-              animation:windshieldPreviewSweep 1.7s ease-in-out infinite alternate;
-              opacity:.92;
+              animation:windshieldPreviewSweep 1.55s cubic-bezier(.45,.05,.55,.95) infinite alternate;
+              opacity:.96;
             }
             .windshield-preview-zone::after {
               content:"";
               position:absolute;
-              inset:9px;
-              border-radius:50%;
-              background:rgba(16,28,46,.72);
+              inset:5px 7px 7px;
+              background:linear-gradient(125deg,
+                rgba(172,221,247,.11),
+                rgba(52,118,160,.04) 42%,
+                rgba(2,10,24,.10) 76%);
+              clip-path:inherit;
+              border-radius:46% 54% 42% 58%;
             }
-            .windshield-preview-zone-left { left:20%; }
-            .windshield-preview-zone-right { right:20%; }
+            .windshield-preview-zone-left {
+              left:18%;
+              animation-delay:0s;
+            }
+            .windshield-preview-zone-right {
+              right:18%;
+              animation-delay:0s;
+            }
 
             @keyframes windshieldPreviewSweep {
-              from { transform:rotate(-48deg); }
-              to   { transform:rotate(48deg); }
+              from { transform:rotate(-56deg); }
+              to   { transform:rotate(56deg); }
             }
 
             @media (prefers-reduced-motion: reduce) {
