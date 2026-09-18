@@ -2600,8 +2600,8 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
 
     // =========================================================
     // PARABRISA SECRETO — VARREDURA AUTOMÁTICA ENQUANTO SEGURA
-    // Dois limpadores paralelos partem do centro e giram juntos:
-    // 0° -> +90° -> 0° -> -90° -> 0° ... até o dedo ser solto.
+    // Dois limpadores paralelos giram juntos pelo mesmo lado:
+    // -90° (esquerda) -> +90° (direita) -> -90° ... até o dedo ser solto.
     // =========================================================
     const WINDSHIELD_SWEEP_LIMIT = Math.PI / 2;
     const WINDSHIELD_SWEEP_SPEED = Math.PI * .84; // ~151°/s
@@ -2618,15 +2618,27 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       return false;
     }
 
+    function getActiveWindshieldPointer() {
+      for (const pointer of state.activePointers.values()) {
+        if(pointer?.key === WINDSHIELD_BRUSH_KEY) return pointer;
+      }
+      return null;
+    }
+
     function getWindshieldBladeSegments(angle) {
-      // Os pivôs ficam logo abaixo da borda inferior para que a varredura
-      // semicircular alcance praticamente todo o vidro em telas diferentes.
-      const pivotY = H * 0.82;
+      // O dedo passa a ser o centro do conjunto do Parabrisa.
+      // Os dois limpadores acompanham o movimento do dedo sem alterar
+      // o tamanho que já foi ajustado manualmente.
+      const pointer = getActiveWindshieldPointer();
+      const centerX = pointer?.x ?? W * .50;
+      const pivotY = pointer?.y ?? H * .82;
+      const pivotOffset = W * .12;
       const length = Math.hypot(W, H) * 0.08;
       const sin = Math.sin(angle);
       const cos = Math.cos(angle);
-      return [.34, .58].map(nx => {
-        const x1 = W * nx;
+
+      return [-pivotOffset, pivotOffset].map(offsetX => {
+        const x1 = centerX + offsetX;
         const y1 = pivotY;
         return {
           x1, y1,
@@ -2708,13 +2720,13 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
 
     function startWindshieldWiper() {
       windshieldWiperState.active = true;
-      windshieldWiperState.angle = 0;
+      windshieldWiperState.angle = -WINDSHIELD_SWEEP_LIMIT;
       windshieldWiperState.direction = 1;
       if(!state.hasInteracted) {
         state.hasInteracted = true;
         document.getElementById("instruction").classList.add("hidden-text");
       }
-      eraseWindshieldFogAtAngle(0);
+      eraseWindshieldFogAtAngle(windshieldWiperState.angle);
       updateProgress();
     }
 
