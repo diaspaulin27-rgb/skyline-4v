@@ -3550,7 +3550,40 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         const action=secretWindshield
           ? (equipped ? t('equipped') : t('owned'))
           : (unlocked ? (equipped ? t('equipped') : t('equip')) : `${t('buy')} · ${b.cost} 🌧️`);
-        div.innerHTML = `<div class="store-preview" style="--preview-width:${previewWidth}px;--preview-dot:${previewDot}px;--preview-blur:${previewBlur}px"></div><div class="store-item-title">${localize(b.name)}</div><div class="store-item-desc">${localize(b.desc)}</div><div class="store-item-cost">${action}</div>`;
+
+        const previewHtml = secretWindshield
+          ? `<div class="store-preview" style="position:relative;overflow:hidden;">
+               <div style="position:absolute;inset:0;background:
+                 radial-gradient(circle at 50% 120%,rgba(56,189,248,.13),transparent 58%),
+                 linear-gradient(120deg,rgba(255,255,255,.07),rgba(56,189,248,.035));"></div>
+               <div style="position:absolute;left:50%;bottom:7px;width:62%;height:62%;transform:translateX(-50%);">
+                 <div class="windshield-preview-sweep" style="position:absolute;inset:0;transform-origin:50% 100%;animation:windshieldPreviewSweep 1.8s ease-in-out infinite alternate;">
+                   <span style="position:absolute;left:22%;bottom:0;width:4px;height:34px;border-radius:999px;background:linear-gradient(180deg,#dff6ff,#63b8ee 42%,#17324e);box-shadow:0 0 7px rgba(99,184,238,.45);transform:rotate(-26deg);transform-origin:50% 100%;"></span>
+                   <span style="position:absolute;left:22%;bottom:26px;width:46px;height:5px;border-radius:999px;background:linear-gradient(90deg,#dff6ff,#63b8ee 55%,#1b3650);box-shadow:0 0 7px rgba(99,184,238,.45);transform:rotate(-26deg);transform-origin:0 50%;"></span>
+                   <span style="position:absolute;right:22%;bottom:0;width:4px;height:34px;border-radius:999px;background:linear-gradient(180deg,#dff6ff,#63b8ee 42%,#17324e);box-shadow:0 0 7px rgba(99,184,238,.45);transform:rotate(-26deg);transform-origin:50% 100%;"></span>
+                   <span style="position:absolute;right:22%;bottom:26px;width:46px;height:5px;border-radius:999px;background:linear-gradient(90deg,#dff6ff,#63b8ee 55%,#1b3650);box-shadow:0 0 7px rgba(99,184,238,.45);transform:rotate(-26deg);transform-origin:100% 50%;"></span>
+                 </div>
+               </div>
+             </div>`
+          : `<div class="store-preview" style="--preview-width:${previewWidth}px;--preview-dot:${previewDot}px;--preview-blur:${previewBlur}px"></div>`;
+
+        div.innerHTML = `${previewHtml}<div class="store-item-title">${localize(b.name)}</div><div class="store-item-desc">${localize(b.desc)}</div><div class="store-item-cost">${action}</div>`;
+
+        if(secretWindshield && !document.getElementById("windshieldPreviewStyle")) {
+          const style=document.createElement("style");
+          style.id="windshieldPreviewStyle";
+          style.textContent=`
+            @keyframes windshieldPreviewSweep {
+              from { transform: rotate(-34deg); }
+              to   { transform: rotate(34deg); }
+            }
+            @media (prefers-reduced-motion: reduce) {
+              .windshield-preview-sweep { animation: none !important; transform: rotate(0deg) !important; }
+            }
+          `;
+          document.head.appendChild(style);
+        }
+
         div.onclick = () => {
           if (!unlocked) {
             if(state.points < b.cost){ showToast(t('not_enough')); return; }
