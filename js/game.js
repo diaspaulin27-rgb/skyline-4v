@@ -2621,7 +2621,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
     function getWindshieldBladeSegments(angle) {
       // Os pivôs ficam logo abaixo da borda inferior para que a varredura
       // semicircular alcance praticamente todo o vidro em telas diferentes.
-      const pivotY = H * 1.025;
+      const pivotY = H * 0.82;
       const length = Math.hypot(W, H) * 0.08;
       const sin = Math.sin(angle);
       const cos = Math.cos(angle);
