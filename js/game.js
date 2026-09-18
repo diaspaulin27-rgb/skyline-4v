@@ -3552,20 +3552,10 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
           : (unlocked ? (equipped ? t('equipped') : t('equip')) : `${t('buy')} · ${b.cost} 🌧️`);
 
         const previewHtml = secretWindshield
-          ? `<div class="store-preview windshield-code-preview" style="position:relative;overflow:hidden;">
+          ? `<div class="store-preview windshield-code-preview">
                <div class="windshield-preview-glass"></div>
-               <div class="windshield-preview-wipers">
-                 <div class="windshield-preview-wiper windshield-preview-wiper-left">
-                   <span class="windshield-preview-arm"></span>
-                   <span class="windshield-preview-blade"></span>
-                   <span class="windshield-preview-pivot"></span>
-                 </div>
-                 <div class="windshield-preview-wiper windshield-preview-wiper-right">
-                   <span class="windshield-preview-arm"></span>
-                   <span class="windshield-preview-blade"></span>
-                   <span class="windshield-preview-pivot"></span>
-                 </div>
-               </div>
+               <div class="windshield-preview-zone windshield-preview-zone-left"></div>
+               <div class="windshield-preview-zone windshield-preview-zone-right"></div>
              </div>`
           : `<div class="store-preview" style="--preview-width:${previewWidth}px;--preview-dot:${previewDot}px;--preview-blur:${previewBlur}px"></div>`;
 
@@ -3575,6 +3565,10 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
           const style=document.createElement("style");
           style.id="windshieldPreviewStyle";
           style.textContent=`
+            .windshield-code-preview {
+              position:relative;
+              overflow:hidden;
+            }
             .windshield-code-preview::before,
             .windshield-code-preview::after {
               display:none !important;
@@ -3584,61 +3578,49 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
               position:absolute;
               inset:0;
               background:
-                linear-gradient(115deg,rgba(255,255,255,.055),transparent 34%),
-                radial-gradient(ellipse at 50% 112%,rgba(91,192,255,.11),transparent 60%);
+                linear-gradient(120deg,rgba(255,255,255,.055),rgba(56,189,248,.025)),
+                radial-gradient(ellipse at 50% 115%,rgba(56,189,248,.10),transparent 62%);
             }
-            .windshield-preview-wipers {
+            .windshield-preview-zone {
               position:absolute;
-              inset:8px 13px 5px;
-            }
-            .windshield-preview-wiper {
-              position:absolute;
-              bottom:5px;
-              width:4px;
-              height:43px;
-              transform-origin:50% calc(100% - 2px);
-              animation:windshieldPreviewSweep 1.65s ease-in-out infinite alternate;
-            }
-            .windshield-preview-wiper-left { left:34%; }
-            .windshield-preview-wiper-right { left:64%; }
-            .windshield-preview-arm {
-              position:absolute;
-              left:1px;
-              bottom:3px;
-              width:2px;
-              height:31px;
-              border-radius:999px;
-              background:rgba(207,232,248,.72);
-              box-shadow:0 0 4px rgba(93,188,246,.24);
-            }
-            .windshield-preview-blade {
-              position:absolute;
-              left:-15px;
-              top:2px;
-              width:34px;
-              height:4px;
-              border-radius:999px;
-              background:linear-gradient(90deg,rgba(213,239,255,.92),rgba(95,185,239,.88));
-              box-shadow:0 0 5px rgba(95,185,239,.28);
-            }
-            .windshield-preview-pivot {
-              position:absolute;
-              left:-2px;
-              bottom:0;
-              width:7px;
-              height:7px;
+              bottom:-14px;
+              width:62px;
+              height:62px;
               border-radius:50%;
-              background:#7fc9f4;
-              box-shadow:0 0 5px rgba(95,185,239,.35);
+              background:conic-gradient(
+                from -90deg,
+                transparent 0deg,
+                rgba(214,241,255,.10) 9deg,
+                rgba(164,220,250,.36) 25deg,
+                rgba(122,202,244,.58) 42deg,
+                rgba(205,239,255,.50) 61deg,
+                transparent 78deg
+              );
+              filter:blur(.45px);
+              mix-blend-mode:screen;
+              transform-origin:50% 100%;
+              animation:windshieldPreviewSweep 1.7s ease-in-out infinite alternate;
+              opacity:.92;
             }
+            .windshield-preview-zone::after {
+              content:"";
+              position:absolute;
+              inset:9px;
+              border-radius:50%;
+              background:rgba(16,28,46,.72);
+            }
+            .windshield-preview-zone-left { left:20%; }
+            .windshield-preview-zone-right { right:20%; }
+
             @keyframes windshieldPreviewSweep {
-              from { transform:rotate(-42deg); }
-              to   { transform:rotate(42deg); }
+              from { transform:rotate(-48deg); }
+              to   { transform:rotate(48deg); }
             }
+
             @media (prefers-reduced-motion: reduce) {
-              .windshield-preview-wiper {
+              .windshield-preview-zone {
                 animation:none !important;
-                transform:rotate(-18deg) !important;
+                transform:rotate(0deg) !important;
               }
             }
           `;
