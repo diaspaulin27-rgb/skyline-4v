@@ -2622,7 +2622,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       // Os pivôs ficam logo abaixo da borda inferior para que a varredura
       // semicircular alcance praticamente todo o vidro em telas diferentes.
       const pivotY = H * 1.025;
-      const length = Math.hypot(W, H) * 0.42;
+      const length = Math.hypot(W, H) * 0.18;
       const sin = Math.sin(angle);
       const cos = Math.cos(angle);
       return [.34, .58].map(nx => {
