@@ -3583,45 +3583,39 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
             }
             .windshield-preview-zone {
               position:absolute;
-              bottom:10px;
+              bottom:7px;
               width:64px;
-              height:72px;
-              background:
-                radial-gradient(ellipse at 48% 68%,
-                  rgba(9,22,43,.96) 0%,
-                  rgba(12,31,57,.94) 50%,
-                  rgba(18,45,75,.82) 76%,
-                  rgba(105,176,218,.24) 94%,
-                  transparent 100%);
-              clip-path:polygon(50% 100%, 5% 77%, 3% 53%, 12% 30%, 29% 12%, 48% 4%, 65% 8%, 80% 23%, 91% 43%, 96% 66%, 91% 87%);
-              filter:blur(.35px) drop-shadow(0 0 4px rgba(105,190,235,.16));
+              height:56px;
               transform-origin:50% 100%;
-              animation:windshieldPreviewSweep 1.55s cubic-bezier(.45,.05,.55,.95) infinite alternate;
-              opacity:.96;
+              animation:windshieldPreviewSweep 1.65s ease-in-out infinite alternate;
+              opacity:.98;
+              filter:drop-shadow(0 0 3px rgba(92,190,247,.42));
+              background:
+                linear-gradient(180deg,rgba(17,66,105,.98),rgba(7,35,65,.98));
+              clip-path:path("M 32 55 C 18 48 8 36 3 20 C 15 8 29 3 47 4 C 55 13 61 27 62 43 C 51 47 41 51 32 55 Z");
+            }
+            .windshield-preview-zone::before {
+              content:"";
+              position:absolute;
+              inset:0;
+              background:
+                radial-gradient(ellipse at 52% 94%,transparent 0 54%,rgba(120,205,250,.48) 57%,transparent 61%),
+                linear-gradient(135deg,rgba(170,225,255,.14),transparent 46%);
+              clip-path:inherit;
             }
             .windshield-preview-zone::after {
               content:"";
               position:absolute;
-              inset:5px 7px 7px;
-              background:linear-gradient(125deg,
-                rgba(172,221,247,.11),
-                rgba(52,118,160,.04) 42%,
-                rgba(2,10,24,.10) 76%);
+              inset:0;
               clip-path:inherit;
-              border-radius:46% 54% 42% 58%;
+              box-shadow:inset 0 0 0 1px rgba(118,204,252,.42);
             }
-            .windshield-preview-zone-left {
-              left:18%;
-              animation-delay:0s;
-            }
-            .windshield-preview-zone-right {
-              right:18%;
-              animation-delay:0s;
-            }
+            .windshield-preview-zone-left { left:19%; }
+            .windshield-preview-zone-right { right:19%; }
 
             @keyframes windshieldPreviewSweep {
-              from { transform:rotate(-56deg); }
-              to   { transform:rotate(56deg); }
+              from { transform:rotate(-46deg); }
+              to   { transform:rotate(46deg); }
             }
 
             @media (prefers-reduced-motion: reduce) {
