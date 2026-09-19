@@ -3552,10 +3552,8 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
           : (unlocked ? (equipped ? t('equipped') : t('equip')) : `${t('buy')} · ${b.cost} 🌧️`);
 
         const previewHtml = secretWindshield
-          ? `<div class="store-preview windshield-code-preview">
-               <div class="windshield-preview-glass"></div>
-               <div class="windshield-preview-zone windshield-preview-zone-left"></div>
-               <div class="windshield-preview-zone windshield-preview-zone-right"></div>
+          ? `<div class="store-preview windshield-image-preview">
+               <img src="assets/images/IMG_2047.webp" alt="${localize(b.name)}" class="windshield-preview-image">
              </div>`
           : `<div class="store-preview" style="--preview-width:${previewWidth}px;--preview-dot:${previewDot}px;--preview-blur:${previewBlur}px"></div>`;
 
@@ -3565,64 +3563,27 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
           const style=document.createElement("style");
           style.id="windshieldPreviewStyle";
           style.textContent=`
-            .windshield-code-preview {
+            .windshield-image-preview {
               position:relative;
               overflow:hidden;
+              display:flex;
+              align-items:center;
+              justify-content:center;
+              background:#071b33;
             }
-            .windshield-code-preview::before,
-            .windshield-code-preview::after {
+            .windshield-image-preview::before,
+            .windshield-image-preview::after {
               display:none !important;
               content:none !important;
             }
-            .windshield-preview-glass {
-              position:absolute;
-              inset:0;
-              background:
-                linear-gradient(120deg,rgba(255,255,255,.055),rgba(56,189,248,.025)),
-                radial-gradient(ellipse at 50% 115%,rgba(56,189,248,.10),transparent 62%);
-            }
-            .windshield-preview-zone {
-              position:absolute;
-              bottom:7px;
-              width:64px;
-              height:56px;
-              transform-origin:50% 100%;
-              animation:windshieldPreviewSweep 1.65s ease-in-out infinite alternate;
-              opacity:.98;
-              filter:drop-shadow(0 0 3px rgba(92,190,247,.42));
-              background:
-                linear-gradient(180deg,rgba(17,66,105,.98),rgba(7,35,65,.98));
-              clip-path:path("M 32 55 C 18 48 8 36 3 20 C 15 8 29 3 47 4 C 55 13 61 27 62 43 C 51 47 41 51 32 55 Z");
-            }
-            .windshield-preview-zone::before {
-              content:"";
-              position:absolute;
-              inset:0;
-              background:
-                radial-gradient(ellipse at 52% 94%,transparent 0 54%,rgba(120,205,250,.48) 57%,transparent 61%),
-                linear-gradient(135deg,rgba(170,225,255,.14),transparent 46%);
-              clip-path:inherit;
-            }
-            .windshield-preview-zone::after {
-              content:"";
-              position:absolute;
-              inset:0;
-              clip-path:inherit;
-              box-shadow:inset 0 0 0 1px rgba(118,204,252,.42);
-            }
-            .windshield-preview-zone-left { left:19%; }
-            .windshield-preview-zone-right { right:19%; }
-
-            @keyframes windshieldPreviewSweep {
-              from { transform:rotate(-46deg); }
-              to   { transform:rotate(46deg); }
-            }
-
-            @media (prefers-reduced-motion: reduce) {
-              .windshield-preview-zone {
-                animation:none !important;
-                transform:rotate(0deg) !important;
-              }
+            .windshield-preview-image {
+              width:100%;
+              height:100%;
+              display:block;
+              object-fit:cover;
+              object-position:center;
+              pointer-events:none;
+              user-select:none;
             }
           `;
           document.head.appendChild(style);
