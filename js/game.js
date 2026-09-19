@@ -3580,8 +3580,9 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
               width:100%;
               height:100%;
               display:block;
-              object-fit:contain;
-              object-position:center;
+              object-fit:cover;
+              object-position:center 42%;
+              transform:scale(.82);
               pointer-events:none;
               user-select:none;
             }
