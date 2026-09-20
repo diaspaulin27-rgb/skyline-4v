@@ -1434,6 +1434,41 @@ const phases = [
       return RAIN_STYLE_PROFILE[phase?.rainStyle] || RAIN_STYLE_PROFILE.steady;
     }
 
+    // PASSO 1 — movimento lateral da chuva nas fases da campanha.
+    // Valores em "pixels por frame a 60 FPS" antes dos multiplicadores de
+    // intensidade/profundidade. Sinal negativo = esquerda; positivo = direita.
+    // As fases de neve ficam em 0 porque usam o sistema dedicado de neve.
+    // O Zen mantém por enquanto o comportamento anterior; a direção aleatória
+    // será adicionada separadamente depois que este movimento estiver aprovado.
+    const PHASE_RAIN_WIND = Object.freeze([
+      -1.10,  // 01 First Rain
+       .95,   // 02 Distant Lights
+      -1.35,  // 03 After Midnight
+       1.50,  // 04 Neon Splash
+       -.75,  // 05 The Window
+      -2.20,  // 06 Storm
+       1.25,  // 07 Horizon
+      -1.00,  // 08 Memories
+        .55,  // 09 Silence
+        .70,  // 10 Clearing Sky
+      -1.80,  // 11 Moving Car
+       0,     // 12 Snowfall
+      -2.50,  // 13 Highway Rain
+       0,     // 14 Morning Frost
+       1.15,  // 15 Summer Sun Shower
+       0,     // 16 Midnight Blizzard
+       -.90,  // 17 City Tunnel (chuva distante continua separada)
+        .85,  // 18 Golden Hour Drops
+       0,     // 19 Snowy Drive
+       -.55   // 20 The Last Wipe
+    ]);
+
+    function getPhaseRainWindFrame() {
+      // Não altera o Zen neste primeiro passo.
+      if (state.isZen) return -0.7 - Math.random() * 0.5;
+      return PHASE_RAIN_WIND[state.currentPhase] ?? -0.9;
+    }
+
     class Particle {
       constructor() { this.reset(true); }
 
@@ -1504,7 +1539,14 @@ const phases = [
         const baseSpeedFrame = 7 + depth * 15 + Math.random() * 5;
         const baseOpacity = 0.15 + depth * 0.4;
         const baseThickness = 0.5 + depth * 1.2;
-        const baseWindFrame = -0.7 - Math.random() * 0.5;
+
+        // Cada fase agora possui uma direção própria de vento. Pequenas variações
+        // por gota + profundidade evitam linhas perfeitamente paralelas sem fazer
+        // a chuva "dançar" como neve.
+        const phaseWindFrame = getPhaseRainWindFrame();
+        const windVariation = .78 + Math.random() * .44;
+        const depthWind = .70 + depth * .55;
+        const baseWindFrame = phaseWindFrame * windVariation * depthWind;
 
         // Intensidade geral do mapa + personalidade individual da fase.
         const lengthScale = zenClimate
