@@ -1434,6 +1434,49 @@ const phases = [
       return RAIN_STYLE_PROFILE[phase?.rainStyle] || RAIN_STYLE_PROFILE.steady;
     }
 
+    // PASSO 2 — rajadas amplas e suaves nas fases da campanha.
+    // O valor representa quanto a força lateral pode respirar ao longo do tempo.
+    // Tempestades recebem mais variação; garoas e chuvas finais, quase nenhuma.
+    const RAIN_GUST_STRENGTH = Object.freeze({
+      light:.12,
+      steady:.15,
+      heavy:.19,
+      neon:.18,
+      soft:.09,
+      storm:.32,
+      breeze:.22,
+      memory:.12,
+      drizzle:.07,
+      clearing:.06,
+      carRain:.15,
+      highwayRain:.24,
+      sunShower:.17,
+      tunnelRain:.18,
+      goldenRain:.10,
+      finalRain:.05
+    });
+
+    function getCampaignRainGustMultiplier(phase = getActivePhase(), depth = .5) {
+      // O Zen fica exatamente fora deste passo. O vento aleatório dele será
+      // implementado separadamente depois da neve, como combinado.
+      if (state.isZen) return 1;
+
+      const strength = RAIN_GUST_STRENGTH[phase?.rainStyle] ?? .14;
+      const phaseOffset = state.currentPhase * .73;
+
+      // Duas ondas longas, com períodos diferentes, evitam uma oscilação mecânica.
+      // A direção base da fase não é invertida: apenas ganha e perde força suavemente.
+      const slowWave = Math.sin(state.elapsed * .18 + phaseOffset);
+      const longWave = Math.sin(state.elapsed * .071 + 1.9 + phaseOffset * .51);
+      const gust = slowWave * .62 + longWave * .38;
+
+      // Gotas próximas sentem mais a rajada; gotas distantes permanecem discretas.
+      const clampedDepth = Math.max(0, Math.min(1, depth));
+      const depthInfluence = .55 + clampedDepth * .70;
+
+      return Math.max(.55, 1 + gust * strength * depthInfluence);
+    }
+
     // PASSO 1 — movimento lateral da chuva nas fases da campanha.
     // Valores em "pixels por frame a 60 FPS" antes dos multiplicadores de
     // intensidade/profundidade. Sinal negativo = esquerda; positivo = direita.
@@ -1464,9 +1507,80 @@ const phases = [
     ]);
 
     function getPhaseRainWindFrame() {
-      // Não altera o Zen neste primeiro passo.
-      if (state.isZen) return -0.7 - Math.random() * 0.5;
+      // No Zen o vento agora é global e muda de direção suavemente (Passo 4).
+      if (state.isZen) return 0;
       return PHASE_RAIN_WIND[state.currentPhase] ?? -0.9;
+    }
+
+    // PASSO 4 — vento aleatório do Modo Zen.
+    // O jogo escolhe entre esquerda, direita ou quase vertical e mantém essa
+    // direção por alguns segundos. A troca nunca acontece de forma instantânea:
+    // o vento atual desliza lentamente até o novo alvo.
+    const zenWindState = {
+      current:0,
+      target:0,
+      changeIn:0,
+      snow:false
+    };
+
+    function chooseZenWindTarget(isSnow = false) {
+      const intensity = Math.max(.1, Math.min(1, getEffectiveRainIntensity()));
+
+      // Chuva pode inclinar mais; neve recebe um vento mais macio.
+      const maxWind = isSnow
+        ? 18 + intensity * 36
+        : 26 + intensity * 76;
+
+      const roll = Math.random();
+
+      // ~20% quase vertical, ~40% esquerda e ~40% direita.
+      let direction = 0;
+      if (roll >= .20) direction = roll < .60 ? -1 : 1;
+
+      if (direction === 0) {
+        // Mesmo quando cai quase reta, existe uma deriva mínima para não parecer
+        // completamente congelada no eixo vertical.
+        const tinyDirection = Math.random() < .5 ? -1 : 1;
+        return tinyDirection * maxWind * (.02 + Math.random() * .08);
+      }
+
+      const magnitude = maxWind * (.38 + Math.random() * .62);
+      return direction * magnitude;
+    }
+
+    function resetZenWind(isSnow = false) {
+      zenWindState.current = 0;
+      zenWindState.target = chooseZenWindTarget(isSnow);
+      zenWindState.changeIn = 8 + Math.random() * 8;
+      zenWindState.snow = isSnow;
+    }
+
+    function updateZenWind(dt, isSnow = false) {
+      if (!state.isZen) return;
+
+      // Ao trocar chuva <-> neve no slider, escolhe um alvo adequado ao novo clima.
+      if (zenWindState.snow !== isSnow) {
+        zenWindState.snow = isSnow;
+        zenWindState.target = chooseZenWindTarget(isSnow);
+        zenWindState.changeIn = 8 + Math.random() * 8;
+      }
+
+      zenWindState.changeIn -= Math.max(0, dt);
+
+      if (zenWindState.changeIn <= 0) {
+        zenWindState.target = chooseZenWindTarget(isSnow);
+
+        // Neve segura uma direção um pouco mais; chuva pode variar antes.
+        zenWindState.changeIn = isSnow
+          ? 11 + Math.random() * 10
+          : 9 + Math.random() * 9;
+      }
+
+      // Interpolação exponencial: atravessa o centro naturalmente quando o novo
+      // alvo está no lado oposto, sem "estalo" visual.
+      const response = isSnow ? .25 : .36;
+      const blend = 1 - Math.exp(-Math.max(0, dt) * response);
+      zenWindState.current += (zenWindState.target - zenWindState.current) * blend;
     }
 
     class Particle {
@@ -1574,6 +1688,7 @@ const phases = [
         this.pulse = 1;
         this.currentVx = this.wind;
         this.currentVy = this.vy;
+        this.zenWindFactor = .82 + Math.random() * .36;
         this.isBead = false;
       }
 
@@ -1589,8 +1704,21 @@ const phases = [
           this.currentVy=this.vy*intensity;
           if (phase.type === 'car_snow') this.currentVx += 92*(.35+this.z*.95);
         } else {
-          // Movimento direto do código fornecido, convertido para deltaTime.
-          this.currentVx = this.wind;
+          if (state.isZen) {
+            // O vento é compartilhado por toda a chuva do Zen, mas profundidade
+            // e uma pequena variação individual impedem linhas idênticas.
+            const depthInfluence = .56 + this.z * .64;
+            this.currentVx =
+              zenWindState.current *
+              depthInfluence *
+              this.zenWindFactor;
+          } else {
+            // A direção base criada no Passo 1 continua igual. O Passo 2 apenas
+            // faz a força desse vento respirar lentamente durante a fase.
+            const gustMultiplier = getCampaignRainGustMultiplier(phase, this.z);
+            this.currentVx = this.wind * gustMultiplier;
+          }
+
           this.currentVy = this.vy;
 
           // Nas fases de carro, mantém a sensação da paisagem em movimento,
@@ -1705,6 +1833,20 @@ const phases = [
       }
     });
 
+    // PASSO 3 — movimento natural da neve nas fases da campanha.
+    // O Zen fica fora deste passo: em 100% ele preserva exatamente o comportamento
+    // anterior até receber o sistema de direção aleatória próprio no próximo passo.
+    const SNOW_NATURAL_MOTION_PROFILE = Object.freeze({
+      snowSoft:  { gust:12, sway:1.00, flutter:1.00, fallPulse:.045 },
+      snowLight: { gust: 6, sway:.82, flutter:.72, fallPulse:.030 },
+      blizzard:  { gust:36, sway:1.26, flutter:1.38, fallPulse:.070 },
+      snowDrive: { gust:20, sway:1.10, flutter:1.12, fallPulse:.055 }
+    });
+
+    function getSnowNaturalMotionProfile(phase = getActivePhase()) {
+      return SNOW_NATURAL_MOTION_PROFILE[phase?.rainStyle] || SNOW_NATURAL_MOTION_PROFILE.snowSoft;
+    }
+
     function getSnowStyleProfile(phase = getActivePhase()) {
       return SNOW_STYLE_PROFILE[phase?.rainStyle] || SNOW_STYLE_PROFILE.snowSoft;
     }
@@ -1806,6 +1948,8 @@ const phases = [
         this.swayAngle = Math.random() * Math.PI * 2;
         this.rotation = Math.random() * Math.PI * 2;
         this.rotationSpeed = (Math.random() - .5) * .012 * 60;
+        this.flutterPhase = Math.random() * Math.PI * 2;
+        this.fallPhase = Math.random() * Math.PI * 2;
 
         this.drawX = this.x;
         this.currentSize = this.baseSize;
@@ -1819,28 +1963,100 @@ const phases = [
         this.swayAngle += this.baseSwaySpeed * profile.sway * dt;
         this.rotation += this.rotationSpeed * profile.rotation * dt;
 
-        const swayX =
-          Math.sin(this.swayAngle) *
-          this.baseSwayAmount *
-          profile.sway;
+        // O Zen continua byte-a-byte equivalente ao movimento anterior.
+        // Este passo altera somente as fases de neve da campanha.
+        if (state.isZen) {
+          const swayX =
+            Math.sin(this.swayAngle) *
+            this.baseSwayAmount *
+            profile.sway;
 
-        this.drawX = this.x + swayX;
+          this.drawX = this.x + swayX;
 
-        const speed = this.baseSpeed * profile.speed;
+          const speed = this.baseSpeed * profile.speed;
 
-        let horizontalSpeed =
-          this.baseDrift * profile.drift +
-          profile.wind;
+          let horizontalSpeed =
+            this.baseDrift * profile.drift +
+            profile.wind;
 
-        // Na fase 19, a trajetória recebe influência clara do carro em movimento.
-        if (phase.type === "car_snow") {
-          horizontalSpeed +=
-            profile.carMotion *
-            (.35 + this.depth * .95);
+          // No Zen 100%, a neve usa a mesma direção aleatória global,
+          // sentindo menos vento no fundo e mais no primeiro plano.
+          const zenDepthInfluence = [ .24, .62, 1.00 ][this.layer] ?? 1;
+          horizontalSpeed += zenWindState.current * zenDepthInfluence;
+
+          if (phase.type === "car_snow") {
+            horizontalSpeed +=
+              profile.carMotion *
+              (.35 + this.depth * .95);
+          }
+
+          this.y += speed * dt;
+          this.x += horizontalSpeed * dt;
+        } else {
+          const natural = getSnowNaturalMotionProfile(phase);
+
+          // Profundidade do movimento:
+          // 65% fundo quase reto / 28% médio perceptível / 7% frente mais solto.
+          const swayDepth = [ .32, 1.00, 1.34 ][this.layer] ?? 1;
+          const gustDepth = [ .16, .62, 1.00 ][this.layer] ?? 1;
+          const flutterDepth = [ .10, .58, 1.00 ][this.layer] ?? 1;
+
+          // Duas ondas lentas formam uma rajada ampla sem parecer um pêndulo.
+          const phaseOffset = state.currentPhase * .67;
+          const broadGust =
+            Math.sin(state.elapsed * .23 + phaseOffset) * .64 +
+            Math.sin(state.elapsed * .087 + 1.8 + phaseOffset * .41) * .36;
+
+          // Cada floco tem uma pequena flutuação própria. No fundo ela é quase
+          // imperceptível; no primeiro plano fica mais evidente e orgânica.
+          const organicSway =
+            Math.sin(this.swayAngle) +
+            Math.sin(this.swayAngle * .47 + this.flutterPhase) * .34 * natural.flutter;
+
+          const swayX =
+            organicSway *
+            this.baseSwayAmount *
+            profile.sway *
+            natural.sway *
+            swayDepth;
+
+          this.drawX = this.x + swayX;
+
+          // A queda também respira alguns poucos por cento para os flocos não
+          // manterem velocidade perfeitamente constante.
+          const fallPulse =
+            1 +
+            Math.sin(this.swayAngle * .31 + this.fallPhase) *
+            natural.fallPulse *
+            (.35 + this.depth * .65);
+
+          const speed =
+            this.baseSpeed *
+            profile.speed *
+            fallPulse;
+
+          const localFlutter =
+            Math.sin(this.swayAngle * .73 + this.flutterPhase) *
+            natural.gust *
+            .20 *
+            flutterDepth;
+
+          let horizontalSpeed =
+            this.baseDrift * profile.drift +
+            profile.wind +
+            broadGust * natural.gust * gustDepth +
+            localFlutter;
+
+          // Snowy Drive continua recebendo claramente o deslocamento do carro.
+          if (phase.type === "car_snow") {
+            horizontalSpeed +=
+              profile.carMotion *
+              (.35 + this.depth * .95);
+          }
+
+          this.y += speed * dt;
+          this.x += horizontalSpeed * dt;
         }
-
-        this.y += speed * dt;
-        this.x += horizontalSpeed * dt;
 
         this.currentSize = this.baseSize * profile.size;
         this.currentOpacity = Math.min(.88, this.baseOpacity * profile.opacity);
@@ -3516,6 +3732,7 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       generateCity(); drawCityBackground();
       const activePhase = getActivePhase();
       applyPhaseAtmosphere(activePhase);
+      if(zen) resetZenWind(Boolean(getZenClimate()?.snow));
       rainParticles.forEach(p=>p.reset(true));
       glassDropsSystem.resetForPhase();
       initFog(); updatePhaseUI();
@@ -3743,6 +3960,8 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
           phase.type === "snow" ||
           phase.type === "car_snow" ||
           Boolean(state.isZen && climate?.snow);
+
+        if(state.isZen) updateZenWind(dt, isSnowPhase);
 
         // =====================================================
         // NEVE — pool dedicado. Não altera a chuva aprovada.
