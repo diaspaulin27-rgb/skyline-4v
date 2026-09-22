@@ -2881,10 +2881,10 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       const opacity=Math.max(.01,Math.min(1,Number(brush?.opacityPerStroke)||1));
       const hardness=Math.max(.02,Math.min(.98,Number(brush?.hardness)||.5));
 
-      // Lâmina larga e relativamente baixa: deixa um rastro claramente quadrado,
-      // diferente dos carimbos circulares dos outros estilos.
-      const halfWidth=radius*1.04;
-      const halfHeight=radius*.27;
+      // Rodo compacto: continua retangular/quadrado, mas sem ocupar uma área
+      // exagerada. A proporção lembra uma pequena lâmina de limpeza.
+      const halfWidth=radius*.58;
+      const halfHeight=radius*.32;
       const feather=2+(1-hardness)*7;
       const corner=Math.max(2,radius*.10);
 
@@ -3083,18 +3083,16 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       );
       const steps = Math.max(1, Math.ceil(distance / spacing));
 
-      // O rodo mantém a lâmina perpendicular ao gesto. Um simples toque começa
-      // horizontal; assim que o dedo se move, a orientação acompanha o movimento.
-      const gestureAngle=distance>1
-        ? Math.atan2(toY-fromY,toX-fromX)+Math.PI/2
-        : 0;
+      // O Largo mantém uma orientação estável. Isso evita que várias lâminas
+      // rotacionadas se empilhem nas curvas e formem aqueles rastros gigantes em S/C.
+      const squeegeeAngle=0;
 
       for (let i = 1; i <= steps; i++) {
         const amount = i / steps;
         const scatter=getBrushScatterOffset(brush);
         const x=fromX + (toX - fromX) * amount + scatter.x;
         const y=fromY + (toY - fromY) * amount + scatter.y;
-        if(isSqueegee) clearFogSqueegeeStamp(x,y,brush,radius,gestureAngle);
+        if(isSqueegee) clearFogSqueegeeStamp(x,y,brush,radius,squeegeeAngle);
         else if(isDiamond) clearFogDiamondStamp(x,y,brush,radius);
         else clearFogStamp(x,y,brush,radius);
       }
