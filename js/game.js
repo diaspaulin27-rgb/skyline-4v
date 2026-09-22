@@ -710,14 +710,14 @@ const phases = [
     const brushes = {
       soft: { name:{en:"Soft",pt:"Suave",es:"Suave"}, cost:0, radius:34, hardness:.35, scatter:0, opacityPerStroke:1.0, texture:"smooth", shape:"circle", desc:{en:"Gentle and balanced.",pt:"Suave e equilibrado.",es:"Suave y equilibrado."} },
       precise: { name:{en:"Precise",pt:"Preciso",es:"Preciso"}, cost:100, radius:23, hardness:.75, scatter:0, opacityPerStroke:1.0, texture:"clean", shape:"circle", desc:{en:"For small details.",pt:"Para pequenos detalhes.",es:"Para pequeños detalles."} },
-      broad: { name:{en:"Broad",pt:"Largo",es:"Amplio"}, cost:200, radius:56, hardness:.40, scatter:0, opacityPerStroke:1.0, texture:"smooth", shape:"circle", desc:{en:"Wide, flowing strokes.",pt:"Traços largos e fluidos.",es:"Trazos amplios y fluidos."} },
+      broad: { name:{en:"Broad",pt:"Largo",es:"Amplio"}, cost:200, radius:56, hardness:.70, scatter:0, opacityPerStroke:1.0, texture:"smooth", shape:"squeegee", desc:{en:"A wide, squared squeegee trail.",pt:"Um rastro largo e quadrado, como um rodo.",es:"Un trazo ancho y cuadrado, como una escobilla."} },
       sharp: { name:{en:"Sharp",pt:"Nítido",es:"Nítido"}, cost:300, radius:19, hardness:.89, scatter:0, opacityPerStroke:1.0, texture:"clean", shape:"circle", desc:{en:"A crisp, controlled edge.",pt:"Borda nítida e controlada.",es:"Borde nítido y controlado."} },
       dream: { name:{en:"Dream",pt:"Sonho",es:"Sueño"}, cost:500, radius:66, hardness:.09, scatter:18, opacityPerStroke:1.0, texture:"cloud", shape:"circle", desc:{en:"Wide and dreamlike.",pt:"Amplo e sonhador.",es:"Amplio y etéreo."} },
       feather: { name:{en:"Feather",pt:"Pluma",es:"Pluma"}, cost:650, radius:46, hardness:.17, scatter:18, opacityPerStroke:1.0, texture:"feather", shape:"circle", desc:{en:"Light, soft clearing.",pt:"Limpeza leve e suave.",es:"Limpieza ligera y suave."} },
       needle: { name:{en:"Needle",pt:"Agulha",es:"Aguja"}, cost:800, radius:13, hardness:.95, scatter:0, opacityPerStroke:1.0, texture:"clean", shape:"circle", desc:{en:"Small and very precise.",pt:"Pequeno e muito preciso.",es:"Pequeño y muy preciso."} },
       velvet: { name:{en:"Velvet",pt:"Veludo",es:"Terciopelo"}, cost:950, radius:50, hardness:.54, scatter:0, opacityPerStroke:.6, texture:"velvet", shape:"circle", desc:{en:"Smooth, steady control.",pt:"Controle suave e constante.",es:"Control suave y constante."} },
       mist: { name:{en:"Mist",pt:"Névoa",es:"Niebla"}, cost:1100, radius:62, hardness:.08, scatter:0, opacityPerStroke:.3, texture:"mist", shape:"circle", desc:{en:"Diffuse and atmospheric.",pt:"Difuso e atmosférico.",es:"Difuso y atmosférico."} },
-      crystal: { name:{en:"Crystal",pt:"Cristal",es:"Cristal"}, cost:1300, radius:29, hardness:.88, scatter:0, opacityPerStroke:1.0, texture:"crystal", shape:"circle", desc:{en:"Clean and clearly defined.",pt:"Limpo e bem definido.",es:"Limpio y bien definido."} },
+      crystal: { name:{en:"Crystal",pt:"Cristal",es:"Cristal"}, cost:1300, radius:29, hardness:.88, scatter:0, opacityPerStroke:1.0, texture:"crystal", shape:"diamond", desc:{en:"Sharp, faceted crystal trail.",pt:"Rastro cristalino, facetado e definido.",es:"Trazo cristalino, facetado y definido."} },
       giant: { name:{en:"Giant",pt:"Gigante",es:"Gigante"}, cost:1600, radius:78, hardness:.37, scatter:0, opacityPerStroke:1.0, texture:"smooth", shape:"circle", desc:{en:"The widest clearing style.",pt:"O estilo de limpeza mais amplo.",es:"El estilo de limpieza más amplio."} },
       focus: { name:{en:"Focus",pt:"Foco",es:"Enfoque"}, cost:1900, radius:36, hardness:.82, scatter:0, opacityPerStroke:1.0, texture:"clean", shape:"circle", desc:{en:"Precise, balanced clarity.",pt:"Nitidez precisa e equilibrada.",es:"Claridad precisa y equilibrada."} },
       windshield: { name:{en:"Windshield",pt:"Parabrisa",es:"Parabrisas"}, cost:0, radius:42, hardness:.58, scatter:0, opacityPerStroke:1.0, texture:"rubber", shape:"arc", desc:{en:"A secret style earned for a clear view.",pt:"Um estilo secreto conquistado pela vista limpa.",es:"Un estilo secreto conquistado por la vista despejada."} }
@@ -2817,6 +2817,173 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       return {x:Math.cos(angle)*distance,y:Math.sin(angle)*distance};
     }
 
+    function pointInRotatedRect(px, py, cx, cy, halfWidth, halfHeight, angle) {
+      const cos=Math.cos(-angle), sin=Math.sin(-angle);
+      const dx=px-cx, dy=py-cy;
+      const localX=dx*cos-dy*sin;
+      const localY=dx*sin+dy*cos;
+      return Math.abs(localX)<=halfWidth && Math.abs(localY)<=halfHeight;
+    }
+
+    function traceRoundedRect(ctx, x, y, width, height, radius) {
+      const r=Math.max(0,Math.min(radius,Math.min(width,height)*.5));
+      ctx.beginPath();
+      ctx.moveTo(x+r,y);
+      ctx.lineTo(x+width-r,y);
+      ctx.quadraticCurveTo(x+width,y,x+width,y+r);
+      ctx.lineTo(x+width,y+height-r);
+      ctx.quadraticCurveTo(x+width,y+height,x+width-r,y+height);
+      ctx.lineTo(x+r,y+height);
+      ctx.quadraticCurveTo(x,y+height,x,y+height-r);
+      ctx.lineTo(x,y+r);
+      ctx.quadraticCurveTo(x,y,x+r,y);
+      ctx.closePath();
+    }
+
+    function markFogRotatedRectGrid(x, y, halfWidth, halfHeight, angle, opacity=1) {
+      let marked=0;
+      const amount=Math.max(.01,Math.min(1,Number(opacity)||1));
+      const reach=Math.hypot(halfWidth,halfHeight);
+      const gx=Math.floor((x/W)*GRID_X), gy=Math.floor((y/H)*GRID_Y);
+      const rx=Math.ceil((reach/W)*GRID_X)+1, ry=Math.ceil((reach/H)*GRID_Y)+1;
+
+      for(let yy=gy-ry;yy<=gy+ry;yy++){
+        for(let xx=gx-rx;xx<=gx+rx;xx++){
+          if(xx<0||yy<0||xx>=GRID_X||yy>=GRID_Y) continue;
+          const px=(xx+.5)/GRID_X*W;
+          const py=(yy+.5)/GRID_Y*H;
+          const index=yy*GRID_X+xx;
+          if(fogGrid[index]<0 || fogGrid[index]>=1 || !isPointInPlayableGlass(px,py)) continue;
+          if(!pointInRotatedRect(px,py,x,y,halfWidth,halfHeight,angle)) continue;
+          const previous=fogGrid[index];
+          const next=Math.min(1,previous+amount);
+          fogGrid[index]=next;
+          fogClearedCells+=next-previous;
+          marked+=next-previous;
+        }
+      }
+      return marked;
+    }
+
+    function wipeGlassDropsInRotatedRect(x, y, halfWidth, halfHeight, angle) {
+      for(const drop of glassDropsSystem.drops){
+        if(!drop.alive) continue;
+        const padding=Math.max(1,drop.r*.72);
+        if(pointInRotatedRect(drop.x,drop.y,x,y,halfWidth+padding,halfHeight+padding,angle)) {
+          drop.scheduleRespawn(3000);
+        }
+      }
+    }
+
+    function clearFogSqueegeeStamp(x, y, brush, radius, angle) {
+      if(!isPointInPlayableGlass(x,y)) return false;
+
+      const opacity=Math.max(.01,Math.min(1,Number(brush?.opacityPerStroke)||1));
+      const hardness=Math.max(.02,Math.min(.98,Number(brush?.hardness)||.5));
+
+      // Lâmina larga e relativamente baixa: deixa um rastro claramente quadrado,
+      // diferente dos carimbos circulares dos outros estilos.
+      const halfWidth=radius*1.04;
+      const halfHeight=radius*.27;
+      const feather=2+(1-hardness)*7;
+      const corner=Math.max(2,radius*.10);
+
+      fogMaskCtx.save();
+      fogMaskCtx.translate(x,y);
+      fogMaskCtx.rotate(angle);
+      fogMaskCtx.globalCompositeOperation="destination-out";
+      fogMaskCtx.fillStyle="#000";
+
+      // Borda externa discreta para não parecer um recorte digital seco demais.
+      fogMaskCtx.globalAlpha=.16*opacity;
+      traceRoundedRect(
+        fogMaskCtx,
+        -halfWidth-feather,
+        -halfHeight-feather,
+        (halfWidth+feather)*2,
+        (halfHeight+feather)*2,
+        corner+feather
+      );
+      fogMaskCtx.fill();
+
+      // Núcleo do rodo: praticamente quadrado, com cantos apenas levemente arredondados.
+      fogMaskCtx.globalAlpha=opacity;
+      traceRoundedRect(
+        fogMaskCtx,
+        -halfWidth,
+        -halfHeight,
+        halfWidth*2,
+        halfHeight*2,
+        corner
+      );
+      fogMaskCtx.fill();
+      fogMaskCtx.restore();
+
+      fogVisualDirty=true;
+      wipeGlassDropsInRotatedRect(x,y,halfWidth,halfHeight,angle);
+      markFogRotatedRectGrid(x,y,halfWidth*.94,halfHeight*.94,angle,opacity);
+      return true;
+    }
+
+    function traceDiamondPath(ctx, cx, cy, radius) {
+      ctx.beginPath();
+      ctx.moveTo(cx, cy-radius);
+      ctx.lineTo(cx+radius, cy);
+      ctx.lineTo(cx, cy+radius);
+      ctx.lineTo(cx-radius, cy);
+      ctx.closePath();
+    }
+
+    function pointInDiamond(px, py, cx, cy, radius) {
+      const r=Math.max(1,radius);
+      return Math.abs(px-cx)/r + Math.abs(py-cy)/r <= 1;
+    }
+
+    function markFogDiamondGrid(x, y, radius, opacity=1) {
+      let marked=0;
+      const amount=Math.max(.01,Math.min(1,Number(opacity)||1));
+      const gx=Math.floor((x/W)*GRID_X), gy=Math.floor((y/H)*GRID_Y);
+      const rx=Math.ceil((radius/W)*GRID_X)+1, ry=Math.ceil((radius/H)*GRID_Y)+1;
+      for(let yy=gy-ry;yy<=gy+ry;yy++){
+        for(let xx=gx-rx;xx<=gx+rx;xx++){
+          if(xx<0||yy<0||xx>=GRID_X||yy>=GRID_Y) continue;
+          const px=(xx+.5)/GRID_X*W, py=(yy+.5)/GRID_Y*H;
+          const index=yy*GRID_X+xx;
+          if(fogGrid[index]<0 || fogGrid[index]>=1 || !isPointInPlayableGlass(px,py)) continue;
+          if(!pointInDiamond(px,py,x,y,radius)) continue;
+          const previous=fogGrid[index];
+          const next=Math.min(1,previous+amount);
+          fogGrid[index]=next;
+          fogClearedCells+=next-previous;
+          marked+=next-previous;
+        }
+      }
+      return marked;
+    }
+
+    function wipeGlassDropsInDiamond(x, y, radius) {
+      for(const drop of glassDropsSystem.drops){
+        if(!drop.alive) continue;
+        const padding=Math.max(1,drop.r*.72);
+        if(pointInDiamond(drop.x,drop.y,x,y,radius+padding)) drop.scheduleRespawn(3000);
+      }
+    }
+
+    function clearFogDiamondStamp(x, y, brush, radius) {
+      if(!isPointInPlayableGlass(x,y)) return false;
+      const stamp=getBrushStamp(brush,radius);
+      const opacity=Math.max(.01,Math.min(1,Number(brush?.opacityPerStroke)||1));
+      fogMaskCtx.save();
+      fogMaskCtx.globalCompositeOperation="destination-out";
+      fogMaskCtx.globalAlpha=opacity;
+      fogMaskCtx.drawImage(stamp.canvas,x-stamp.cssSize/2,y-stamp.cssSize/2,stamp.cssSize,stamp.cssSize);
+      fogMaskCtx.restore();
+      fogVisualDirty=true;
+      wipeGlassDropsInDiamond(x,y,radius*.88);
+      markFogDiamondGrid(x,y,radius*.72,opacity);
+      return true;
+    }
+
     function clearFogStamp(x, y, brush, radius) {
       if(!isPointInPlayableGlass(x,y)) return false;
       const stamp=getBrushStamp(brush,radius);
@@ -2839,7 +3006,8 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       const hardness=Math.max(.02,Math.min(.98,Number(brush?.hardness) || .5));
       const texture=getBrushTextureProfile(brush);
       const textureName=brush?.texture || "smooth";
-      const key=`${radius.toFixed(2)}:${hardness}:${textureName}:${DPR}`;
+      const shape=brush?.shape || "circle";
+      const key=`${shape}:${radius.toFixed(2)}:${hardness}:${textureName}:${DPR}`;
       if(brushStampCache.has(key)) return brushStampCache.get(key);
       const padding=3;
       const cssSize=Math.ceil(radius*2+padding*2);
@@ -2861,7 +3029,18 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       gradient.addColorStop(edgeStop,`rgba(0,0,0,${texture.edge})`);
       gradient.addColorStop(1,"rgba(0,0,0,0)");
       context.fillStyle=gradient;
-      context.fillRect(0,0,cssSize,cssSize);
+      if(shape === "diamond") {
+        traceDiamondPath(context,center,center,radius);
+        context.fill();
+        context.save();
+        context.globalAlpha=.20;
+        context.fillStyle="#000";
+        traceDiamondPath(context,center,center,radius*.54);
+        context.fill();
+        context.restore();
+      } else {
+        context.fillRect(0,0,cssSize,cssSize);
+      }
 
       // Texturas são sutis para não transformar a limpeza em um efeito visual pesado.
       if(textureName === "feather" || textureName === "cloud") {
@@ -2896,17 +3075,28 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       const radius = brush.radius * scale * .84;
       const distance = Math.hypot(toX - fromX, toY - fromY);
       const opacity=Math.max(.01,Math.min(1,Number(brush?.opacityPerStroke) || 1));
-      const spacing = Math.max(4, radius * (opacity < 1 ? .46 : .22));
+      const isSqueegee=brush?.shape === "squeegee";
+      const isDiamond=brush?.shape === "diamond";
+      const spacing = Math.max(
+        4,
+        radius * (isSqueegee ? .18 : (isDiamond ? .30 : (opacity < 1 ? .46 : .22)))
+      );
       const steps = Math.max(1, Math.ceil(distance / spacing));
+
+      // O rodo mantém a lâmina perpendicular ao gesto. Um simples toque começa
+      // horizontal; assim que o dedo se move, a orientação acompanha o movimento.
+      const gestureAngle=distance>1
+        ? Math.atan2(toY-fromY,toX-fromX)+Math.PI/2
+        : 0;
+
       for (let i = 1; i <= steps; i++) {
         const amount = i / steps;
         const scatter=getBrushScatterOffset(brush);
-        clearFogStamp(
-          fromX + (toX - fromX) * amount + scatter.x,
-          fromY + (toY - fromY) * amount + scatter.y,
-          brush,
-          radius
-        );
+        const x=fromX + (toX - fromX) * amount + scatter.x;
+        const y=fromY + (toY - fromY) * amount + scatter.y;
+        if(isSqueegee) clearFogSqueegeeStamp(x,y,brush,radius,gestureAngle);
+        else if(isDiamond) clearFogDiamondStamp(x,y,brush,radius);
+        else clearFogStamp(x,y,brush,radius);
       }
       const now = performance.now();
       state.cleanStreak = now - state.lastWipe < 350 ? state.cleanStreak + 1 : 1;
@@ -3949,6 +4139,46 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         ctx.beginPath();
         ctx.ellipse(cx,cy,rx,ry,0,start,end);
         ctx.stroke();
+      } else if(brush.shape === "diamond") {
+        const startX=width*.15;
+        const endX=width*.85;
+        const yBase=height*.52;
+        const length=Math.max(0,Math.min(1,progress));
+        const steps=Math.max(1,Math.floor(11*length));
+        const size=Math.max(5,Math.min(height*.23,brush.radius*.20));
+        for(let i=0;i<=steps;i++){
+          const t=steps ? i/steps : 0;
+          const x=startX+(endX-startX)*t;
+          const y=yBase+Math.sin(t*Math.PI*2)*height*.035;
+          ctx.globalAlpha=opacity;
+          traceDiamondPath(ctx,x,y,size);
+          ctx.fillStyle="#000";
+          ctx.fill();
+          ctx.globalAlpha=opacity*.24;
+          traceDiamondPath(ctx,x,y,size*.52);
+          ctx.fill();
+        }
+        ctx.globalAlpha=opacity;
+      } else if(brush.shape === "squeegee") {
+        const startX=width*.16;
+        const endX=width*.84;
+        const y=height*.52;
+        const currentX=startX+(endX-startX)*Math.max(0,Math.min(1,progress));
+        const bladeWidth=Math.max(5,height*.13);
+        const bladeHeight=Math.max(18,height*.58);
+        const left=startX-bladeWidth*.5;
+        const trailWidth=Math.max(bladeWidth,currentX-startX+bladeWidth);
+
+        // A faixa já percorrida fica quadrada e larga, deixando óbvio no preview
+        // que este estilo não é mais um pincel circular.
+        traceRoundedRect(ctx,left,y-bladeHeight*.5,trailWidth,bladeHeight,Math.max(2,bladeWidth*.22));
+        ctx.fillStyle="#000";
+        ctx.fill();
+
+        // Mostra a posição atual da lâmina do rodo com um núcleo um pouco mais forte.
+        ctx.globalAlpha=Math.min(1,opacity+.12);
+        traceRoundedRect(ctx,currentX-bladeWidth*.5,y-bladeHeight*.5,bladeWidth,bladeHeight,Math.max(2,bladeWidth*.22));
+        ctx.fill();
       } else {
         const startX=width*.14;
         const endX=width*.86;
