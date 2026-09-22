@@ -3911,8 +3911,8 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
 
     // =========================================================
     // PARABRISA SECRETO — VARREDURA AUTOMÁTICA ENQUANTO SEGURA
-    // Dois arcos elípticos varrem juntos pelo mesmo lado:
-    // -90° (esquerda) -> +90° (direita) -> -90° ... até o dedo ser solto.
+    // Dois limpadores paralelos partem do centro e giram juntos:
+    // 0° -> +90° -> 0° -> -90° -> 0° ... até o dedo ser solto.
     // =========================================================
     const WINDSHIELD_SWEEP_LIMIT = Math.PI / 2;
     const WINDSHIELD_SWEEP_SPEED = Math.PI * .84; // ~151°/s
@@ -3929,108 +3929,89 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       return false;
     }
 
-    function getActiveWindshieldPointer() {
-      for (const pointer of state.activePointers.values()) {
-        if(pointer?.key === WINDSHIELD_BRUSH_KEY) return pointer;
-      }
-      return null;
+    function getWindshieldBladeSegments(angle) {
+      // Os pivôs ficam logo abaixo da borda inferior para que a varredura
+      // semicircular alcance praticamente todo o vidro em telas diferentes.
+      const pivotY = H * 1.025;
+      const length = Math.hypot(W, H) * 1.04;
+      const sin = Math.sin(angle);
+      const cos = Math.cos(angle);
+      return [.34, .58].map(nx => {
+        const x1 = W * nx;
+        const y1 = pivotY;
+        return {
+          x1, y1,
+          x2:x1 + sin * length,
+          y2:y1 - cos * length
+        };
+      });
     }
 
-    function getWindshieldArcs(angle) {
-      const pointer = getActiveWindshieldPointer();
-      const centerX = pointer?.x ?? W * .50;
-      const centerY = pointer?.y ?? H * .82;
-      const pivotOffset = W * .105;
-      const radius = Math.hypot(W, H) * .085;
-      const span = Math.PI / 18; // pequeno trecho de arco (~10°)
-
-      return [-pivotOffset, pivotOffset].map(offsetX => ({
-        cx:centerX + offsetX,
-        cy:centerY,
-        rx:radius,
-        ry:radius * .70,
-        rotation:0,
-        start:angle - span * .5,
-        end:angle + span * .5
-      }));
-    }
-
-    function sampleWindshieldArcPoints(arc, samples=7) {
-      const points=[];
-      const cosR=Math.cos(arc.rotation || 0);
-      const sinR=Math.sin(arc.rotation || 0);
-      for(let i=0;i<samples;i++) {
-        const t=samples<=1 ? .5 : i/(samples-1);
-        const a=arc.start+(arc.end-arc.start)*t;
-        const ex=Math.cos(a)*arc.rx;
-        const ey=Math.sin(a)*arc.ry;
-        points.push({
-          x:arc.cx+ex*cosR-ey*sinR,
-          y:arc.cy+ex*sinR+ey*cosR
-        });
-      }
-      return points;
+    function pointSegmentDistanceSquared(px, py, segment) {
+      const vx = segment.x2 - segment.x1;
+      const vy = segment.y2 - segment.y1;
+      const wx = px - segment.x1;
+      const wy = py - segment.y1;
+      const vv = vx * vx + vy * vy || 1;
+      const t = Math.max(0, Math.min(1, (wx * vx + wy * vy) / vv));
+      const dx = px - (segment.x1 + vx * t);
+      const dy = py - (segment.y1 + vy * t);
+      return dx * dx + dy * dy;
     }
 
     function eraseWindshieldFogAtAngle(angle) {
       const brush = brushes[WINDSHIELD_BRUSH_KEY];
       const scale = Math.max(.82, Math.min(1.18, Math.min(W, H) / 390));
       const bladeWidth = Math.max(18, Math.min(30, brush.radius * scale * .60));
-      const arcs = getWindshieldArcs(angle);
+      const segments = getWindshieldBladeSegments(angle);
 
-      // shape:'arc': o Parabrisa agora apaga a névoa com ctx.ellipse em arco.
-      // A varredura automática aprovada continua igual; muda apenas a geometria.
+      // Apaga a máscara diretamente em duas lâminas longas. Uma passada externa
+      // leve cria a borda suave; o núcleo remove a névoa por completo.
       fogMaskCtx.save();
       fogMaskCtx.globalCompositeOperation = "destination-out";
       fogMaskCtx.lineCap = "round";
+      fogMaskCtx.lineJoin = "round";
       fogMaskCtx.strokeStyle = "#000";
-      for(const arc of arcs) {
+      for(const segment of segments) {
         fogMaskCtx.globalAlpha = .18;
         fogMaskCtx.lineWidth = bladeWidth * 1.75;
         fogMaskCtx.beginPath();
-        fogMaskCtx.ellipse(arc.cx,arc.cy,arc.rx,arc.ry,arc.rotation,arc.start,arc.end);
+        fogMaskCtx.moveTo(segment.x1, segment.y1);
+        fogMaskCtx.lineTo(segment.x2, segment.y2);
         fogMaskCtx.stroke();
 
-        fogMaskCtx.globalAlpha = brush.opacityPerStroke;
+        fogMaskCtx.globalAlpha = 1;
         fogMaskCtx.lineWidth = bladeWidth;
         fogMaskCtx.beginPath();
-        fogMaskCtx.ellipse(arc.cx,arc.cy,arc.rx,arc.ry,arc.rotation,arc.start,arc.end);
+        fogMaskCtx.moveTo(segment.x1, segment.y1);
+        fogMaskCtx.lineTo(segment.x2, segment.y2);
         fogMaskCtx.stroke();
       }
       fogMaskCtx.restore();
       fogVisualDirty = true;
 
-      const arcPoints=arcs.flatMap(arc=>sampleWindshieldArcPoints(arc,8));
-      const gridRadius = bladeWidth * .78;
-      const gridRadiusSq = gridRadius * gridRadius;
-
       // Mantém o progresso lógico alinhado com a área realmente varrida.
+      const gridRadius = bladeWidth * .70;
+      const gridRadiusSq = gridRadius * gridRadius;
       for(let gy=0; gy<GRID_Y; gy++) {
         for(let gx=0; gx<GRID_X; gx++) {
           const index = gy * GRID_X + gx;
-          if(fogGrid[index] < 0 || fogGrid[index] >= 1) continue;
+          if(fogGrid[index] !== 0) continue;
           const px = (gx + .5) / GRID_X * W;
           const py = (gy + .5) / GRID_Y * H;
           if(!isPointInPlayableGlass(px, py)) continue;
-          if(arcPoints.some(point => {
-            const dx=px-point.x, dy=py-point.y;
-            return dx*dx+dy*dy <= gridRadiusSq;
-          })) {
-            const previous=fogGrid[index];
-            fogGrid[index]=1;
-            fogClearedCells+=1-previous;
+          if(segments.some(segment => pointSegmentDistanceSquared(px, py, segment) <= gridRadiusSq)) {
+            fogGrid[index] = 1;
+            fogClearedCells++;
           }
         }
       }
 
-      // As gotas do vidro também saem quando o arco passa por cima.
-      const dropRadiusSq = (bladeWidth * .90) ** 2;
+      // As gotas do vidro também saem quando uma lâmina passa por cima.
+      const dropRadiusSq = (bladeWidth * .82) ** 2;
       for(const drop of glassDropsSystem.drops) {
         if(!drop.alive) continue;
-        if(arcPoints.some(point => {
-          const dx=drop.x-point.x, dy=drop.y-point.y;
-          return dx*dx+dy*dy <= dropRadiusSq;
-        })) {
+        if(segments.some(segment => pointSegmentDistanceSquared(drop.x, drop.y, segment) <= dropRadiusSq)) {
           drop.scheduleRespawn(3000);
         }
       }
@@ -4038,13 +4019,13 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
 
     function startWindshieldWiper() {
       windshieldWiperState.active = true;
-      windshieldWiperState.angle = -WINDSHIELD_SWEEP_LIMIT;
+      windshieldWiperState.angle = 0;
       windshieldWiperState.direction = 1;
       if(!state.hasInteracted) {
         state.hasInteracted = true;
         document.getElementById("instruction").classList.add("hidden-text");
       }
-      eraseWindshieldFogAtAngle(windshieldWiperState.angle);
+      eraseWindshieldFogAtAngle(0);
       updateProgress();
     }
 
