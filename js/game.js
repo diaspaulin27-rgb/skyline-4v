@@ -710,7 +710,7 @@ const phases = [
     const brushes = {
       soft: { name:{en:"Soft",pt:"Suave",es:"Suave"}, cost:0, radius:34, blur:.95, vignette:.35, desc:{en:"Gentle and balanced.",pt:"Suave e equilibrado.",es:"Suave y equilibrado."} },
       precise: { name:{en:"Precise",pt:"Preciso",es:"Preciso"}, cost:100, radius:23, blur:.42, vignette:.18, desc:{en:"For small details.",pt:"Para pequenos detalhes.",es:"Para pequeños detalles."} },
-      broad: { name:{en:"Sweep",pt:"Rodo",es:"Barrido"}, cost:200, radius:56, blur:.88, vignette:.42, desc:{en:"Wide, flowing strokes.",pt:"Passadas largas e fluidas.",es:"Pasadas amplias y fluidas."} },
+      broad: { name:{en:"Sweep",pt:"Rodo",es:"Barrido"}, cost:200, radius:56, blur:.88, vignette:.42, opacityPerStroke:1.0, shape:"squeegee", desc:{en:"Wide, flowing strokes.",pt:"Passadas largas e fluidas.",es:"Pasadas amplias y fluidas."} },
       sharp: { name:{en:"Sharp",pt:"Nítido",es:"Nítido"}, cost:300, radius:19, blur:.24, vignette:.10, desc:{en:"A crisp, controlled edge.",pt:"Borda nítida e controlada.",es:"Borde nítido y controlado."} },
       dream: { name:{en:"Dream",pt:"Sonho",es:"Sueño"}, cost:500, radius:66, blur:1.28, vignette:.58, desc:{en:"Wide and dreamlike.",pt:"Amplo e sonhador.",es:"Amplio y etéreo."} },
       feather: { name:{en:"Feather",pt:"Pluma",es:"Pluma"}, cost:650, radius:46, blur:1.18, vignette:.30, desc:{en:"Light, soft clearing.",pt:"Limpeza leve e suave.",es:"Limpieza ligera y suave."} },
@@ -3884,9 +3884,8 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
         document.getElementById("instruction").classList.add("hidden-text");
       }
 
-      // Base clássica restaurada para TODOS os estilos normais.
-      // A passada segue o dedo com círculos muito sobrepostos, criando um rastro
-      // contínuo. O que muda entre estilos é somente tamanho e suavidade.
+      // Base clássica restaurada para os estilos normais. O Rodo é a única
+      // exceção comum: volta a usar uma ponta quadrada, como na versão anterior.
       const scale = Math.max(.82, Math.min(1.18, Math.min(W, H) / 390));
       const radius = brush.radius * scale * .84;
       const distance = Math.hypot(toX - fromX, toY - fromY);
@@ -3895,12 +3894,23 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
 
       for (let i = 1; i <= steps; i++) {
         const amount = i / steps;
-        clearFogStamp(
-          fromX + (toX - fromX) * amount,
-          fromY + (toY - fromY) * amount,
-          brush,
-          radius
-        );
+        const x = fromX + (toX - fromX) * amount;
+        const y = fromY + (toY - fromY) * amount;
+        if(brush.shape === "squeegee") {
+          // Quadrado fixo, sem girar com o gesto.
+          const halfSide = radius * .46;
+          fogMaskCtx.save();
+          fogMaskCtx.globalCompositeOperation = "destination-out";
+          fogMaskCtx.globalAlpha = 1;
+          fogMaskCtx.fillStyle = "#000";
+          fogMaskCtx.fillRect(x-halfSide, y-halfSide, halfSide*2, halfSide*2);
+          fogMaskCtx.restore();
+          fogVisualDirty = true;
+          wipeGlassDropsInRotatedRect(x,y,halfSide,halfSide,0);
+          markFogRotatedRectGrid(x,y,halfSide,halfSide,0,1);
+        } else {
+          clearFogStamp(x,y,brush,radius);
+        }
       }
 
       const now = performance.now();
@@ -4922,20 +4932,35 @@ const glassDropsSystem = new GlassDrops(glassCanvas);
       ctx.globalCompositeOperation="destination-out";
 
       if(key === WINDSHIELD_BRUSH_KEY || brush.shape === "arc") {
-        // O Parabrisa continua sendo a única geometria especial.
-        const cx=width*.50;
-        const cy=height*.72;
-        const rx=width*.32;
-        const ry=height*.48;
-        const start=-Math.PI*.90;
-        const end=start+Math.PI*1.30*Math.max(0,Math.min(1,progress));
+        // Preview do Parabrisa: dois limpadores paralelos reproduzem a
+        // varredura especial do estilo secreto.
+        const p=Math.max(0,Math.min(1,progress));
+        const angle=-Math.PI/2 + Math.PI*p;
+        const pivotY=height*.80;
+        const pivotOffset=width*.115;
+        const bladeLength=Math.min(width*.25,height*.43);
+        const sin=Math.sin(angle), cos=Math.cos(angle);
         ctx.globalAlpha=1;
         ctx.lineCap="round";
-        ctx.lineWidth=Math.max(5,Math.min(12,brush.radius*.18));
+        ctx.lineWidth=Math.max(4,Math.min(8,brush.radius*.14));
         ctx.strokeStyle="#000";
-        ctx.beginPath();
-        ctx.ellipse(cx,cy,rx,ry,0,start,end);
-        ctx.stroke();
+        for(const offset of [-pivotOffset,pivotOffset]) {
+          const x1=width*.50+offset;
+          const y1=pivotY;
+          ctx.beginPath();
+          ctx.moveTo(x1,y1);
+          ctx.lineTo(x1+sin*bladeLength,y1-cos*bladeLength);
+          ctx.stroke();
+        }
+      } else if(brush.shape === "squeegee") {
+        // Preview do Rodo acompanha a ponta quadrada usada no vidro.
+        const startX=width*.18;
+        const endX=width*.82;
+        const x=startX+(endX-startX)*Math.max(0,Math.min(1,progress));
+        const side=Math.min(height*.42,width*.24);
+        ctx.globalAlpha=1;
+        ctx.fillStyle="#000";
+        ctx.fillRect(x-side/2,height*.52-side/2,side,side);
       } else {
         // Todos os demais previews usam exatamente a mesma lógica visual
         // da limpeza clássica: carimbos circulares densos e sobrepostos.
